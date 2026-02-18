@@ -1,62 +1,93 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* ------------------------------
-   Base Document
------------------------------- */
-html {
-  background-color: #0b0b0f;
-}
-
-/* ------------------------------
-   Theme Tokens
------------------------------- */
-:root {
-  --background: #0b0b0f;
-  --foreground: #eaeaea;
-
-  --surface: rgba(255, 255, 255, 0.05);
-  --surface-border: rgba(255, 255, 255, 0.1);
-  --muted: #9ca3af;
-}
-
-/* ------------------------------
-   Text Selection
------------------------------- */
-::selection {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* ------------------------------
-   Tailwind Theme Mapping
------------------------------- */
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-/* ------------------------------
-   Light Mode (Optional / Future)
------------------------------- */
-@media (prefers-color-scheme: light) {
+@layer base {
   :root {
-    --background: #ffffff;
-    --foreground: #171717;
+    --background: 210 40% 98%;
+    --foreground: 215 25% 15%;
 
-    --surface: #f5f5f5;
-    --surface-border: #e5e7eb;
-    --muted: #6b7280;
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    --primary: 187 82% 31%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 221 83% 53%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 187 82% 31%;
+
+    --radius: 0.625rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 25% 35%;
+    --sidebar-primary: 187 82% 31%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 187 82% 95%;
+    --sidebar-accent-foreground: 187 82% 25%;
+    --sidebar-border: 214 32% 93%;
+    --sidebar-ring: 187 82% 31%;
+
+    --chart-1: 187 82% 31%;
+    --chart-2: 221 83% 53%;
+    --chart-3: 160 84% 39%;
+    --chart-4: 210 40% 70%;
+    --chart-5: 187 60% 50%;
+
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
   }
 }
 
-/* ------------------------------
-   Body Defaults
------------------------------- */
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans, Arial, Helvetica, sans-serif);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
 }
+
+@layer utilities {
+  .medical-gradient {
+    background: linear-gradient(135deg, hsl(187, 82%, 31%) 0%, hsl(221, 83%, 53%) 100%);
+  }
+
+  .medical-gradient-soft {
+    background: linear-gradient(135deg, hsl(187, 82%, 95%) 0%, hsl(221, 83%, 95%) 100%);
+  }
+
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm;
+  }
+
+  .stat-card {
+    @apply bg-card rounded-xl border border-border/60 shadow-sm p-5 transition-all duration-200 hover:shadow-md hover:border-primary/20;
+  }
+}
+
