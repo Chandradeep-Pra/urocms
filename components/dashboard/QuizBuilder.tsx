@@ -22,6 +22,9 @@ export default function QuizBuilderPage() {
   const [filteredBanks, setFilteredBanks] = useState<QuestionBank[]>([]);
   const [loadingBanks, setLoadingBanks] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [openBanks, setOpenBanks] = useState<string[]>([]);
+  const [bankQuestions, setBankQuestions] = useState<Record<string, any[]>>({});
+  const [loadingQuestions, setLoadingQuestions] = useState<string | null>(null);
 
   const [quiz, setQuiz] = useState({
     title: "",
@@ -31,6 +34,7 @@ export default function QuizBuilderPage() {
     randomizeQuestions: false,
     randomizeOptions: false,
     bankIds: [] as string[],
+    questionIds: [] as string[],
   });
 
   /* ───────── LOAD BANKS ───────── */
@@ -64,10 +68,10 @@ export default function QuizBuilderPage() {
       return;
     }
 
-    if (quiz.bankIds.length === 0) {
-      toast.error("Select at least one bank");
-      return;
-    }
+    // if (quiz.bankIds.length === 0) {
+    //   toast.error("Select at least one bank");
+    //   return;
+    // }
 
     if (quiz.durationMinutes <= 0) {
       toast.error("Duration must be greater than 0");
@@ -99,6 +103,7 @@ export default function QuizBuilderPage() {
         randomizeQuestions: false,
         randomizeOptions: false,
         bankIds: [],
+        questionIds: [],
       });
 
     } catch (err) {
@@ -119,6 +124,52 @@ export default function QuizBuilderPage() {
     }));
   };
 
+  const toggleExpand = async (bankId: string) => {
+  const isOpen = openBanks.includes(bankId);
+
+  if (isOpen) {
+    setOpenBanks(prev => prev.filter(id => id !== bankId));
+    return;
+  }
+
+  setOpenBanks(prev => [...prev, bankId]);
+
+  // If questions already loaded, don't refetch
+  if (bankQuestions[bankId]) return;
+
+  try {
+    setLoadingQuestions(bankId);
+
+    const res = await fetch(`/api/questions?bankId=${bankId}`);
+    const data = await res.json();
+
+    setBankQuestions(prev => ({
+      ...prev,
+      [bankId]: data.questions || []
+    }));
+
+  } catch {
+    toast.error("Failed to load questions");
+  } finally {
+    setLoadingQuestions(null);
+  }
+};
+const toggleQuestion = (questionId: string) => {
+  setQuiz(prev => ({
+    ...prev,
+    questionIds: prev.questionIds.includes(questionId)
+      ? prev.questionIds.filter(id => id !== questionId)
+      : [...prev.questionIds, questionId],
+  }));
+};
+const importFullBank = (bankId: string) => {
+  setQuiz(prev => ({
+    ...prev,
+    bankIds: prev.bankIds.includes(bankId)
+      ? prev.bankIds.filter(id => id !== bankId)
+      : [...prev.bankIds, bankId],
+  }));
+};
   /* ───────── UI ───────── */
 
   return (
@@ -252,36 +303,77 @@ export default function QuizBuilderPage() {
             )}
 
             {filteredBanks.map((bank) => {
-              const selected = quiz.bankIds.includes(bank.id);
+  const selected = quiz.bankIds.includes(bank.id);
+  const isOpen = openBanks.includes(bank.id);
+  const questions = bankQuestions[bank.id] || [];
 
-              return (
-                <div
-                  key={bank.id}
-                  className={`flex items-center justify-between rounded-xl border p-4 transition-all ${
-                    selected
-                      ? "bg-teal-50 border-teal-400 shadow-sm"
-                      : "hover:bg-slate-50"
-                  }`}
-                >
-                  <div>
-                    <p className="font-medium">
-                      {bank.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {bank.questionCount} questions
-                    </p>
-                  </div>
+  return (
+    <div
+      key={bank.id}
+      className="rounded-xl border transition-all"
+    >
+      {/* BANK HEADER */}
+      <div className="flex items-center justify-between p-4 hover:bg-slate-50">
+        <div>
+          <p className="font-medium">{bank.title}</p>
+          <p className="text-xs text-muted-foreground">
+            {bank.questionCount} questions
+          </p>
+        </div>
 
-                  <Button
-                    size="sm"
-                    variant={selected ? "outline" : "default"}
-                    onClick={() => toggleBank(bank.id)}
-                  >
-                    {selected ? "Remove" : "Add"}
-                  </Button>
-                </div>
-              );
-            })}
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={selected ? "outline" : "default"}
+            onClick={() => importFullBank(bank.id)}
+          >
+            {selected ? "Remove Full" : "Import Full"}
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => toggleExpand(bank.id)}
+            className={`${isOpen?"bg-orange-300":"bg-blue-300"}`}
+          >
+            {isOpen ? "Hide" : "View"}
+          </Button>
+        </div>
+      </div>
+
+      {/* EXPANDED QUESTIONS */}
+      {isOpen && (
+        <div className="border-t bg-slate-50 px-4 py-3 space-y-2 max-h-60 overflow-y-auto">
+          {loadingQuestions === bank.id && (
+            <p className="text-xs text-muted-foreground">
+              Loading questions...
+            </p>
+          )}
+
+          {questions.map((q: any) => {
+            const checked = quiz.questionIds.includes(q.id);
+
+            return (
+              <label
+                key={q.id}
+                className="flex items-center gap-2 text-sm"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleQuestion(q.id)}
+                />
+                <span className="truncate">
+                  {q.questionText}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+})}
           </div>
 
           <div className="pt-4 border-t mt-4 text-sm text-muted-foreground">
