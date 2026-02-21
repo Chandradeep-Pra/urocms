@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react";
-import { Plus, Trophy, Clock, CalendarDays, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Clock, CalendarDays, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,202 +14,345 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
-interface GrandMock {
+interface Quiz {
   id: string;
   title: string;
-  liveDateTime: string;
-  questionCount: number;
-  duration: number;
-  status: "scheduled" | "live" | "completed";
-  participants: number;
+  type: string;
+  durationMinutes: number;
+  createdAt?: any;
 }
 
-const mockData: GrandMock[] = [
-  { id: "1", title: "Grand Mock #1 — Full Urology", liveDateTime: "2025-03-01T10:00", questionCount: 200, duration: 180, status: "scheduled", participants: 0 },
-  { id: "2", title: "Grand Mock #2 — Renal Focus", liveDateTime: "2025-02-15T14:00", questionCount: 150, duration: 120, status: "live", participants: 342 },
-  { id: "3", title: "Grand Mock #3 — Anatomy", liveDateTime: "2025-01-20T09:00", questionCount: 100, duration: 90, status: "completed", participants: 512 },
-];
+interface MockEvent {
+  id: string;
+  quizId: string;
+  title: string;
+  startTime: string;
+  durationMinutes: number;
+}
 
-const statusStyles: Record<string, string> = {
-  scheduled: "bg-info/10 text-info border-info/20",
-  live: "bg-accent/10 text-accent border-accent/20",
-  completed: "bg-muted text-muted-foreground border-border",
+const formatDateTime = (value: any) => {
+  if (!value) return "-";
+
+  // Firestore Timestamp
+  if (value._seconds) {
+    return new Date(value._seconds * 1000).toLocaleString();
+  }
+
+  // If already Date object
+  if (value instanceof Date) {
+    return value.toLocaleString();
+  }
+
+  // If string
+  return new Date(value).toLocaleString();
 };
 
-const GrandMockTestsPage = () => {
-  const [tests, setTests] = useState(mockData);
+const GrandMockPage = () => {
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [mocks, setMocks] = useState<MockEvent[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", liveDateTime: "", duration: "120" });
+  const [loading, setLoading] = useState(true);
 
-  const handleSave = () => {
-    if (!form.title || !form.liveDateTime) { toast.error("Fill all fields"); return; }
-    setTests((prev) => [...prev, {
-      id: Date.now().toString(),
-      title: form.title,
-      liveDateTime: form.liveDateTime,
-      questionCount: 0,
-      duration: parseInt(form.duration),
-      status: "scheduled",
-      participants: 0,
-    }]);
-    setDialogOpen(false);
-    setForm({ title: "", liveDateTime: "", duration: "120" });
-    toast.success("Grand Mock created");
+  const router = useRouter();
+
+  const [form, setForm] = useState({
+    quizId: "",
+    startTime: "",
+    durationMinutes: "",
+  });
+
+  /* ───────── LOAD DATA ───────── */
+
+  useEffect(() => {
+    loadQuizzes();
+    loadMocks();
+  }, []);
+
+  const loadQuizzes = async () => {
+    try {
+      const res = await fetch("/api/quizzes");
+      const data = await res.json();
+
+      const filtered = (data.quizzes || []).filter(
+        (q: Quiz) =>
+          q.type === "mock" || q.type === "grand-mock"
+      );
+
+      setQuizzes(filtered);
+    } catch {
+      toast.error("Failed to load quizzes");
+    }
+  };
+
+  const loadMocks = async () => {
+    try {
+      const res = await fetch("/api/mocks");
+      const data = await res.json();
+      setMocks(data.mocks || []);
+    } catch {
+      toast.error("Failed to load mocks");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ───────── DERIVE STATUS ───────── */
+
+ const deriveStatus = (mock: MockEvent) => {
+  const now = Date.now();
+
+  let start: number;
+
+  // Firestore Timestamp
+  if ((mock.startTime as any)?._seconds) {
+    start = (mock.startTime as any)._seconds * 1000;
+  }
+  // ISO or datetime-local string
+  else {
+    start = new Date(mock.startTime).getTime();
+  }
+
+  if (!start || isNaN(start)) return "Scheduled";
+
+  const end = start + Number(mock.durationMinutes) * 60 * 1000;
+
+  if (now < start) return "Scheduled";
+  if (now >= start && now <= end) return "Live";
+  return "Completed";
+};
+
+  /* ───────── CREATE MOCK ───────── */
+
+  const handleSave = async () => {
+    if (!form.quizId || !form.startTime) {
+      toast.error("Select quiz and start time");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/mocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quizId: form.quizId,
+          startTime: form.startTime,
+          durationMinutes: Number(form.durationMinutes),
+        }),
+      });
+
+      if (!res.ok) throw new Error();
+
+      toast.success("Mock scheduled");
+      setDialogOpen(false);
+      setForm({
+        quizId: "",
+        startTime: "",
+        durationMinutes: "",
+      });
+
+      loadMocks();
+    } catch {
+      toast.error("Failed to create mock");
+    }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+
+      {/* HEADER */}
       <div className="flex items-center justify-between">
-        <p className="text-muted-foreground">{tests.length} grand mock tests</p>
+        <p className="text-muted-foreground">
+          {mocks.length} mock events
+        </p>
+
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-  <DialogTrigger asChild>
-    <Button className="bg-gradient-to-r from-teal-600 to-blue-600 hover:opacity-90 text-white shadow-md">
-      <Plus className="mr-2 h-4 w-4" />
-      Create Grand Mock
-    </Button>
-  </DialogTrigger>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Schedule Mock
+            </Button>
+          </DialogTrigger>
 
-  <DialogContent className="sm:max-w-lg rounded-2xl border border-slate-200 bg-white p-0 overflow-hidden">
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>
+                Schedule Mock Event
+              </DialogTitle>
+            </DialogHeader>
 
-    {/* HEADER */}
-    <div className="px-6 py-6 border-b border-slate-100 bg-gradient-to-r from-teal-50 to-blue-50">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-semibold text-slate-800">
-          Create Grand Mock Test
-        </DialogTitle>
-        <p className="text-sm text-slate-600 mt-1">
-          Schedule a live exam event for all participants.
-        </p>
-      </DialogHeader>
-    </div>
+            <div className="space-y-5 mt-4">
 
-    {/* BODY */}
-    <div className="px-6 py-6 space-y-6">
+              {/* Select Quiz */}
+              <div className="space-y-2">
+                <Label>Select Quiz</Label>
+                <Select
+                  value={form.quizId}
+                  onValueChange={(v) => {
+                    const selected = quizzes.find(
+                      (q) => q.id === v
+                    );
 
-      {/* Title */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium text-slate-700">
-          Grand Mock Title
-        </Label>
-        <Input
-          value={form.title}
-          onChange={(e) =>
-            setForm({ ...form, title: e.target.value })
-          }
-          placeholder="e.g. National Urology Grand Mock – March 2026"
-          className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
-        />
-      </div>
+                    setForm({
+                      ...form,
+                      quizId: v,
+                      durationMinutes:
+                        selected?.durationMinutes?.toString() || "",
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose quiz" />
+                  </SelectTrigger>
 
-      {/* Live Date */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium text-slate-700">
-          Live Date & Time
-        </Label>
-
-        <div className="flex items-center rounded-xl border border-slate-200 focus-within:border-teal-500 focus-within:ring-1 focus-within:ring-teal-500 px-3 bg-white">
-          <span className="text-slate-400 text-sm mr-2">📅</span>
-          <Input
-            type="datetime-local"
-            value={form.liveDateTime}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                liveDateTime: e.target.value,
-              })
-            }
-            className="border-0 focus-visible:ring-0 bg-transparent"
-          />
-        </div>
-
-        <p className="text-xs text-slate-500">
-          The test will automatically go live at this time.
-        </p>
-      </div>
-
-      {/* Duration */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium text-slate-700">
-          Duration
-        </Label>
-
-        <div className="flex items-center rounded-xl border border-slate-200 focus-within:border-teal-500 focus-within:ring-1 focus-within:ring-teal-500 px-3 bg-white">
-          <Input
-            type="number"
-            min="1"
-            value={form.duration}
-            onChange={(e) =>
-              setForm({ ...form, duration: e.target.value })
-            }
-            className="border-0 focus-visible:ring-0 bg-transparent"
-            placeholder="180"
-          />
-          <span className="text-slate-500 text-sm ml-2">
-            minutes
-          </span>
-        </div>
-
-        <p className="text-xs text-slate-500">
-          Participants will have this much time once the test starts.
-        </p>
-      </div>
-
-    </div>
-
-    {/* FOOTER */}
-    <div className="px-6 py-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-
-      <Button
-        variant="ghost"
-        onClick={() => setDialogOpen(false)}
-        className="text-slate-600 hover:text-slate-800"
-      >
-        Cancel
-      </Button>
-
-      <Button
-        onClick={handleSave}
-        className="bg-gradient-to-r from-teal-600 to-blue-600 hover:opacity-90 text-white px-6 shadow-md"
-      >
-        Launch Grand Mock
-      </Button>
-
-    </div>
-  </DialogContent>
-</Dialog>
-
-      </div>
-
-      <div className="grid gap-4">
-        {tests.map((test) => (
-          <Card key={test.id} className={`shadow-sm border-l-4 ${test.status === "live" ? "border-l-accent" : test.status === "scheduled" ? "border-l-info" : "border-l-border"}`}>
-            <CardContent className="p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <Trophy className={`h-5 w-5 ${test.status === "live" ? "text-accent" : "text-primary"}`} />
-                    <h3 className="font-semibold text-foreground text-lg">{test.title}</h3>
-                    <Badge variant="outline" className={statusStyles[test.status]}>{test.status}</Badge>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><CalendarDays className="h-4 w-4" /> {new Date(test.liveDateTime).toLocaleString()}</span>
-                    <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {test.duration} min</span>
-                    <span className="flex items-center gap-1"><Users className="h-4 w-4" /> {test.participants} participants</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-foreground">{test.questionCount}</p>
-                  <p className="text-xs text-muted-foreground">questions</p>
-                </div>
+                  <SelectContent>
+                    {quizzes.map((quiz) => (
+                      <SelectItem
+                        key={quiz.id}
+                        value={quiz.id}
+                      >
+                        {quiz.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+
+              {/* Start Time */}
+              <div className="space-y-2">
+                <Label>Start Time</Label>
+                <Input
+                  type="datetime-local"
+                  value={form.startTime}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      startTime: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              {/* Duration */}
+              <div className="space-y-2">
+                <Label>Duration (minutes)</Label>
+                <Input
+                  type="number"
+                  value={form.durationMinutes}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      durationMinutes: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <Button
+                onClick={handleSave}
+                className="w-full"
+              >
+                Save Mock
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
+
+      {/* LIST */}
+      {loading ? (
+        <p className="text-sm text-muted-foreground">
+          Loading...
+        </p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {mocks.map((mock) => (
+            <div
+  key={mock.id}
+  onClick={() => router.push(`grand-mocks/${mock.id}`)}
+  className="group relative w-full overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-xl"
+>
+  {/* Background Gradient Based On Status */}
+  <div
+    className={`absolute inset-0 opacity-10 ${
+      deriveStatus(mock) === "Live"
+        ? "bg-gradient-to-r from-emerald-500 to-green-400"
+        : deriveStatus(mock) === "Scheduled"
+        ? "bg-gradient-to-r from-blue-500 to-indigo-400"
+        : "bg-gradient-to-r from-zinc-400 to-zinc-500"
+    }`}
+  />
+
+  <div className="relative flex flex-col md:flex-row items-center justify-between p-6 gap-6">
+
+    {/* LEFT STATUS BLOCK */}
+    <div
+      className={`flex items-center justify-center w-24 h-24 rounded-2xl text-white font-bold text-lg shadow-md ${
+        deriveStatus(mock) === "Live"
+          ? "bg-emerald-500 animate-pulse"
+          : deriveStatus(mock) === "Scheduled"
+          ? "bg-blue-500"
+          : "bg-zinc-500"
+      }`}
+    >
+      {deriveStatus(mock) === "Live"
+        ? "LIVE"
+        : deriveStatus(mock) === "Scheduled"
+        ? "SOON"
+        : "ENDED"}
+    </div>
+
+    {/* CENTER CONTENT */}
+    <div className="flex-1 space-y-3 text-center md:text-left">
+
+      <h3 className="text-xl font-semibold tracking-tight">
+        {mock.title}
+      </h3>
+
+      <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-sm text-muted-foreground">
+
+        <span className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4" />
+          {formatDateTime(mock.startTime)}
+        </span>
+
+        <span className="flex items-center gap-2">
+          <Clock className="h-4 w-4" />
+          {mock.durationMinutes} minutes
+        </span>
+
+        <span className="flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          Quiz: {mock.quizId}
+        </span>
+      </div>
+    </div>
+
+    {/* RIGHT SIDE VISUAL */}
+    <div className="text-center md:text-right space-y-1">
+      <p className="text-4xl font-bold leading-none">
+        {mock.durationMinutes}
+      </p>
+      <p className="text-xs uppercase tracking-widest text-muted-foreground">
+        Minutes
+      </p>
+    </div>
+  </div>
+</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
-export default GrandMockTestsPage;
+export default GrandMockPage;

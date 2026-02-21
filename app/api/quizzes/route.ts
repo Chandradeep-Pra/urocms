@@ -63,13 +63,25 @@ export async function POST(req: NextRequest) {
 }
 
 
-export async function GET() {
+
+export async function GET(req: NextRequest) {
   try {
-    const snapshot = await adminDb
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get("type");
+
+    let query = adminDb
       .collection("quizzes")
-      .where("isActive", "==", true)
-      .orderBy("createdAt", "desc")
-      .get();
+      .where("isActive", "==", true);
+
+    // 🔥 Apply type filter only if provided
+    if (type) {
+      query = query.where("type", "==", type);
+    }
+
+    // 🔥 Keep ordering
+    query = query.orderBy("createdAt", "desc");
+
+    const snapshot = await query.get();
 
     const quizzes = snapshot.docs.map((doc) => ({
       id: doc.id,
@@ -80,6 +92,7 @@ export async function GET() {
 
   } catch (err) {
     console.error("Fetch quizzes error:", err);
+
     return NextResponse.json(
       { error: "Failed to fetch quizzes" },
       { status: 500 }
