@@ -1,4 +1,4 @@
-//@ts-nocheck
+//@ts-ignore
 import { getGuestUsers } from "@/lib/server/guestService";
 import UsersClient from "./UserClient";
 
