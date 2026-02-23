@@ -9,13 +9,12 @@ interface Guest {
   id: string;
   name: string;
   email: string;
-  tier: "free";
+  tier: "guest";
   createdAt: string;
 }
 
 export default function UsersClient({ guests }: { guests: Guest[] }) {
   const [search, setSearch] = useState("");
-
   return (
     <div className="space-y-6">
 

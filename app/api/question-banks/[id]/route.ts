@@ -1,3 +1,5 @@
+//@ts-ignore
+
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
@@ -6,14 +8,15 @@ import { FieldValue } from "firebase-admin/firestore";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     const { title, section } = await req.json();
 
     await adminDb
       .collection("questionBanks")
-      .doc(params.id)
+      .doc(id)
       .update({
         ...(title && { title }),
         ...(section && { section }),

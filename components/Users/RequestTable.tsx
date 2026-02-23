@@ -19,6 +19,7 @@ interface Props {
 }
 
 export function RequestTable({ data, onApprove }: Props) {
+  console.log("Rendering RequestTable with data:", data);
   return (
     <DataTable
       data={data}

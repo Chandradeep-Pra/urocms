@@ -18,6 +18,7 @@ export async function getGuestUsers(): Promise<GuestUser[]> {
   return snapshot.docs.map((doc) => {
     const data = doc.data();
 
+
     return {
       id: doc.id, // 🔥 UID now
       email: data.email ?? "",

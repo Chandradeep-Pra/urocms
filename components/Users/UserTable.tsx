@@ -15,7 +15,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  tier: "paid" | "free";
+  tier: "paid" | "guest";
   createdAt: string;
 }
 
@@ -37,7 +37,7 @@ export function UserTable({
         {
           header: "Name",
           accessor: (u) => (
-            <span className="font-medium">{u.name}</span>
+            <span className="font-medium">{u.name !== "" ? u.name : "No Name"}</span>
           ),
         },
         {

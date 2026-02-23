@@ -56,12 +56,27 @@ export async function POST(req: NextRequest) {
     console.log("User exists:", userDoc.exists);
 
     if (!userDoc.exists) {
-      return NextResponse.json({ valid: false }, { status: 401 });
-    }
+  const defaultTier = decoded.firebase.sign_in_provider === "anonymous"
+    ? "guest"
+    : "free";
+
+  await adminDb.collection("users").doc(decoded.uid).set({
+    email: decoded.email ?? null,
+    tier: defaultTier,
+    source: decoded.firebase.sign_in_provider,
+    createdAt: new Date().toISOString(),
+  });
+
+  return NextResponse.json({
+    valid: true,
+    tier: defaultTier,
+  });
+}
 
     return NextResponse.json({
       valid: true,
       tier: userDoc.data()?.tier ?? "guest",
+      email: userDoc.data()?.email ?? null,
     });
 
   } catch (err) {

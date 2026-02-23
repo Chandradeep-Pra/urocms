@@ -16,7 +16,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  tier: "paid" | "free";
+  tier: "paid" | "guest";
   createdAt: string;
 }
 
@@ -46,7 +46,7 @@ export default function UserTabs({
   onToggleTier,
 }: Props) {
   /* -------- FILTER LOGIC -------- */
-
+  console.log("Rendering UserTabs with users:", users);
   const filteredRequests = useMemo(() => {
     return requests.filter(
       (r) =>
@@ -67,11 +67,13 @@ export default function UserTabs({
   const freeUsers = useMemo(() => {
     return users.filter(
       (u) =>
-        u.tier === "free" &&
-        (u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.tier === "guest" &&
+        (u?.name.toLowerCase().includes(search.toLowerCase()) ||
           u.email.toLowerCase().includes(search.toLowerCase()))
     );
   }, [users, search]);
+
+  console.log("Free Users:", freeUsers);
 
   /* -------- UI -------- */
 
