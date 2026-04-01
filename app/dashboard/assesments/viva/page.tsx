@@ -7,6 +7,8 @@ import {
   ChevronUp,
   Loader2,
   Trash2,
+  Upload,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,6 +71,7 @@ export default function AIVivaPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [uploadingExhibitIndex, setUploadingExhibitIndex] = useState<number | null>(null);
 
   const [form, setForm] = useState({
     case: {
@@ -166,6 +169,47 @@ export default function AIVivaPage() {
       fetchCases();
     } catch {
       toast.error("Delete failed");
+    }
+  };
+
+  /* ================= IMAGE UPLOAD ================= */
+
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    exhibitIndex: number
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "viva-cases");
+
+    setUploadingExhibitIndex(exhibitIndex);
+
+    try {
+      const res = await fetch("/api/cloudinary-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const data = await res.json();
+
+      // Update the exhibit URL with the uploaded image URL
+      const updated = [...form.exhibits];
+      updated[exhibitIndex].url = data.url;
+      setForm({ ...form, exhibits: updated });
+
+      toast.success("Image uploaded successfully!");
+    } catch (error) {
+      toast.error("Image upload failed");
+      console.error("Upload error:", error);
+    } finally {
+      setUploadingExhibitIndex(null);
     }
   };
 
@@ -278,25 +322,103 @@ export default function AIVivaPage() {
                 </Button>
 
                 {form.exhibits.map((ex, i) => (
-                  <div key={i} className="border p-3 mt-3 rounded flex flex-col gap-2">
+                  <div key={i} className="border p-4 mt-3 rounded flex flex-col gap-3 bg-slate-50">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-medium text-sm">Exhibit {i + 1}</h4>
+                      <button
+                        onClick={() => {
+                          const updated = form.exhibits.filter((_, idx) => idx !== i);
+                          setForm({ ...form, exhibits: updated });
+                        }}
+                        className="p-1 hover:bg-red-100 rounded transition"
+                      >
+                        <X size={16} className="text-red-500" />
+                      </button>
+                    </div>
+
                     <Input
                       placeholder="Label"
+                      value={ex.label}
                       onChange={(e) => {
                         const updated = [...form.exhibits];
                         updated[i].label = e.target.value;
                         setForm({ ...form, exhibits: updated });
                       }}
                     />
+
+                    {/* IMAGE UPLOAD SECTION */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold">Upload Image</Label>
+                      <div className="flex gap-2">
+                        <label className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, i)}
+                            disabled={uploadingExhibitIndex === i}
+                            className="hidden"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            disabled={uploadingExhibitIndex === i}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              (e.currentTarget.parentElement?.querySelector('input[type="file"]') as HTMLInputElement)?.click();
+                            }}
+                          >
+                            {uploadingExhibitIndex === i ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Choose Image
+                              </>
+                            )}
+                          </Button>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* IMAGE PREVIEW */}
+                    {ex.url && (
+                      <div className="relative group">
+                        <img
+                          src={ex.url}
+                          alt={ex.label || "Preview"}
+                          className="w-full h-40 object-cover rounded border border-slate-200"
+                        />
+                        <button
+                          onClick={() => {
+                            const updated = [...form.exhibits];
+                            updated[i].url = "";
+                            setForm({ ...form, exhibits: updated });
+                          }}
+                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* MANUAL URL INPUT */}
                     <Input
-                      placeholder="Image URL"
+                      placeholder="Or paste image URL manually"
+                      value={ex.url}
                       onChange={(e) => {
                         const updated = [...form.exhibits];
                         updated[i].url = e.target.value;
                         setForm({ ...form, exhibits: updated });
                       }}
                     />
+
                     <Textarea
                       placeholder="Description"
+                      value={ex.description}
                       onChange={(e) => {
                         const updated = [...form.exhibits];
                         updated[i].description = e.target.value;
