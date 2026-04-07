@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle2, ImageUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,9 @@ interface Props {
 }
 
 export default function QuestionCreator({ banks, setBanks }: Props) {
+  const questionImageInputRef = useRef<HTMLInputElement>(null);
+  const explanationImageInputRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState<QuestionForm>({
     bankId: "",
     question: { text: "", image: "" },
@@ -58,11 +61,12 @@ export default function QuestionCreator({ banks, setBanks }: Props) {
       body: formData,
     });
 
-    if (!res.ok) {
-      throw new Error("Upload failed");
+    const data = await res.json();
+
+    if (!res.ok || !data?.url) {
+      throw new Error(data?.error || "Upload failed");
     }
 
-    const data = await res.json();
     return data.url as string;
   }
 
@@ -83,11 +87,16 @@ export default function QuestionCreator({ banks, setBanks }: Props) {
         },
       }));
       toast.success("Question image uploaded", { id: toastId });
-    } catch {
-      toast.error("Question image upload failed", { id: toastId });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Question image upload failed",
+        { id: toastId }
+      );
     } finally {
       setUploadingQuestionImage(false);
-      e.target.value = "";
+      if (questionImageInputRef.current) {
+        questionImageInputRef.current.value = "";
+      }
     }
   }
 
@@ -108,11 +117,16 @@ export default function QuestionCreator({ banks, setBanks }: Props) {
         },
       }));
       toast.success("Explanation image uploaded", { id: toastId });
-    } catch {
-      toast.error("Explanation image upload failed", { id: toastId });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Explanation image upload failed",
+        { id: toastId }
+      );
     } finally {
       setUploadingExplanationImage(false);
-      e.target.value = "";
+      if (explanationImageInputRef.current) {
+        explanationImageInputRef.current.value = "";
+      }
     }
   }
 
@@ -251,32 +265,32 @@ const saveQuestion = async () => {
                 })
               }
             />
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleQuestionImageUpload}
-                disabled={uploadingQuestionImage}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                disabled={uploadingQuestionImage}
-              >
-                {uploadingQuestionImage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading
-                  </>
-                ) : (
-                  <>
-                    <ImageUp className="mr-2 h-4 w-4" />
-                    Upload
-                  </>
-                )}
-              </Button>
-            </label>
+            <input
+              ref={questionImageInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleQuestionImageUpload}
+              disabled={uploadingQuestionImage}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={uploadingQuestionImage}
+              onClick={() => questionImageInputRef.current?.click()}
+            >
+              {uploadingQuestionImage ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading
+                </>
+              ) : (
+                <>
+                  <ImageUp className="mr-2 h-4 w-4" />
+                  Upload
+                </>
+              )}
+            </Button>
           </div>
 
           {form.question.image && (
@@ -370,32 +384,32 @@ const saveQuestion = async () => {
                 })
               }
             />
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleExplanationImageUpload}
-                disabled={uploadingExplanationImage}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                disabled={uploadingExplanationImage}
-              >
-                {uploadingExplanationImage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading
-                  </>
-                ) : (
-                  <>
-                    <ImageUp className="mr-2 h-4 w-4" />
-                    Upload
-                  </>
-                )}
-              </Button>
-            </label>
+            <input
+              ref={explanationImageInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleExplanationImageUpload}
+              disabled={uploadingExplanationImage}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={uploadingExplanationImage}
+              onClick={() => explanationImageInputRef.current?.click()}
+            >
+              {uploadingExplanationImage ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading
+                </>
+              ) : (
+                <>
+                  <ImageUp className="mr-2 h-4 w-4" />
+                  Upload
+                </>
+              )}
+            </Button>
           </div>
 
           {form.explanation.image && (
