@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, ImageIcon } from "lucide-react";
+import { CheckCircle2, ImageUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,12 +39,82 @@ export default function QuestionCreator({ banks, setBanks }: Props) {
   const [form, setForm] = useState<QuestionForm>({
     bankId: "",
     question: { text: "", image: "" },
-    options: ["", "", "", ""],
+    options: ["", "", "", "", ""],
     correctAnswer: 0,
     explanation: { text: "", image: "" },
   });
 
   const [loading, setLoading] = useState(false);
+  const [uploadingQuestionImage, setUploadingQuestionImage] = useState(false);
+  const [uploadingExplanationImage, setUploadingExplanationImage] = useState(false);
+
+  async function uploadToCloudinary(file: File, folder: string) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", folder);
+
+    const res = await fetch("/api/cloudinary-upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      throw new Error("Upload failed");
+    }
+
+    const data = await res.json();
+    return data.url as string;
+  }
+
+  async function handleQuestionImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const toastId = toast.loading("Uploading question image...");
+    setUploadingQuestionImage(true);
+
+    try {
+      const url = await uploadToCloudinary(file, "questions");
+      setForm((prev) => ({
+        ...prev,
+        question: {
+          ...prev.question,
+          image: url,
+        },
+      }));
+      toast.success("Question image uploaded", { id: toastId });
+    } catch {
+      toast.error("Question image upload failed", { id: toastId });
+    } finally {
+      setUploadingQuestionImage(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleExplanationImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const toastId = toast.loading("Uploading explanation image...");
+    setUploadingExplanationImage(true);
+
+    try {
+      const url = await uploadToCloudinary(file, "questions");
+      setForm((prev) => ({
+        ...prev,
+        explanation: {
+          ...prev.explanation,
+          image: url,
+        },
+      }));
+      toast.success("Explanation image uploaded", { id: toastId });
+    } catch {
+      toast.error("Explanation image upload failed", { id: toastId });
+    } finally {
+      setUploadingExplanationImage(false);
+      e.target.value = "";
+    }
+  }
 
 const saveQuestion = async () => {
   if (!form.bankId || !form.question.text.trim()) {
@@ -96,7 +166,7 @@ const saveQuestion = async () => {
     setForm({
       bankId: "",
       question: { text: "", image: "" },
-      options: ["", "", "", ""],
+      options: ["", "", "", "", ""],
       correctAnswer: 0,
       explanation: { text: "", image: "" },
     });
@@ -166,20 +236,48 @@ const saveQuestion = async () => {
 
         {/* Question Image */}
         <div className="space-y-2">
-          <Label>Question Image URL (optional)</Label>
-          <Input
-            placeholder="https://..."
-            value={form.question.image}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                question: {
-                  ...form.question,
-                  image: e.target.value,
-                },
-              })
-            }
-          />
+          <Label>Question Image (optional)</Label>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Paste image URL or upload"
+              value={form.question.image}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  question: {
+                    ...form.question,
+                    image: e.target.value,
+                  },
+                })
+              }
+            />
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleQuestionImageUpload}
+                disabled={uploadingQuestionImage}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={uploadingQuestionImage}
+              >
+                {uploadingQuestionImage ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading
+                  </>
+                ) : (
+                  <>
+                    <ImageUp className="mr-2 h-4 w-4" />
+                    Upload
+                  </>
+                )}
+              </Button>
+            </label>
+          </div>
 
           {form.question.image && (
             <div className="rounded-xl overflow-hidden border mt-3">
@@ -257,20 +355,48 @@ const saveQuestion = async () => {
 
         {/* Explanation Image */}
         <div className="space-y-2">
-          <Label>Explanation Image URL (optional)</Label>
-          <Input
-            placeholder="https://..."
-            value={form.explanation.image}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                explanation: {
-                  ...form.explanation,
-                  image: e.target.value,
-                },
-              })
-            }
-          />
+          <Label>Explanation Image (optional)</Label>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Paste image URL or upload"
+              value={form.explanation.image}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  explanation: {
+                    ...form.explanation,
+                    image: e.target.value,
+                  },
+                })
+              }
+            />
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleExplanationImageUpload}
+                disabled={uploadingExplanationImage}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={uploadingExplanationImage}
+              >
+                {uploadingExplanationImage ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading
+                  </>
+                ) : (
+                  <>
+                    <ImageUp className="mr-2 h-4 w-4" />
+                    Upload
+                  </>
+                )}
+              </Button>
+            </label>
+          </div>
 
           {form.explanation.image && (
             <div className="rounded-xl overflow-hidden border mt-3">

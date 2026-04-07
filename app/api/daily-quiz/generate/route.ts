@@ -20,9 +20,9 @@ Generate ONE high-quality multiple choice question for "Quiz of the Day".
 Topic: ${topic}
 
 Requirements:
-- Clinical scenario based
-- 4 options only
-- One correct answer
+ - Clinical scenario based
+ - 5 options only
+ - One correct answer
 - Clear educational explanation
 - High-yield learning value
 
@@ -30,8 +30,8 @@ Return STRICT JSON only (no markdown, no commentary):
 
 {
   "question": "string",
-  "options": ["string", "string", "string", "string"],
-  "correctIndex": number (0-3),
+  "options": ["string", "string", "string", "string", "string"],
+  "correctIndex": number (0-4),
   "explanation": "string"
 }
 `;
@@ -57,7 +57,7 @@ Return STRICT JSON only (no markdown, no commentary):
     if (
       !parsed.question ||
       !Array.isArray(parsed.options) ||
-      parsed.options.length !== 4
+      parsed.options.length !== 5
     ) {
       return NextResponse.json(
         { error: "Invalid AI structure" },

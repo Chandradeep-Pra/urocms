@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarDays, Users, Sparkles, Upload, ImageUp } from "lucide-react";
+import { CalendarDays, Users, Sparkles, ImageUp } from "lucide-react";
 import { toast } from "sonner";
 
 interface QuizState {
@@ -12,16 +12,22 @@ interface QuizState {
   explanation: string;
 }
 
+interface LiveQuiz {
+  question: string;
+  createdAt?: { _seconds: number } | string | Date;
+  submissions?: number;
+}
+
 export default function DailyQuizManager() {
   const [quiz, setQuiz] = useState<QuizState>({
     question: "",
     image: "",
-    options: ["", "", "", ""],
+    options: ["", "", "", "", ""],
     correctIndex: 0,
     explanation: "",
   });
 
-  const [live, setLive] = useState<any>(null);
+  const [live, setLive] = useState<LiveQuiz | null>(null);
   const [aiTopic, setAiTopic] = useState("");
   const [loadingAI, setLoadingAI] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -42,7 +48,7 @@ export default function DailyQuizManager() {
 
   /* ───────── STATE HELPERS ───────── */
 
-  const update = (field: keyof QuizState, value: any) =>
+  const update = <K extends keyof QuizState>(field: K, value: QuizState[K]) =>
     setQuiz((prev) => ({ ...prev, [field]: value }));
 
   const updateOption = (value: string, index: number) => {
@@ -70,7 +76,7 @@ export default function DailyQuizManager() {
   const toastId = toast.loading("Uploading image...");
 
   try {
-    const res = await fetch("/api/upload-image", {
+    const res = await fetch("/api/cloudinary-upload", {
       method: "POST",
       body: formData,
     });

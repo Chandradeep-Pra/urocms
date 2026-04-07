@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       tags,
     } = body;
 
-    if (!bankId || !questionText || !options?.length) {
+    if (!bankId || !questionText || !Array.isArray(options) || options.length !== 5) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }

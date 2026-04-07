@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     if (
       !question ||
       !Array.isArray(options) ||
-      options.length < 2 ||
+      options.length !== 5 ||
       correctIndex === undefined
     ) {
       return NextResponse.json(
