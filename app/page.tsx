@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Apple, Play } from "lucide-react"
 import Link from "next/link";
 
 export default function Page() {
@@ -8,34 +9,30 @@ export default function Page() {
     <main className="min-h-screen bg-[#0a0f0d] text-white">
 
       {/* NAVBAR */}
-      <header className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-extrabold tracking-tight text-emerald-400">
-          Urologics
-        </h1>
-
-       <Link href="/login">
-  <Button
-    variant="outline"
-    className="border-emerald-700 text-emerald-300 hover:bg-emerald-900/40"
-  >
-    Admin Login
-  </Button>
-</Link>
+      <header className="flex items-center px-6 py-6 max-w-7xl mx-auto">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl border border-emerald-500/60 bg-emerald-500/15 grid place-items-center text-emerald-300 text-sm font-bold">
+            U
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-emerald-300">
+            Urologics
+          </h1>
+        </div>
       </header>
 
       {/* HERO */}
       <section className="px-6 pt-28 pb-36 max-w-7xl mx-auto grid md:grid-cols-2 gap-20 items-center">
         <div className="space-y-7">
-          <Badge className="bg-emerald-900/50 text-emerald-300 border border-emerald-700 rounded-full px-4 py-1">
+          <Badge className="bg-emerald-900/60 text-emerald-100 border border-emerald-600 rounded-full px-4 py-1">
             FRCS Urology Preparation App
           </Badge>
 
           <h2 className="text-4xl md:text-5xl font-extrabold leading-tight">
             FRCS Urology <br />
-            <span className="text-emerald-400">Done Properly.</span>
+            <span className="text-emerald-300">Done Properly.</span>
           </h2>
 
-          <p className="text-lg text-slate-300 max-w-xl leading-relaxed">
+          <p className="text-lg text-slate-200 max-w-xl leading-relaxed">
             Urologics is a premium mobile learning platform built for serious
             FRCS Urology aspirants. Practice with exam-grade mock tests,
             AI-powered viva simulations, high-yield video content, and
@@ -47,17 +44,31 @@ export default function Page() {
           <div className="flex gap-4 pt-2">
             <Button
               size="lg"
-              className="bg-emerald-500 hover:bg-emerald-400 text-black rounded-2xl shadow-xl shadow-emerald-500/30"
+              className="bg-emerald-400 hover:bg-emerald-300 text-black rounded-2xl shadow-xl shadow-emerald-500/30"
             >
               Get Early Access
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="rounded-2xl border-slate-600 text-slate-200"
+              className="rounded-2xl border-emerald-700 text-emerald-100 bg-[#0f1714]"
             >
               Download App
             </Button>
+          </div>
+
+          <div className="pt-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-400 mb-3">Coming Soon On</p>
+            <div className="flex flex-wrap gap-3">
+              <div className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-[#101714] px-4 py-2 text-sm text-slate-100">
+                <Apple className="h-4 w-4 text-emerald-300" />
+                iOS
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-[#101714] px-4 py-2 text-sm text-slate-100">
+                <Play className="h-4 w-4 text-emerald-300" />
+                Android
+              </div>
+            </div>
           </div>
         </div>
 
@@ -73,7 +84,7 @@ export default function Page() {
       </section>
 
       {/* FEATURES */}
-      <section className="px-6 py-32 bg-[#0d1412]">
+      <section className="px-6 py-32 bg-[#0d1512]">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-20 items-center">
 
           {/* VISUAL BLOCK */}
@@ -104,10 +115,10 @@ export default function Page() {
 
       {/* PRICING */}
       <section className="px-6 py-36 max-w-6xl mx-auto text-center">
-        <h3 className="text-4xl font-extrabold mb-4">
+        <h3 className="text-4xl font-extrabold mb-4 text-white">
           Premium, Not Noisy
         </h3>
-        <p className="text-slate-400 mb-16">
+        <p className="text-slate-200 mb-16">
           Built for aspirants who take the exam seriously.
         </p>
 
@@ -145,16 +156,27 @@ export default function Page() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-emerald-900/40 py-12 text-center text-sm text-slate-500">
-        © {new Date().getFullYear()} Urologics · Built by{" "}
-        <a
-          href="https://www.linkedin.com/company/tic-tech-toe"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-white"
-        >
-          Tic Tech Toe
-        </a>
+      <footer className="border-t border-emerald-900/40 py-12 text-center text-sm text-slate-400">
+        <div className="flex flex-col items-center gap-3">
+          <Link
+            href="/login"
+            className="text-xs text-emerald-300/90 hover:text-emerald-200 underline underline-offset-4"
+          >
+            Admin Login
+          </Link>
+
+          <p>
+            © {new Date().getFullYear()} Urologics · Built by{" "}
+            <a
+              href="https://www.linkedin.com/company/tic-tech-toe"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-white"
+            >
+              Tic Tech Toe
+            </a>
+          </p>
+        </div>
       </footer>
     </main>
   )
@@ -168,7 +190,7 @@ function Feature({ title, desc }: { title: string; desc: string }) {
       <h4 className="text-xl font-semibold text-white mb-3">
         {title}
       </h4>
-      <p className="text-slate-400 leading-relaxed">{desc}</p>
+      <p className="text-slate-300 leading-relaxed">{desc}</p>
     </div>
   )
 }
@@ -188,24 +210,30 @@ function PricingCard({
     <Card
       className={`rounded-3xl border ${
         highlight
-          ? "border-emerald-500 shadow-2xl shadow-emerald-500/30"
-          : "border-emerald-900/40"
-      } bg-[#111816]`}
+          ? "border-emerald-400 shadow-2xl shadow-emerald-500/30 bg-gradient-to-b from-emerald-900/45 to-[#14231c]"
+          : "border-emerald-700/60 bg-[#15201b]"
+      }`}
     >
       <CardContent className="pt-10 pb-12 space-y-7">
         {highlight && (
-          <Badge className="bg-emerald-500 text-black rounded-full px-4 py-1">
+          <Badge className="bg-emerald-400 text-black rounded-full px-4 py-1">
             Most Popular
           </Badge>
         )}
-        <h4 className="text-2xl font-bold">{title}</h4>
-        <p className="text-4xl font-extrabold text-emerald-400">{price}</p>
-        <ul className="space-y-2 text-slate-400 text-sm">
+        <h4 className="text-2xl font-bold text-white">{title}</h4>
+        <p className="text-4xl font-extrabold text-emerald-200">{price}</p>
+        <ul className="space-y-2 text-slate-100/95 text-sm">
           {features.map((f) => (
             <li key={f}>• {f}</li>
           ))}
         </ul>
-        <Button className="w-full mt-4 bg-emerald-500 hover:bg-emerald-400 text-black rounded-2xl shadow-lg shadow-emerald-500/30">
+        <Button
+          className={`w-full mt-4 rounded-2xl ${
+            highlight
+              ? "bg-emerald-400 hover:bg-emerald-300 text-black shadow-lg shadow-emerald-500/30"
+              : "bg-[#0f1714] border border-emerald-600/80 text-emerald-100 hover:bg-emerald-900/30"
+          }`}
+        >
           Choose Plan
         </Button>
       </CardContent>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   HelpCircle,
@@ -25,34 +26,81 @@ import {
 } from "recharts";
 import DailyQuizForm from "@/components/dashboard/DailyQuizManager";
 
-const stats = [
-  { title: "Total Users", value: "2,847", change: "+12%", icon: Users, color: "text-primary" },
-  { title: "Paid Users", value: "1,203", change: "+8%", icon: TrendingUp, color: "text-accent" },
-  { title: "Total Questions", value: "5,432", change: "+24", icon: HelpCircle, color: "text-secondary" },
-  { title: "Mock Tests", value: "48", change: "+3", icon: FileText, color: "text-info" },
-  { title: "Grand Mocks", value: "6", change: "1 upcoming", icon: Trophy, color: "text-warning" },
-  { title: "AI Viva Cases", value: "124", change: "+5", icon: Brain, color: "text-primary" },
-  { title: "Chapters", value: "32", change: "", icon: BookOpen, color: "text-accent" },
-  { title: "Videos", value: "87", change: "+6", icon: Video, color: "text-secondary" },
-];
+type DashboardStats = {
+  totalUsers: number;
+  paidUsers: number;
+  totalQuestions: number;
+  mockTests: number;
+  grandMocks: number;
+  vivaCases: number;
+  chapters: number;
+  videos: number;
+};
 
-const userGrowth = [
-  { month: "Sep", users: 180 },
-  { month: "Oct", users: 320 },
-  { month: "Nov", users: 450 },
-  { month: "Dec", users: 580 },
-  { month: "Jan", users: 720 },
-  { month: "Feb", users: 847 },
-];
+type GrowthPoint = {
+  month: string;
+  users: number;
+};
 
-const tierData = [
-  { name: "Paid", value: 1203 },
-  { name: "Free", value: 1644 },
-];
+type TierPoint = {
+  name: string;
+  value: number;
+};
+
+const EMPTY_STATS: DashboardStats = {
+  totalUsers: 0,
+  paidUsers: 0,
+  totalQuestions: 0,
+  mockTests: 0,
+  grandMocks: 0,
+  vivaCases: 0,
+  chapters: 0,
+  videos: 0,
+};
 
 const TIER_COLORS = ["hsl(187, 82%, 31%)", "hsl(214, 32%, 85%)"];
 
 const Dashboard = () => {
+  const [loading, setLoading] = useState(true);
+  const [statsData, setStatsData] = useState<DashboardStats>(EMPTY_STATS);
+  const [userGrowth, setUserGrowth] = useState<GrowthPoint[]>([]);
+  const [tierData, setTierData] = useState<TierPoint[]>([]);
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/dashboard", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to fetch metrics");
+
+        const data = await res.json();
+        setStatsData(data.stats ?? EMPTY_STATS);
+        setUserGrowth(Array.isArray(data.userGrowth) ? data.userGrowth : []);
+        setTierData(Array.isArray(data.tierData) ? data.tierData : []);
+      } catch (error) {
+        console.error("Dashboard load error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  const stats = useMemo(
+    () => [
+      { title: "Total Users", value: statsData.totalUsers.toLocaleString(), icon: Users, color: "text-primary" },
+      { title: "Paid Users", value: statsData.paidUsers.toLocaleString(), icon: TrendingUp, color: "text-accent" },
+      { title: "Total Questions", value: statsData.totalQuestions.toLocaleString(), icon: HelpCircle, color: "text-secondary" },
+      { title: "Mock Tests", value: statsData.mockTests.toLocaleString(), icon: FileText, color: "text-info" },
+      { title: "Grand Mocks", value: statsData.grandMocks.toLocaleString(), icon: Trophy, color: "text-warning" },
+      { title: "AI Viva Cases", value: statsData.vivaCases.toLocaleString(), icon: Brain, color: "text-primary" },
+      { title: "Chapters", value: statsData.chapters.toLocaleString(), icon: BookOpen, color: "text-accent" },
+      { title: "Videos", value: statsData.videos.toLocaleString(), icon: Video, color: "text-secondary" },
+    ],
+    [statsData]
+  );
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -63,9 +111,9 @@ const Dashboard = () => {
               <div>
                 <p className="text-sm text-muted-foreground">{stat.title}</p>
                 <p className="mt-1 text-2xl font-bold text-foreground">{stat.value}</p>
-                {stat.change && (
-                  <p className="mt-1 text-xs text-accent font-medium">{stat.change}</p>
-                )}
+                <p className="mt-1 text-xs text-muted-foreground font-medium">
+                  {loading ? "Loading..." : "Live"}
+                </p>
               </div>
               <div className="rounded-lg bg-muted p-2.5">
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
@@ -99,6 +147,9 @@ const Dashboard = () => {
                 <Bar dataKey="users" fill="hsl(187, 82%, 31%)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            {!userGrowth.length && (
+              <p className="text-xs text-muted-foreground mt-3">No user growth data available yet.</p>
+            )}
           </CardContent>
         </Card>
 
