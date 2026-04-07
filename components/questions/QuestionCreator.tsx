@@ -274,6 +274,7 @@ const saveQuestion = async () => {
               disabled={uploadingQuestionImage}
             />
             <Button
+            className="cursor-pointer bg-black text-white p-3 rounded-2xl hover:bg-slate-800 transition"
               type="button"
               variant="outline"
               disabled={uploadingQuestionImage}
@@ -298,7 +299,7 @@ const saveQuestion = async () => {
               <img
                 src={form.question.image}
                 alt="preview"
-                className="w-full h-48 object-cover"
+                className="w-full h-auto object-cover"
               />
             </div>
           )}
@@ -393,6 +394,7 @@ const saveQuestion = async () => {
               disabled={uploadingExplanationImage}
             />
             <Button
+            className="cursor-pointer bg-black text-white p-3 rounded-2xl hover:bg-slate-800 transition"
               type="button"
               variant="outline"
               disabled={uploadingExplanationImage}
@@ -417,7 +419,7 @@ const saveQuestion = async () => {
               <img
                 src={form.explanation.image}
                 alt="preview"
-                className="w-full h-48 object-cover"
+                className="w-full h-auto object-cover"
               />
             </div>
           )}
