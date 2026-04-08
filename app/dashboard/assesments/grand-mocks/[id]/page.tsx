@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -9,7 +9,16 @@ import {
   FileText,
   CheckCircle2,
   ArrowLeft,
+  ChevronDown,
 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Question {
   id: string;
@@ -33,7 +42,9 @@ export default function GrandMockDetailsPage() {
   const router = useRouter();
 
   const [mock, setMock] = useState<MockDetails | null>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,7 +78,20 @@ export default function GrandMockDetailsPage() {
   if (!mock) return <div className="p-10">Mock not found</div>;
 
   const status = deriveStatus();
-  const activeQuestion = mock.questions?.[activeIndex];
+
+  const getExplanationText = (question: Question) => {
+    if (!question.explanation) return "No explanation provided.";
+    if (typeof question.explanation === "string") return question.explanation;
+    if (typeof question.explanation?.text === "string") {
+      return question.explanation.text;
+    }
+    return "No explanation provided.";
+  };
+
+  const getQuestionPreview = (text: string, maxLength = 96) => {
+    if (text.length <= maxLength) return text;
+    return `${text.slice(0, maxLength)}...`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-white">
@@ -126,96 +150,155 @@ export default function GrandMockDetailsPage() {
       </div>
 
       {/* MAIN LAYOUT */}
-      <div className="max-w-7xl mx-auto px-8 py-10 flex gap-10">
-
-        {/* SIDEBAR */}
-        <div className="w-28 shrink-0">
-          <div className="sticky top-28 space-y-2">
-
-            {mock.questions?.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveIndex(index)}
-                className={`w-full py-3 rounded-xl text-sm font-medium transition-all ${
-                  activeIndex === index
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "bg-white border border-zinc-200 hover:bg-zinc-100"
-                }`}
-              >
-                Q{index + 1}
-              </button>
-            ))}
-
-          </div>
-        </div>
-
-        {/* QUESTION PANEL */}
-        <div className="flex-1 bg-white border border-zinc-200 rounded-3xl p-12 shadow-sm">
-
-          <div className="mb-10">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3">
-              Question {activeIndex + 1}
+      <div className="max-w-7xl mx-auto px-8 py-10">
+        <div className="rounded-3xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b border-zinc-200 bg-zinc-50/70">
+            <h2 className="text-lg font-semibold text-zinc-900">Questions</h2>
+            <p className="text-sm text-zinc-500 mt-1">
+              Expand any row to view complete options and explanation.
             </p>
-
-            <h2 className="text-xl text-zinc-900 leading-relaxed">
-              {activeQuestion?.questionText}
-            </h2>
           </div>
 
-          {/* OPTIONS */}
-          <div className="space-y-4">
+          <Table className="min-w-[860px]">
+            <TableHeader>
+              <TableRow className="bg-zinc-50/80 hover:bg-zinc-50/80">
+                <TableHead className="w-[72px] px-4">#</TableHead>
+                <TableHead className="px-4">Question</TableHead>
+                <TableHead className="w-[130px]">Options</TableHead>
+                <TableHead className="w-[220px]">Correct Answer</TableHead>
+                <TableHead className="w-[140px]">Explanation</TableHead>
+                <TableHead className="w-[120px] text-right pr-4">Action</TableHead>
+              </TableRow>
+            </TableHeader>
 
-            {activeQuestion?.options?.map((option, i) => {
-              const isCorrect =
-                option === activeQuestion.correctAnswer;
+            <TableBody>
+              {mock.questions?.map((question, index) => {
+                const isExpanded = expandedQuestionId === question.id;
 
-              return (
-                <div
-                  key={i}
-                  className={`flex items-center gap-4 p-4 rounded-2xl transition border ${
-                    isCorrect
-                      ? "border-emerald-400 bg-emerald-50"
-                      : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100"
-                  }`}
-                >
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      isCorrect
-                        ? "bg-emerald-500 text-white"
-                        : "bg-white border border-zinc-300"
-                    }`}
-                  >
-                    {String.fromCharCode(65 + i)}
-                  </div>
+                return (
+                  <Fragment key={question.id}>
+                    <TableRow className="hover:bg-zinc-50/80">
+                      <TableCell className="px-4 font-medium text-zinc-700">
+                        {index + 1}
+                      </TableCell>
 
-                  <span className="flex-1 text-sm text-zinc-800">
-                    {option}
-                  </span>
+                      <TableCell className="px-4 text-zinc-800 whitespace-normal leading-relaxed">
+                        {getQuestionPreview(question.questionText)}
+                      </TableCell>
 
-                  {isCorrect && (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  )}
-                </div>
-              );
-            })}
+                      <TableCell className="text-zinc-600">
+                        {question.options?.length ?? 0}
+                      </TableCell>
 
-          </div>
+                      <TableCell className="text-zinc-700 whitespace-normal">
+                        {question.correctAnswer}
+                      </TableCell>
 
-          {/* EXPLANATION */}
-          {activeQuestion?.explanation?.text && (
-            <div className="mt-12 pt-8 border-t border-zinc-200">
+                      <TableCell>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                            getExplanationText(question) !== "No explanation provided."
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-zinc-100 text-zinc-600"
+                          }`}
+                        >
+                          {getExplanationText(question) !== "No explanation provided."
+                            ? "Available"
+                            : "Missing"}
+                        </span>
+                      </TableCell>
 
-              <h3 className="text-sm font-semibold text-zinc-700 mb-3">
-                Explanation
-              </h3>
+                      <TableCell className="text-right pr-4">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedQuestionId(isExpanded ? null : question.id)
+                          }
+                          className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 transition"
+                        >
+                          {isExpanded ? "Collapse" : "Expand"}
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 transition-transform ${
+                              isExpanded ? "rotate-180" : "rotate-0"
+                            }`}
+                          />
+                        </button>
+                      </TableCell>
+                    </TableRow>
 
-              <p className="text-sm text-zinc-600 leading-relaxed">
-                {activeQuestion.explanation.text}
-              </p>
+                    {isExpanded && (
+                      <TableRow className="bg-zinc-50/60 hover:bg-zinc-50/60">
+                        <TableCell colSpan={6} className="p-0">
+                          <div className="px-6 py-6 border-t border-zinc-200">
+                            <div className="grid gap-6 lg:grid-cols-2">
+                              <div>
+                                <h3 className="text-sm font-semibold text-zinc-800 mb-2">
+                                  Full Question
+                                </h3>
+                                <p className="text-sm text-zinc-700 leading-relaxed">
+                                  {question.questionText}
+                                </p>
+                              </div>
 
-            </div>
-          )}
+                              <div>
+                                <h3 className="text-sm font-semibold text-zinc-800 mb-2">
+                                  Explanation
+                                </h3>
+                                <p className="text-sm text-zinc-700 leading-relaxed">
+                                  {getExplanationText(question)}
+                                </p>
+                              </div>
+                            </div>
 
+                            <div className="mt-6">
+                              <h3 className="text-sm font-semibold text-zinc-800 mb-3">
+                                Options
+                              </h3>
+
+                              <div className="grid gap-3 md:grid-cols-2">
+                                {question.options?.map((option, optionIndex) => {
+                                  const isCorrect = option === question.correctAnswer;
+
+                                  return (
+                                    <div
+                                      key={optionIndex}
+                                      className={`flex items-start gap-3 rounded-xl border p-3 ${
+                                        isCorrect
+                                          ? "border-emerald-300 bg-emerald-50"
+                                          : "border-zinc-200 bg-white"
+                                      }`}
+                                    >
+                                      <div
+                                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                                          isCorrect
+                                            ? "bg-emerald-500 text-white"
+                                            : "bg-zinc-100 text-zinc-700"
+                                        }`}
+                                      >
+                                        {String.fromCharCode(65 + optionIndex)}
+                                      </div>
+
+                                      <p className="flex-1 text-sm text-zinc-700 whitespace-normal">
+                                        {option}
+                                      </p>
+
+                                      {isCorrect && (
+                                        <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>
