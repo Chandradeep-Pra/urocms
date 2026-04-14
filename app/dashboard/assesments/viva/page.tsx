@@ -29,6 +29,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 /* ================= TYPES ================= */
 
@@ -72,6 +73,7 @@ export default function AIVivaPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadingExhibitIndex, setUploadingExhibitIndex] = useState<number | null>(null);
+  const router = useRouter();
 
   const [form, setForm] = useState({
     case: {
@@ -501,10 +503,13 @@ export default function AIVivaPage() {
     return (
       <Card
         key={c.id}
+        // onClick={() => {
+        //   if (!open) fetchCaseDetails(c.id);
+        //   setExpandedId(open ? null : c.id);
+        // }}
         onClick={() => {
-          if (!open) fetchCaseDetails(c.id);
-          setExpandedId(open ? null : c.id);
-        }}
+  router.push(`viva/${c.id}`);
+}}
         className={`
           group relative cursor-pointer overflow-hidden rounded-2xl bg-white
           transition-all duration-300 transform will-change-transform
