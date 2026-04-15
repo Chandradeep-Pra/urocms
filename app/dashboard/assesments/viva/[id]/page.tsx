@@ -160,6 +160,61 @@ export default function CaseDetailsPage() {
           />
         </div>
 
+        {/* ALLOWED USERS */}
+<div className="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
+  <h3 className="font-semibold text-slate-700">
+    Allowed Users (Emails)
+  </h3>
+
+  {caseData.allowedUser?.map((email: string, i: number) => (
+    <div key={i} className="flex gap-2">
+      <Input
+        value={email}
+        onChange={(e) => {
+          const updated = [...caseData.allowedUser];
+          updated[i] = e.target.value.toLowerCase();
+
+          setCaseData({
+            ...caseData,
+            allowedUser: updated,
+          });
+        }}
+        placeholder="Enter email"
+      />
+
+      {/* REMOVE BUTTON */}
+      <Button
+        variant="outline"
+        onClick={() => {
+          const updated = caseData.allowedUser.filter(
+            (_: string, index: number) => index !== i
+          );
+
+          setCaseData({
+            ...caseData,
+            allowedUser: updated,
+          });
+        }}
+      >
+        Remove
+      </Button>
+    </div>
+  ))}
+
+  {/* ADD NEW EMAIL */}
+  <Button
+    variant="secondary"
+    onClick={() => {
+      setCaseData({
+        ...caseData,
+        allowedUser: [...(caseData.allowedUser || []), ""],
+      });
+    }}
+  >
+    + Add Email
+  </Button>
+</div>
+
         {/* OBJECTIVES */}
         <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
           <h3 className="font-semibold text-slate-700">Objectives</h3>
