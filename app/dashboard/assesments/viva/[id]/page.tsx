@@ -165,7 +165,7 @@ export default function CaseDetailsPage() {
 
   const updateFastQuestionKeywords = (questionIndex: number, value: string) => {
     const answerKeywords = value
-      .split(/[,\s]+/)
+      .split(",")
       .map((keyword) => keyword.trim())
       .filter(Boolean);
 
@@ -766,9 +766,9 @@ export default function CaseDetailsPage() {
                     />
 
                     <Input
-                      value={question.answerKeywords.join(" ")}
+                      value={question.answerKeywords.join(", ")}
                       onChange={(e) => updateFastQuestionKeywords(index, e.target.value)}
-                      placeholder="Answer keywords separated by spaces"
+                      placeholder="Answer keywords separated by commas"
                       className="mt-4 bg-white"
                     />
 

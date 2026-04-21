@@ -195,13 +195,13 @@ export function FastAndFuriousDialog({
                               Answer Keywords
                             </Label>
                             <p className="text-xs text-slate-500">
-                              Add keywords separated by spaces. They will be stored as an array on save.
+                              Add keywords separated by commas. They will be stored as an array on save.
                             </p>
                           </div>
 
                           <Input
-                            placeholder="e.g. sepsis obstruction decompression antibiotics"
-                            value={activeQuestion.answerKeywords.join(" ")}
+                            placeholder="e.g. sepsis, obstruction, decompression, antibiotics"
+                            value={activeQuestion.answerKeywords.join(", ")}
                             onChange={(e) =>
                               onQuestionKeywordsChange(activeQuestionIndex, e.target.value)
                             }

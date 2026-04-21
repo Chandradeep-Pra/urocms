@@ -241,7 +241,7 @@ export default function AIVivaPage() {
 
   const updateFastQuestionKeywords = (questionIndex: number, value: string) => {
     const answerKeywords = value
-      .split(/[,\s]+/)
+      .split(",")
       .map((keyword) => keyword.trim())
       .filter(Boolean);
 
