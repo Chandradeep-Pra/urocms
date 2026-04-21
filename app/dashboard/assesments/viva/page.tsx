@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   Plus,
-  ChevronDown,
-  ChevronUp,
   Loader2,
   Trash2,
   Upload,
@@ -13,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -28,66 +25,31 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
+import { FastAndFuriousDialog } from "@/components/viva/FastAndFuriousDialog";
+import { VivaModeSelector } from "@/components/viva/VivaModeSelector";
+import {
+  createFastQuestion,
+  createInitialVivaForm,
+  type VivaCase,
+  type VivaCaseForm,
+  type VivaMode,
+} from "@/components/viva/types";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-
-/* ================= TYPES ================= */
-
-interface Attempt {
-  candidate: {
-    name: string;
-    email: string;
-  };
-  report?: {
-    score?: number;
-  };
-}
-
-interface VivaCase {
-  id: string;
-  case: {
-    title: string;
-    level: string;
-    stem: string;
-    objectives: string[];
-  };
-  exhibits: {
-    label: string;
-    url: string;
-    description: string;
-  }[];
-  marking_criteria: {
-    must_mention: string[];
-    critical_fail: string[];
-  };
-  attemptsCount?: number;
-  attempts?: Attempt[];
-}
 
 /* ================= COMPONENT ================= */
 
 export default function AIVivaPage() {
   const [cases, setCases] = useState<VivaCase[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [fastModeDialogOpen, setFastModeDialogOpen] = useState(false);
   const [uploadingExhibitIndex, setUploadingExhibitIndex] = useState<number | null>(null);
+  const [uploadingFastQuestionIndex, setUploadingFastQuestionIndex] = useState<number | null>(null);
   const router = useRouter();
 
-  const [form, setForm] = useState({
-    case: {
-      title: "",
-      level: "Intermediate",
-      stem: "",
-      objectives: [] as string[],
-    },
-    exhibits: [] as any[],
-    marking_criteria: {
-      must_mention: [] as string[],
-      critical_fail: [] as string[],
-    },
-  });
+  const [form, setForm] = useState<VivaCaseForm>(createInitialVivaForm());
 
   /* ================= FETCH ================= */
 
@@ -108,23 +70,6 @@ export default function AIVivaPage() {
     fetchCases();
   }, []);
 
-  /* ================= FETCH SINGLE ================= */
-
-  const fetchCaseDetails = async (id: string) => {
-    try {
-      const res = await fetch(`/api/viva-cases/${id}`);
-      const data = await res.json();
-
-      setCases((prev) =>
-        prev.map((c) =>
-          c.id === id ? { ...c, ...data.case } : c
-        )
-      );
-    } catch {
-      toast.error("Failed to load case");
-    }
-  };
-
   /* ================= CREATE ================= */
 
   const handleSave = async () => {
@@ -133,23 +78,52 @@ export default function AIVivaPage() {
       return;
     }
 
+    if (
+      form.mode === "Fast and Furious" &&
+      form.fastAndFurious.questionCount < 1
+    ) {
+      toast.error("Add at least one question for Fast and Furious mode");
+      return;
+    }
+
+    const payload: VivaCaseForm = {
+      ...form,
+      case: {
+        ...form.case,
+        fastAndFuriousQuestions:
+          form.mode === "Fast and Furious"
+            ? form.fastAndFurious.questions.map((item, index) => ({
+                [`question${index + 1}`]: {
+                  question: item.question,
+                  image: item.imageEnabled
+                    ? {
+                        imageUrl: item.image.imageUrl || "",
+                        imageName: item.image.imageName || "",
+                        imageDesc: item.image.imageDesc || "",
+                      }
+                    : {},
+                },
+              }))
+            : [],
+      },
+    };
+
     try {
       const res = await fetch("/api/viva-cases", {
         method: "POST",
-        body: JSON.stringify(form),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error();
 
       toast.success("Case created");
       setDialogOpen(false);
+      setFastModeDialogOpen(false);
       fetchCases();
-
-      setForm({
-        case: { title: "", level: "Intermediate", stem: "", objectives: [] },
-        exhibits: [],
-        marking_criteria: { must_mention: [], critical_fail: [] },
-      });
+      setForm(createInitialVivaForm());
 
     } catch {
       toast.error("Create failed");
@@ -176,9 +150,11 @@ export default function AIVivaPage() {
 
   /* ================= IMAGE UPLOAD ================= */
 
-  const handleImageUpload = async (
+  const uploadImage = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    exhibitIndex: number
+    onStart: () => void,
+    onSuccess: (url: string) => void,
+    onComplete: () => void
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -187,7 +163,7 @@ export default function AIVivaPage() {
     formData.append("file", file);
     formData.append("folder", "viva-cases");
 
-    setUploadingExhibitIndex(exhibitIndex);
+    onStart();
 
     try {
       const res = await fetch("/api/cloudinary-upload", {
@@ -200,19 +176,191 @@ export default function AIVivaPage() {
       }
 
       const data = await res.json();
-
-      // Update the exhibit URL with the uploaded image URL
-      const updated = [...form.exhibits];
-      updated[exhibitIndex].url = data.url;
-      setForm({ ...form, exhibits: updated });
-
+      onSuccess(data.url);
       toast.success("Image uploaded successfully!");
     } catch (error) {
       toast.error("Image upload failed");
       console.error("Upload error:", error);
     } finally {
-      setUploadingExhibitIndex(null);
+      onComplete();
     }
+  };
+
+  const handleExhibitImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    exhibitIndex: number
+  ) => {
+    uploadImage(
+      e,
+      () => setUploadingExhibitIndex(exhibitIndex),
+      (url) => {
+        setForm((prev) => {
+          const updated = [...prev.exhibits];
+          updated[exhibitIndex] = { ...updated[exhibitIndex], url };
+          return { ...prev, exhibits: updated };
+        });
+      },
+      () => setUploadingExhibitIndex(null)
+    );
+  };
+
+  const syncFastQuestionCount = (nextCount: number) => {
+    const safeCount = Number.isFinite(nextCount) ? Math.max(1, nextCount) : 1;
+
+    setForm((prev) => {
+      const currentQuestions = prev.fastAndFurious.questions;
+      let nextQuestions = currentQuestions;
+
+      if (safeCount > currentQuestions.length) {
+        nextQuestions = [
+          ...currentQuestions,
+          ...Array.from(
+            { length: safeCount - currentQuestions.length },
+            (_, offset) => createFastQuestion(currentQuestions.length + offset)
+          ),
+        ];
+      } else if (safeCount < currentQuestions.length) {
+        nextQuestions = currentQuestions.slice(0, safeCount);
+      }
+
+      return {
+        ...prev,
+        fastAndFurious: {
+          questionCount: safeCount,
+          questions: nextQuestions,
+        },
+      };
+    });
+  };
+
+  const handleFastQuestionImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    questionIndex: number
+  ) => {
+    uploadImage(
+      e,
+      () => setUploadingFastQuestionIndex(questionIndex),
+      (url) => {
+        setForm((prev) => {
+          const questions = [...prev.fastAndFurious.questions];
+          questions[questionIndex] = {
+            ...questions[questionIndex],
+            imageEnabled: true,
+            image: {
+              ...questions[questionIndex].image,
+              imageUrl: url,
+            },
+          };
+
+          return {
+            ...prev,
+            fastAndFurious: {
+              ...prev.fastAndFurious,
+              questions,
+            },
+          };
+        });
+      },
+      () => setUploadingFastQuestionIndex(null)
+    );
+  };
+
+  const handleModeChange = (mode: VivaMode) => {
+    setForm((prev) => ({ ...prev, mode }));
+    if (mode === "Fast and Furious") {
+      setFastModeDialogOpen(true);
+    }
+  };
+
+  const toggleFastQuestionImage = (questionIndex: number) => {
+    setForm((prev) => {
+      const questions = [...prev.fastAndFurious.questions];
+      const current = questions[questionIndex];
+      questions[questionIndex] = {
+        ...current,
+        imageEnabled: !current.imageEnabled,
+        image: !current.imageEnabled
+          ? current.image
+          : {
+              ...current.image,
+              imageUrl: "",
+              imageDesc: "",
+            },
+      };
+
+      return {
+        ...prev,
+        fastAndFurious: {
+          ...prev.fastAndFurious,
+          questions,
+        },
+      };
+    });
+  };
+
+  const updateFastQuestionImageField = (
+    questionIndex: number,
+    field: "imageName" | "imageUrl" | "imageDesc",
+    value: string
+  ) => {
+    setForm((prev) => {
+      const questions = [...prev.fastAndFurious.questions];
+      questions[questionIndex] = {
+        ...questions[questionIndex],
+        image: {
+          ...questions[questionIndex].image,
+          [field]: value,
+        },
+      };
+
+      return {
+        ...prev,
+        fastAndFurious: {
+          ...prev.fastAndFurious,
+          questions,
+        },
+      };
+    });
+  };
+
+  const updateFastQuestionText = (questionIndex: number, value: string) => {
+    setForm((prev) => {
+      const questions = [...prev.fastAndFurious.questions];
+      questions[questionIndex] = {
+        ...questions[questionIndex],
+        question: value,
+      };
+
+      return {
+        ...prev,
+        fastAndFurious: {
+          ...prev.fastAndFurious,
+          questions,
+        },
+      };
+    });
+  };
+
+  const getModeCardStyles = (mode?: VivaMode) => {
+    if (mode === "Fast and Furious") {
+      return {
+        card:
+          "border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 hover:border-amber-300",
+        badge: "bg-amber-100 text-amber-800 border border-amber-200",
+        accent: "from-amber-400 via-orange-400 to-red-400",
+        chip: "⚡ Fast and Furious",
+        footer: "text-amber-700",
+      };
+    }
+
+    return {
+      card:
+        "border-teal-200 bg-gradient-to-br from-teal-50 via-white to-cyan-50 hover:border-teal-300",
+      badge: "bg-teal-100 text-teal-800 border border-teal-200",
+      accent: "from-teal-400 via-emerald-400 to-cyan-400",
+      chip: "🧘 Calm and Composed",
+      footer: "text-teal-700",
+    };
   };
 
   /* ================= UI ================= */
@@ -226,7 +374,7 @@ export default function AIVivaPage() {
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-teal-600 text-white">
+            <Button className="rounded-xl bg-teal-600 text-white shadow-sm">
               <Plus className="mr-2 h-4 w-4" />
               Add Case
             </Button>
@@ -235,16 +383,26 @@ export default function AIVivaPage() {
           {/* ================= FULL FORM ================= */}
           <DialogContent className="max-w-4xl p-0 overflow-hidden rounded-2xl">
 
-            <div className="px-6 py-5 border-b bg-slate-50">
+            <div className="border-b bg-white px-6 py-5">
               <DialogHeader>
-                <DialogTitle>Create AI Viva Case</DialogTitle>
+                <DialogTitle>✨ Create AI Viva Case</DialogTitle>
               </DialogHeader>
             </div>
 
-            <div className="px-6 py-6 space-y-8 max-h-[75vh] overflow-y-auto">
+            <div className="max-h-[75vh] space-y-6 overflow-y-auto bg-slate-50 px-6 py-6">
+
+              <VivaModeSelector
+                mode={form.mode}
+                questionCount={form.fastAndFurious.questionCount}
+                onModeChange={handleModeChange}
+                onConfigureFastMode={() => setFastModeDialogOpen(true)}
+              />
 
               {/* CASE */}
-              <section className="space-y-4">
+              <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold text-slate-800">📝 Basic Details</h3>
+                </div>
                 <Input
                   placeholder="Case Title"
                   value={form.case.title}
@@ -254,10 +412,11 @@ export default function AIVivaPage() {
                       case: { ...form.case, title: e.target.value },
                     })
                   }
+                  className="h-11 rounded-xl"
                 />
 
                 <select
-                  className="w-full border p-2 rounded"
+                  className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none"
                   value={form.case.level}
                   onChange={(e) =>
                     setForm({
@@ -280,11 +439,13 @@ export default function AIVivaPage() {
                       case: { ...form.case, stem: e.target.value },
                     })
                   }
+                  className="min-h-[120px] rounded-xl"
                 />
               </section>
 
               {/* OBJECTIVES */}
-              <section>
+              <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-800">🎯 Objectives</h3>
                 <Input
                   placeholder="Add objective (Enter)"
                   onKeyDown={(e) => {
@@ -304,12 +465,30 @@ export default function AIVivaPage() {
                       (e.target as HTMLInputElement).value = "";
                     }
                   }}
+                  className="h-11 rounded-xl"
                 />
+                {!!form.case.objectives.length && (
+                  <div className="flex flex-wrap gap-2">
+                    {form.case.objectives.map((objective, index) => (
+                      <span
+                        key={`${objective}-${index}`}
+                        className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700"
+                      >
+                        {objective}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </section>
 
               {/* EXHIBITS */}
-              <section>
-                <Button
+              <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-800">🖼 Exhibits</h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
                   onClick={() =>
                     setForm({
                       ...form,
@@ -322,12 +501,14 @@ export default function AIVivaPage() {
                 >
                   Add Exhibit
                 </Button>
+                </div>
 
                 {form.exhibits.map((ex, i) => (
-                  <div key={i} className="border p-4 mt-3 rounded flex flex-col gap-3 bg-slate-50">
+                  <div key={i} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="flex justify-between items-start">
-                      <h4 className="font-medium text-sm">Exhibit {i + 1}</h4>
+                      <h4 className="font-medium text-sm text-slate-800">Exhibit {i + 1}</h4>
                       <button
+                        type="button"
                         onClick={() => {
                           const updated = form.exhibits.filter((_, idx) => idx !== i);
                           setForm({ ...form, exhibits: updated });
@@ -346,24 +527,25 @@ export default function AIVivaPage() {
                         updated[i].label = e.target.value;
                         setForm({ ...form, exhibits: updated });
                       }}
+                      className="rounded-xl bg-white"
                     />
 
                     {/* IMAGE UPLOAD SECTION */}
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold">Upload Image</Label>
+                      <p className="text-xs font-semibold text-slate-700">🖼 Upload Image</p>
                       <div className="flex gap-2">
                         <label className="flex-1">
                           <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => handleImageUpload(e, i)}
+                            onChange={(e) => handleExhibitImageUpload(e, i)}
                             disabled={uploadingExhibitIndex === i}
                             className="hidden"
                           />
                           <Button
                             type="button"
                             variant="outline"
-                            className="w-full"
+                            className="w-full rounded-xl bg-white"
                             disabled={uploadingExhibitIndex === i}
                             onClick={(e) => {
                               e.preventDefault();
@@ -416,6 +598,7 @@ export default function AIVivaPage() {
                         updated[i].url = e.target.value;
                         setForm({ ...form, exhibits: updated });
                       }}
+                      className="rounded-xl bg-white"
                     />
 
                     <Textarea
@@ -426,13 +609,15 @@ export default function AIVivaPage() {
                         updated[i].description = e.target.value;
                         setForm({ ...form, exhibits: updated });
                       }}
+                      className="min-h-[88px] rounded-xl bg-white"
                     />
                   </div>
                 ))}
               </section>
 
               {/* MARKING */}
-              <section>
+              <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-800">✅ Marking</h3>
                 <Input
                   placeholder="Must mention (Enter)"
                   onKeyDown={(e) => {
@@ -454,6 +639,7 @@ export default function AIVivaPage() {
                       (e.target as HTMLInputElement).value = "";
                     }
                   }}
+                  className="h-11 rounded-xl"
                 />
 
                 <Input
@@ -477,19 +663,45 @@ export default function AIVivaPage() {
                       (e.target as HTMLInputElement).value = "";
                     }
                   }}
+                  className="h-11 rounded-xl"
                 />
               </section>
 
             </div>
 
-            <div className="px-6 py-4 border-t flex justify-end gap-3">
+            <div className="flex justify-end gap-3 border-t bg-white px-6 py-4">
               <Button variant="ghost" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSave}>Save Case</Button>
+              <Button className="rounded-xl bg-teal-600 text-white hover:bg-teal-700" onClick={handleSave}>
+                Save Case
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
+
+        <FastAndFuriousDialog
+          open={fastModeDialogOpen}
+          form={form}
+          uploadingQuestionIndex={uploadingFastQuestionIndex}
+          onOpenChange={setFastModeDialogOpen}
+          onQuestionCountChange={syncFastQuestionCount}
+          onQuestionTextChange={updateFastQuestionText}
+          onToggleQuestionImage={toggleFastQuestionImage}
+          onQuestionImageUpload={handleFastQuestionImageUpload}
+          onQuestionImageLabelChange={(questionIndex, value) =>
+            updateFastQuestionImageField(questionIndex, "imageName", value)
+          }
+          onQuestionImageUrlChange={(questionIndex, value) =>
+            updateFastQuestionImageField(questionIndex, "imageUrl", value)
+          }
+          onQuestionImageDescriptionChange={(questionIndex, value) =>
+            updateFastQuestionImageField(questionIndex, "imageDesc", value)
+          }
+          onQuestionImageRemove={(questionIndex) =>
+            updateFastQuestionImageField(questionIndex, "imageUrl", "")
+          }
+        />
       </div>
 
       {/* LOADING */}
@@ -498,15 +710,12 @@ export default function AIVivaPage() {
       {/* GRID */}
       <div className="grid lg:grid-cols-2 gap-6">
   {cases.map((c) => {
-    const open = expandedId === c.id;
+    const modeStyles = getModeCardStyles(c.mode);
+    const fastQuestionCount = c.case.fastAndFuriousQuestions?.length ?? 0;
 
     return (
       <Card
         key={c.id}
-        // onClick={() => {
-        //   if (!open) fetchCaseDetails(c.id);
-        //   setExpandedId(open ? null : c.id);
-        // }}
         onClick={() => {
   router.push(`viva/${c.id}`);
 }}
@@ -514,26 +723,27 @@ export default function AIVivaPage() {
           group relative cursor-pointer overflow-hidden rounded-2xl bg-white
           transition-all duration-300 transform will-change-transform
           hover:-translate-y-1 hover:scale-[1.01]
-          ${
-            open
-              ? "border-teal-300 shadow-lg ring-2 ring-teal-100"
-              : "border border-slate-200 shadow-sm hover:shadow-xl hover:border-slate-300"
-          }
+          border shadow-sm hover:shadow-xl ${modeStyles.card}
         `}
       >
-        {/* subtle highlight */}
-        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/40 pointer-events-none" />
+        <div
+          className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${modeStyles.accent}`}
+        />
+        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/50 pointer-events-none" />
 
         <CardContent className="relative p-6 space-y-4">
 
           {/* HEADER */}
           <div className="flex justify-between items-start">
             <div className="space-y-1">
+              <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${modeStyles.badge}`}>
+                {modeStyles.chip}
+              </span>
               <p className="font-semibold text-slate-800 leading-snug">
                 {c.case.title}
               </p>
 
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+              <span className="inline-flex text-[11px] px-2 py-0.5 rounded-full bg-white/80 text-slate-600 border border-slate-200">
                 {c.case.level}
               </span>
             </div>
@@ -549,12 +759,23 @@ export default function AIVivaPage() {
             {c.case.stem}
           </p>
 
+          <div className="flex flex-wrap gap-2">
+            {c.mode === "Fast and Furious" ? (
+              <span className="rounded-full bg-white/90 px-3 py-1 text-xs text-amber-700 border border-amber-200">
+                {fastQuestionCount} questions
+              </span>
+            ) : (
+              <span className="rounded-full bg-white/90 px-3 py-1 text-xs text-teal-700 border border-teal-200">
+                {c.exhibits?.length || 0} exhibits
+              </span>
+            )}
+          </div>
+
           {/* FOOTER */}
           <div className="flex justify-between items-center pt-1">
 
-            <div className="flex items-center gap-1.5 text-sm text-teal-600 font-medium">
-              {open ? "Hide details" : "View details"}
-              {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            <div className={`flex items-center gap-1.5 text-sm font-medium ${modeStyles.footer}`}>
+              View details
             </div>
 
             {/* DELETE */}
@@ -569,66 +790,6 @@ export default function AIVivaPage() {
             </button>
           </div>
 
-          {/* EXPAND (smooth animation) */}
-          <div
-            className={`grid transition-all duration-300 ease-in-out ${
-              open ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"
-            }`}
-          >
-            <div className="overflow-hidden border-t pt-4 space-y-4">
-
-              {/* ATTEMPTS */}
-              <div>
-                <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">
-                  Attempts
-                </h4>
-
-                {c.attempts?.length ? (
-                  <div className="space-y-2">
-                    {c.attempts.map((a, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg hover:bg-slate-100 transition"
-                      >
-                        <div className="flex items-center gap-3">
-                          {/* avatar */}
-                          <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center text-xs font-semibold text-teal-700">
-                            {a.candidate.name?.charAt(0)}
-                          </div>
-
-                          <div>
-                            <p className="text-sm font-medium text-slate-800">
-                              {a.candidate.name}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {a.candidate.email}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div
-                          className={`text-sm font-semibold ${
-                            a.report?.score >= 80
-                              ? "text-green-600"
-                              : a.report?.score >= 50
-                              ? "text-yellow-600"
-                              : "text-red-500"
-                          }`}
-                        >
-                          {a.report?.score ?? "-"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-400">
-                    No attempts yet
-                  </p>
-                )}
-              </div>
-
-            </div>
-          </div>
         </CardContent>
       </Card>
     );
