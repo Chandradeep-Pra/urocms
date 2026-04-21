@@ -492,7 +492,7 @@ export default function CaseDetailsPage() {
               </div>
 
               {caseData.case.objectives.map((objective, index) => (
-                <div key={`${objective}-${index}`} className="flex gap-2">
+                <div key={`objective-${index}`} className="flex gap-2">
                   <Input
                     value={objective}
                     onChange={(e) => {
@@ -545,7 +545,7 @@ export default function CaseDetailsPage() {
               <div>
                 <p className="mb-2 text-sm text-slate-500">Must Mention</p>
                 {caseData.marking_criteria.must_mention.map((item, index) => (
-                  <div key={`${item}-${index}`} className="mb-2 flex gap-2">
+                  <div key={`must-mention-${index}`} className="mb-2 flex gap-2">
                     <Input
                       value={item}
                       onChange={(e) => {
@@ -597,7 +597,7 @@ export default function CaseDetailsPage() {
               <div>
                 <p className="mb-2 text-sm text-slate-500">Critical Fail</p>
                 {caseData.marking_criteria.critical_fail.map((item, index) => (
-                  <div key={`${item}-${index}`} className="mb-2 flex gap-2">
+                  <div key={`critical-fail-${index}`} className="mb-2 flex gap-2">
                     <Input
                       value={item}
                       onChange={(e) => {
