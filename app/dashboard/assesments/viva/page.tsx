@@ -820,6 +820,18 @@ export default function AIVivaPage() {
         {cases.map((vivaCase) => {
           const calmModeReady = hasConfiguredCalmMode(vivaCase);
           const fastModeReady = hasConfiguredFastMode(vivaCase);
+          const configuredFastQuestions = vivaCase.modes.fastAndFurious.questions.filter(
+            (question) => question.question.trim().length > 0
+          );
+          const totalFastKeywords = vivaCase.modes.fastAndFurious.questions.reduce(
+            (count, question) => count + question.answerKeywords.length,
+            0
+          );
+          const totalFastExhibits = vivaCase.modes.fastAndFurious.questions.reduce(
+            (count, question) => count + question.linkedExhibitIds.length,
+            0
+          );
+          const firstFastQuestion = configuredFastQuestions[0];
 
           return (
             <Card
@@ -870,6 +882,51 @@ export default function AIVivaPage() {
                     {vivaCase.exhibits.length} shared exhibits
                   </span>
                 </div>
+
+                {fastModeReady && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-amber-900">
+                        Fast and Furious
+                      </p>
+                      <p className="text-xs text-amber-700">
+                        {configuredFastQuestions.length}/{vivaCase.modes.fastAndFurious.questionCount} questions ready
+                      </p>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs text-amber-700">
+                        {totalFastKeywords} keywords
+                      </span>
+                      <span className="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs text-amber-700">
+                        {totalFastExhibits} exhibit links
+                      </span>
+                    </div>
+
+                    {firstFastQuestion && (
+                      <div className="mt-3 rounded-xl border border-white/80 bg-white/80 p-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                          First Question
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-sm text-slate-700">
+                          {firstFastQuestion.question}
+                        </p>
+                        {firstFastQuestion.answerKeywords.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {firstFastQuestion.answerKeywords.slice(0, 3).map((keyword) => (
+                              <span
+                                key={`${firstFastQuestion.id}-${keyword}`}
+                                className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600"
+                              >
+                                {keyword}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between pt-1">
                   <p className="text-sm font-medium text-teal-700">Open case</p>

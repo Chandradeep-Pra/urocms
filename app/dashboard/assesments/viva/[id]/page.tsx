@@ -688,6 +688,48 @@ export default function CaseDetailsPage() {
               </div>
             </div>
 
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                  Questions
+                </p>
+                <p className="mt-1 text-xl font-semibold text-slate-800">
+                  {
+                    caseData.modes.fastAndFurious.questions.filter((question) =>
+                      question.question.trim()
+                    ).length
+                  }
+                  <span className="ml-1 text-sm font-medium text-slate-500">
+                    / {caseData.modes.fastAndFurious.questionCount}
+                  </span>
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                  Answer Keywords
+                </p>
+                <p className="mt-1 text-xl font-semibold text-slate-800">
+                  {caseData.modes.fastAndFurious.questions.reduce(
+                    (count, question) => count + question.answerKeywords.length,
+                    0
+                  )}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                  Exhibit Links
+                </p>
+                <p className="mt-1 text-xl font-semibold text-slate-800">
+                  {caseData.modes.fastAndFurious.questions.reduce(
+                    (count, question) => count + question.linkedExhibitIds.length,
+                    0
+                  )}
+                </p>
+              </div>
+            </div>
+
             <div className="space-y-4">
               {caseData.modes.fastAndFurious.questions.map((question, index) => {
                 const linkedExhibits = caseData.exhibits.filter((exhibit) =>
@@ -697,11 +739,22 @@ export default function CaseDetailsPage() {
                 return (
                   <div key={question.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-semibold text-slate-800">
-                        Question {index + 1}
-                      </h4>
-                      <span className="rounded-full bg-white px-3 py-1 text-xs text-slate-500">
-                        {linkedExhibits.length} linked exhibits
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-800">
+                          Question {index + 1}
+                        </h4>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {question.answerKeywords.length} keywords, {linkedExhibits.length} linked exhibits
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs ${
+                          question.question.trim()
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-white text-slate-500"
+                        }`}
+                      >
+                        {question.question.trim() ? "Configured" : "Draft"}
                       </span>
                     </div>
 
