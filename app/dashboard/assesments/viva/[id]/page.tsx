@@ -27,12 +27,22 @@ export default function CaseDetailsPage() {
   const [saving, setSaving] = useState(false);
   const [activeMode, setActiveMode] = useState<VivaMode>("Calm and Composed");
   const [fastModeDialogOpen, setFastModeDialogOpen] = useState(false);
+  const [fastKeywordInputs, setFastKeywordInputs] = useState<Record<string, string>>({});
 
   const fetchCase = async () => {
     try {
       const res = await fetch(`/api/viva-cases/${id}`);
       const data = await res.json();
-      setCaseData(normalizeVivaCase(data.case));
+      const normalizedCase = normalizeVivaCase(data.case);
+      setCaseData(normalizedCase);
+      setFastKeywordInputs(
+        Object.fromEntries(
+          normalizedCase.modes.fastAndFurious.questions.map((question) => [
+            question.id,
+            question.answerKeywords.join(", "),
+          ])
+        )
+      );
     } catch {
       toast.error("Failed to load case");
     } finally {
@@ -164,13 +174,19 @@ export default function CaseDetailsPage() {
   };
 
   const updateFastQuestionKeywords = (questionIndex: number, value: string) => {
-    const answerKeywords = value
-      .split(",")
-      .map((keyword) => keyword.trim())
-      .filter(Boolean);
-
     setCaseData((prev) => {
       if (!prev) return prev;
+
+      const question = prev.modes.fastAndFurious.questions[questionIndex];
+      const answerKeywords = value
+        .split(",")
+        .map((keyword) => keyword.trim())
+        .filter(Boolean);
+
+      setFastKeywordInputs((current) => ({
+        ...current,
+        [question.id]: value,
+      }));
 
       const questions = [...prev.modes.fastAndFurious.questions];
       questions[questionIndex] = {
@@ -322,7 +338,7 @@ export default function CaseDetailsPage() {
           <h3 className="font-semibold text-slate-800">Allowed Users</h3>
 
           {caseData.allowedUser.map((email, index) => (
-            <div key={`${email}-${index}`} className="flex gap-2">
+            <div key={`allowed-user-${index}`} className="flex gap-2">
               <Input
                 value={email}
                 onChange={(e) => {
@@ -766,7 +782,9 @@ export default function CaseDetailsPage() {
                     />
 
                     <Input
-                      value={question.answerKeywords.join(", ")}
+                      value={
+                        fastKeywordInputs[question.id] ?? question.answerKeywords.join(", ")
+                      }
                       onChange={(e) => updateFastQuestionKeywords(index, e.target.value)}
                       placeholder="Answer keywords separated by commas"
                       className="mt-4 bg-white"
