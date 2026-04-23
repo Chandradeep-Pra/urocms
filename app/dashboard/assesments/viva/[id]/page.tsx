@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ export default function CaseDetailsPage() {
   const [activeMode, setActiveMode] = useState<VivaMode>("Calm and Composed");
   const [fastModeDialogOpen, setFastModeDialogOpen] = useState(false);
   const [fastKeywordInputs, setFastKeywordInputs] = useState<Record<string, string>>({});
+  const [uploadingExhibitIndex, setUploadingExhibitIndex] = useState<number | null>(null);
 
   const fetchCase = async () => {
     try {
@@ -79,6 +80,46 @@ export default function CaseDetailsPage() {
       toast.error(error.message || "Update failed");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const uploadImage = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    exhibitIndex: number
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "viva-cases");
+
+    setUploadingExhibitIndex(exhibitIndex);
+
+    try {
+      const res = await fetch("/api/cloudinary-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+
+      setCaseData((prev) => {
+        if (!prev) return prev;
+
+        const exhibits = [...prev.exhibits];
+        exhibits[exhibitIndex] = { ...exhibits[exhibitIndex], url: data.url };
+        return { ...prev, exhibits };
+      });
+
+      toast.success("Image uploaded");
+    } catch {
+      toast.error("Image upload failed");
+    } finally {
+      setUploadingExhibitIndex(null);
+      event.target.value = "";
     }
   };
 
@@ -410,6 +451,42 @@ export default function CaseDetailsPage() {
                 placeholder="Label"
               />
 
+              <label className="block">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => uploadImage(e, index)}
+                  disabled={uploadingExhibitIndex === index}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={uploadingExhibitIndex === index}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    (
+                      e.currentTarget.parentElement?.querySelector(
+                        'input[type="file"]'
+                      ) as HTMLInputElement
+                    )?.click();
+                  }}
+                >
+                  {uploadingExhibitIndex === index ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Image
+                    </>
+                  )}
+                </Button>
+              </label>
+
               {exhibit.url && (
                 <div className="relative">
                   <img
@@ -428,7 +505,7 @@ export default function CaseDetailsPage() {
                     exhibits[index] = { ...exhibits[index], url: e.target.value };
                     setCaseData({ ...caseData, exhibits });
                   }}
-                  placeholder="Image URL"
+                  placeholder="Or paste image URL manually"
                 />
 
                 {exhibit.url && (

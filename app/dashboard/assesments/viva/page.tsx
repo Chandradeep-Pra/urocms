@@ -20,6 +20,10 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { FastAndFuriousDialog } from "@/components/viva/FastAndFuriousDialog";
 import { VivaModeSelector } from "@/components/viva/VivaModeSelector";
@@ -949,11 +953,15 @@ export default function AIVivaPage() {
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent className="rounded-xl">
-          <p className="text-sm text-slate-600">
-            Are you sure you want to delete this case?
-          </p>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Viva Case?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this case? This will hide it from the active viva
+              case list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
-          <div className="mt-4 flex justify-end gap-2">
+          <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
@@ -961,7 +969,7 @@ export default function AIVivaPage() {
             >
               Delete
             </AlertDialogAction>
-          </div>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
