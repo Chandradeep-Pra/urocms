@@ -26,10 +26,14 @@ function parseVideo(url: string) {
 
   // Google Drive
   const driveMatch = url.match(/\/d\/([^/]+)/);
-  if (driveMatch) {
+  const driveQueryMatch = url.match(/[?&]id=([^&]+)/);
+  const driveFileId = driveMatch?.[1] || driveQueryMatch?.[1];
+
+  if (driveFileId) {
     return {
       provider: "drive",
-      streamUrl: `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`,
+      driveFileId,
+      previewUrl: `https://drive.google.com/file/d/${driveFileId}/preview`,
     };
   }
 
@@ -62,7 +66,7 @@ export default function VideoPlayerLayout({
   useEffect(() => {
     if (!video || !videoRef.current) return;
 
-    if (parsed?.provider !== "youtube") {
+    if (parsed?.provider === "file") {
       videoRef.current
         .play()
         .then(() => setPlaying(true))
@@ -94,7 +98,7 @@ export default function VideoPlayerLayout({
       }
     }
 
-    if (e.key === " " && parsed?.provider !== "youtube") {
+    if (e.key === " " && parsed?.provider === "file") {
       e.preventDefault();
       togglePlay();
     }
@@ -182,6 +186,17 @@ export default function VideoPlayerLayout({
                   allow="autoplay; encrypted-media"
                   allowFullScreen
                 />
+              ) : parsed?.provider === "drive" ? (
+                <iframe
+                  src={parsed.previewUrl}
+                  className={`${
+                    isFullscreen
+                      ? "w-full h-full"
+                      : "w-full aspect-video rounded-2xl"
+                  }`}
+                  allow="autoplay"
+                  allowFullScreen
+                />
               ) : (
                 <video
                   ref={videoRef}
@@ -201,7 +216,7 @@ export default function VideoPlayerLayout({
           </div>
 
           {/* Controls (Only for HTML5 Video) */}
-          {parsed?.provider !== "youtube" && (
+          {parsed?.provider === "file" && (
             <div className="absolute bottom-10 left-0 w-full px-20">
               <div className="flex items-center gap-6 w-full">
 

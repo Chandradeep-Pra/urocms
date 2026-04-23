@@ -18,6 +18,8 @@ export interface VideoItem {
   description: string;
   videoUrl: string;
   sectionId: string;
+  accessTier?: "free" | "paid";
+  provider?: "youtube" | "drive";
 }
 
 export default function AdminVideoPage() {
