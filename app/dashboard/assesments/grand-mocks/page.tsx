@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Clock, CalendarDays, FileText } from "lucide-react";
+import {
+  CalendarDays,
+  Clock,
+  FileText,
+  Plus,
+  Users,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,20 +22,25 @@ import {
 } from "@/components/ui/dialog";
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 interface Quiz {
   id: string;
   title: string;
   type: string;
   durationMinutes: number;
-  createdAt?: any;
+}
+
+interface MockAttempt {
+  candidate: {
+    name: string;
+    email: string;
+  };
+  marks: number;
 }
 
 interface MockEvent {
@@ -37,41 +48,45 @@ interface MockEvent {
   quizId: string;
   title: string;
   startTime: string;
+  endTime?: string;
   durationMinutes: number;
+  attempts?: MockAttempt[];
+  attemptsCount?: number;
 }
 
 const formatDateTime = (value: any) => {
   if (!value) return "-";
 
-  // Firestore Timestamp
   if (value._seconds) {
     return new Date(value._seconds * 1000).toLocaleString();
   }
 
-  // If already Date object
   if (value instanceof Date) {
     return value.toLocaleString();
   }
 
-  // If string
   return new Date(value).toLocaleString();
 };
 
-const GrandMockPage = () => {
+const getTimestamp = (value: any) => {
+  if (!value) return NaN;
+  if (value._seconds) return value._seconds * 1000;
+  return new Date(value).getTime();
+};
+
+export default function GrandMockPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [mocks, setMocks] = useState<MockEvent[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-
   const router = useRouter();
 
   const [form, setForm] = useState({
     quizId: "",
     startTime: "",
+    endTime: "",
     durationMinutes: "",
   });
-
-  /* ───────── LOAD DATA ───────── */
 
   useEffect(() => {
     loadQuizzes();
@@ -84,8 +99,7 @@ const GrandMockPage = () => {
       const data = await res.json();
 
       const filtered = (data.quizzes || []).filter(
-        (q: Quiz) =>
-          q.type === "mock" || q.type === "grand-mock"
+        (quiz: Quiz) => quiz.type === "mock" || quiz.type === "grand-mock"
       );
 
       setQuizzes(filtered);
@@ -106,32 +120,18 @@ const GrandMockPage = () => {
     }
   };
 
-  /* ───────── DERIVE STATUS ───────── */
+  const deriveStatus = (mock: MockEvent) => {
+    const now = Date.now();
+    const start = getTimestamp(mock.startTime);
+    const end = mock.endTime
+      ? getTimestamp(mock.endTime)
+      : start + Number(mock.durationMinutes) * 60 * 1000;
 
- const deriveStatus = (mock: MockEvent) => {
-  const now = Date.now();
-
-  let start: number;
-
-  // Firestore Timestamp
-  if ((mock.startTime as any)?._seconds) {
-    start = (mock.startTime as any)._seconds * 1000;
-  }
-  // ISO or datetime-local string
-  else {
-    start = new Date(mock.startTime).getTime();
-  }
-
-  if (!start || isNaN(start)) return "Scheduled";
-
-  const end = start + Number(mock.durationMinutes) * 60 * 1000;
-
-  if (now < start) return "Scheduled";
-  if (now >= start && now <= end) return "Live";
-  return "Completed";
-};
-
-  /* ───────── CREATE MOCK ───────── */
+    if (!start || Number.isNaN(start)) return "Scheduled";
+    if (now < start) return "Scheduled";
+    if (now >= start && now <= end) return "Live";
+    return "Completed";
+  };
 
   const handleSave = async () => {
     if (!form.quizId || !form.startTime) {
@@ -146,6 +146,7 @@ const GrandMockPage = () => {
         body: JSON.stringify({
           quizId: form.quizId,
           startTime: form.startTime,
+          endTime: form.endTime || null,
           durationMinutes: Number(form.durationMinutes),
         }),
       });
@@ -157,9 +158,9 @@ const GrandMockPage = () => {
       setForm({
         quizId: "",
         startTime: "",
+        endTime: "",
         durationMinutes: "",
       });
-
       loadMocks();
     } catch {
       toast.error("Failed to create mock");
@@ -168,12 +169,8 @@ const GrandMockPage = () => {
 
   return (
     <div className="space-y-8">
-
-      {/* HEADER */}
       <div className="flex items-center justify-between">
-        <p className="text-muted-foreground">
-          {mocks.length} mock events
-        </p>
+        <p className="text-muted-foreground">{mocks.length} mock events</p>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -183,31 +180,25 @@ const GrandMockPage = () => {
             </Button>
           </DialogTrigger>
 
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-xl">
             <DialogHeader>
-              <DialogTitle>
-                Schedule Mock Event
-              </DialogTitle>
+              <DialogTitle>Schedule Mock Event</DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-5 mt-4">
-
-              {/* Select Quiz */}
+            <div className="mt-4 space-y-5">
               <div className="space-y-2">
                 <Label>Select Quiz</Label>
                 <Select
                   value={form.quizId}
-                  onValueChange={(v) => {
-                    const selected = quizzes.find(
-                      (q) => q.id === v
-                    );
+                  onValueChange={(value) => {
+                    const selected = quizzes.find((quiz) => quiz.id === value);
 
-                    setForm({
-                      ...form,
-                      quizId: v,
+                    setForm((prev) => ({
+                      ...prev,
+                      quizId: value,
                       durationMinutes:
                         selected?.durationMinutes?.toString() || "",
-                    });
+                    }));
                   }}
                 >
                   <SelectTrigger>
@@ -216,10 +207,7 @@ const GrandMockPage = () => {
 
                   <SelectContent>
                     {quizzes.map((quiz) => (
-                      <SelectItem
-                        key={quiz.id}
-                        value={quiz.id}
-                      >
+                      <SelectItem key={quiz.id} value={quiz.id}>
                         {quiz.title}
                       </SelectItem>
                     ))}
@@ -227,40 +215,51 @@ const GrandMockPage = () => {
                 </Select>
               </div>
 
-              {/* Start Time */}
-              <div className="space-y-2">
-                <Label>Start Time</Label>
-                <Input
-                  type="datetime-local"
-                  value={form.startTime}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      startTime: e.target.value,
-                    })
-                  }
-                />
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Start Time</Label>
+                  <Input
+                    type="datetime-local"
+                    value={form.startTime}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        startTime: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>End Time</Label>
+                  <Input
+                    type="datetime-local"
+                    value={form.endTime}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        endTime: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
               </div>
 
-              {/* Duration */}
               <div className="space-y-2">
                 <Label>Duration (minutes)</Label>
                 <Input
                   type="number"
                   value={form.durationMinutes}
                   onChange={(e) =>
-                    setForm({
-                      ...form,
+                    setForm((prev) => ({
+                      ...prev,
                       durationMinutes: e.target.value,
-                    })
+                    }))
                   }
                 />
               </div>
 
-              <Button
-                onClick={handleSave}
-                className="w-full"
-              >
+              <Button onClick={handleSave} className="w-full">
                 Save Mock
               </Button>
             </div>
@@ -268,91 +267,94 @@ const GrandMockPage = () => {
         </Dialog>
       </div>
 
-      {/* LIST */}
       {loading ? (
-        <p className="text-sm text-muted-foreground">
-          Loading...
-        </p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {mocks.map((mock) => (
-            <div
-  key={mock.id}
-  onClick={() => router.push(`grand-mocks/${mock.id}`)}
-  className="group relative w-full overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-xl"
->
-  {/* Background Gradient Based On Status */}
-  <div
-    className={`absolute inset-0 opacity-10 ${
-      deriveStatus(mock) === "Live"
-        ? "bg-gradient-to-r from-emerald-500 to-green-400"
-        : deriveStatus(mock) === "Scheduled"
-        ? "bg-gradient-to-r from-blue-500 to-indigo-400"
-        : "bg-gradient-to-r from-zinc-400 to-zinc-500"
-    }`}
-  />
+          {mocks.map((mock) => {
+            const attemptsCount = Array.isArray(mock.attempts)
+              ? mock.attempts.length
+              : mock.attemptsCount || 0;
 
-  <div className="relative flex flex-col md:flex-row items-center justify-between p-6 gap-6">
+            return (
+              <div
+                key={mock.id}
+                onClick={() =>
+                  router.push(`/dashboard/assesments/grand-mocks/${mock.id}`)
+                }
+                className="group relative w-full cursor-pointer overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-xl"
+              >
+                <div
+                  className={`absolute inset-0 opacity-10 ${
+                    deriveStatus(mock) === "Live"
+                      ? "bg-gradient-to-r from-emerald-500 to-green-400"
+                      : deriveStatus(mock) === "Scheduled"
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-400"
+                      : "bg-gradient-to-r from-zinc-400 to-zinc-500"
+                  }`}
+                />
 
-    {/* LEFT STATUS BLOCK */}
-    <div
-      className={`flex items-center justify-center w-24 h-24 rounded-2xl text-white font-bold text-lg shadow-md ${
-        deriveStatus(mock) === "Live"
-          ? "bg-emerald-500 animate-pulse"
-          : deriveStatus(mock) === "Scheduled"
-          ? "bg-blue-500"
-          : "bg-zinc-500"
-      }`}
-    >
-      {deriveStatus(mock) === "Live"
-        ? "LIVE"
-        : deriveStatus(mock) === "Scheduled"
-        ? "SOON"
-        : "ENDED"}
-    </div>
+                <div className="relative flex flex-col items-center justify-between gap-6 p-6 md:flex-row">
+                  <div
+                    className={`flex h-24 w-24 items-center justify-center rounded-2xl text-lg font-bold text-white shadow-md ${
+                      deriveStatus(mock) === "Live"
+                        ? "animate-pulse bg-emerald-500"
+                        : deriveStatus(mock) === "Scheduled"
+                        ? "bg-blue-500"
+                        : "bg-zinc-500"
+                    }`}
+                  >
+                    {deriveStatus(mock) === "Live"
+                      ? "LIVE"
+                      : deriveStatus(mock) === "Scheduled"
+                      ? "SOON"
+                      : "ENDED"}
+                  </div>
 
-    {/* CENTER CONTENT */}
-    <div className="flex-1 space-y-3 text-center md:text-left">
+                  <div className="flex-1 space-y-3 text-center md:text-left">
+                    <h3 className="text-xl font-semibold tracking-tight">
+                      {mock.title}
+                    </h3>
 
-      <h3 className="text-xl font-semibold tracking-tight">
-        {mock.title}
-      </h3>
+                    <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground md:justify-start">
+                      <span className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4" />
+                        {formatDateTime(mock.startTime)}
+                      </span>
 
-      <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        {mock.endTime
+                          ? formatDateTime(mock.endTime)
+                          : `${mock.durationMinutes} minutes`}
+                      </span>
 
-        <span className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4" />
-          {formatDateTime(mock.startTime)}
-        </span>
+                      <span className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Quiz: {mock.quizId}
+                      </span>
 
-        <span className="flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          {mock.durationMinutes} minutes
-        </span>
+                      <span className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        {attemptsCount} attempted
+                      </span>
+                    </div>
+                  </div>
 
-        <span className="flex items-center gap-2">
-          <FileText className="h-4 w-4" />
-          Quiz: {mock.quizId}
-        </span>
-      </div>
-    </div>
-
-    {/* RIGHT SIDE VISUAL */}
-    <div className="text-center md:text-right space-y-1">
-      <p className="text-4xl font-bold leading-none">
-        {mock.durationMinutes}
-      </p>
-      <p className="text-xs uppercase tracking-widest text-muted-foreground">
-        Minutes
-      </p>
-    </div>
-  </div>
-</div>
-          ))}
+                  <div className="space-y-1 text-center md:text-right">
+                    <p className="text-4xl font-bold leading-none">
+                      {attemptsCount}
+                    </p>
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Attempts
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
-};
-
-export default GrandMockPage;
+}
