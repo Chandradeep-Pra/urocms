@@ -10,10 +10,7 @@ import {
   ChevronDown,
   Clock,
   FileText,
-  Mail,
-  Plus,
   Trophy,
-  User,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -95,11 +92,6 @@ export default function GrandMockDetailsPage() {
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [attemptDraft, setAttemptDraft] = useState({
-    name: "",
-    email: "",
-    marks: "",
-  });
   const [form, setForm] = useState({
     quizId: "",
     startTime: "",
@@ -180,7 +172,6 @@ export default function GrandMockDetailsPage() {
         startTime: form.startTime,
         endTime: form.endTime,
         durationMinutes: Number(form.durationMinutes),
-        attempts: mock.attempts,
       };
 
       const res = await fetch(`/api/mocks/${id}`, {
@@ -200,35 +191,6 @@ export default function GrandMockDetailsPage() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const addAttempt = () => {
-    if (!mock) return;
-    if (!attemptDraft.name || !attemptDraft.email || attemptDraft.marks === "") {
-      toast.error("Name, email and marks are required");
-      return;
-    }
-
-    setMock({
-      ...mock,
-      attempts: [
-        ...mock.attempts,
-        {
-          candidate: {
-            name: attemptDraft.name,
-            email: attemptDraft.email,
-          },
-          marks: Number(attemptDraft.marks),
-        },
-      ],
-      attemptsCount: mock.attempts.length + 1,
-    });
-
-    setAttemptDraft({
-      name: "",
-      email: "",
-      marks: "",
-    });
   };
 
   if (loading) return <div className="p-10">Loading...</div>;
@@ -401,47 +363,9 @@ export default function GrandMockDetailsPage() {
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-zinc-900">Attempts</h2>
               <p className="mt-1 text-sm text-zinc-500">
-                Add candidate name, email and marks. These are stored on the mock and shown on cards and details.
+                Attempt records should come from the real student submission flow. This page shows the submitted candidates and marks.
               </p>
             </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input
-                  value={attemptDraft.name}
-                  onChange={(e) =>
-                    setAttemptDraft((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  value={attemptDraft.email}
-                  onChange={(e) =>
-                    setAttemptDraft((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Marks</Label>
-                <Input
-                  type="number"
-                  value={attemptDraft.marks}
-                  onChange={(e) =>
-                    setAttemptDraft((prev) => ({ ...prev, marks: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-
-            <Button onClick={addAttempt} className="mt-4">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Attempt
-            </Button>
 
             <div className="mt-6 space-y-3">
               {mock.attempts.length > 0 ? (
@@ -451,32 +375,16 @@ export default function GrandMockDetailsPage() {
                     className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 md:flex-row md:items-center md:justify-between"
                   >
                     <div className="space-y-1">
-                      <p className="flex items-center gap-2 text-sm font-medium text-zinc-900">
-                        <User className="h-4 w-4 text-zinc-500" />
+                      <p className="text-sm font-medium text-zinc-900">
                         {attempt.candidate.name || "Unnamed candidate"}
                       </p>
-                      <p className="flex items-center gap-2 text-sm text-zinc-500">
-                        <Mail className="h-4 w-4" />
-                        {attempt.candidate.email}
-                      </p>
+                      <p className="text-sm text-zinc-500">{attempt.candidate.email}</p>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <div className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-900">
                         {attempt.marks} marks
                       </div>
-                      <Button
-                        variant="outline"
-                        onClick={() =>
-                          setMock({
-                            ...mock,
-                            attempts: mock.attempts.filter((_, itemIndex) => itemIndex !== index),
-                            attemptsCount: mock.attempts.length - 1,
-                          })
-                        }
-                      >
-                        Remove
-                      </Button>
                     </div>
                   </div>
                 ))
@@ -565,12 +473,12 @@ export default function GrandMockDetailsPage() {
                     </TableRow>
 
                     {isExpanded && (
-                      <TableRow className="bg-zinc-50/60 hover:bg-zinc-50/60">
+                      <TableRow className="bg-zinc-50/80 hover:bg-zinc-50/80">
                         <TableCell colSpan={6} className="p-0">
-                          <div className="border-t border-zinc-200 px-6 py-6">
-                            <div className="grid gap-6 lg:grid-cols-2">
-                              <div>
-                                <h3 className="mb-2 text-sm font-semibold text-zinc-800">
+                          <div className="border-t border-zinc-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(244,244,245,0.95))] px-6 py-6">
+                            <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+                              <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">
                                   Full Question
                                 </h3>
                                 <p className="text-sm leading-relaxed text-zinc-700">
@@ -578,8 +486,8 @@ export default function GrandMockDetailsPage() {
                                 </p>
                               </div>
 
-                              <div>
-                                <h3 className="mb-2 text-sm font-semibold text-zinc-800">
+                              <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">
                                   Explanation
                                 </h3>
                                 <p className="text-sm leading-relaxed text-zinc-700">
@@ -588,8 +496,8 @@ export default function GrandMockDetailsPage() {
                               </div>
                             </div>
 
-                            <div className="mt-6">
-                              <h3 className="mb-3 text-sm font-semibold text-zinc-800">
+                            <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">
                                 Options
                               </h3>
 
