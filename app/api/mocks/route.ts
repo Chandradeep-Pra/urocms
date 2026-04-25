@@ -2,10 +2,6 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 
-/* ─────────────────────────────────────────────
-   GET — Fetch All Scheduled Mocks
-───────────────────────────────────────────── */
-
 export async function GET() {
   try {
     const snapshot = await adminDb
@@ -13,13 +9,19 @@ export async function GET() {
       .orderBy("createdAt", "desc")
       .get();
 
-    const mocks = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const mocks = snapshot.docs.map((doc) => {
+      const data = doc.data();
+
+      return {
+        id: doc.id,
+        attemptsCount: Array.isArray(data.attempts)
+          ? data.attempts.length
+          : data.attemptsCount ?? 0,
+        ...data,
+      };
+    });
 
     return NextResponse.json({ mocks });
-
   } catch (err) {
     console.error("Fetch mocks error:", err);
 
@@ -30,14 +32,10 @@ export async function GET() {
   }
 }
 
-/* ─────────────────────────────────────────────
-   POST — Create Mock Event
-───────────────────────────────────────────── */
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { quizId, startTime, durationMinutes } = body;
+    const { quizId, startTime, endTime, durationMinutes } = body;
 
     if (!quizId || !startTime) {
       return NextResponse.json(
@@ -46,12 +44,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    /* ───────── Fetch Quiz To Validate ───────── */
-
-    const quizDoc = await adminDb
-      .collection("quizzes")
-      .doc(quizId)
-      .get();
+    const quizDoc = await adminDb.collection("quizzes").doc(quizId).get();
 
     if (!quizDoc.exists) {
       return NextResponse.json(
@@ -62,43 +55,39 @@ export async function POST(req: NextRequest) {
 
     const quizData = quizDoc.data();
 
-    /* ───────── Validate Type ───────── */
-
-    if (
-      quizData?.type !== "mock" &&
-      quizData?.type !== "grand-mock"
-    ) {
+    if (quizData?.type !== "mock" && quizData?.type !== "grand-mock") {
       return NextResponse.json(
         { error: "Only mock type quizzes can be scheduled" },
         { status: 400 }
       );
     }
 
-    /* ───────── Final Duration Logic ───────── */
-
     const finalDuration =
       durationMinutes && durationMinutes > 0
-        ? durationMinutes
+        ? Number(durationMinutes)
         : quizData?.durationMinutes || 60;
 
-    /* ───────── Create Mock Event ───────── */
+    const resolvedStartTime = new Date(startTime);
+    const resolvedEndTime = endTime
+      ? new Date(endTime)
+      : new Date(resolvedStartTime.getTime() + finalDuration * 60 * 1000);
 
-    const docRef = await adminDb
-      .collection("mocks")
-      .add({
-        quizId,
-        title: quizData?.title || "Untitled Mock",
-        type: quizData?.type,
-        startTime: new Date(startTime),
-        durationMinutes: finalDuration,
-        createdAt: FieldValue.serverTimestamp(),
-      });
+    const docRef = await adminDb.collection("mocks").add({
+      quizId,
+      title: quizData?.title || "Untitled Mock",
+      type: quizData?.type,
+      startTime: resolvedStartTime,
+      endTime: resolvedEndTime,
+      durationMinutes: finalDuration,
+      attempts: [],
+      attemptsCount: 0,
+      createdAt: FieldValue.serverTimestamp(),
+    });
 
     return NextResponse.json({
       success: true,
       id: docRef.id,
     });
-
   } catch (err) {
     console.error("Create mock error:", err);
 

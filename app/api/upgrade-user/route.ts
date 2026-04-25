@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import {
+  getConfiguredDriveResourceIds,
+  grantDriveAccessToEmail,
+} from "@/lib/server/googleDrive";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,16 +19,31 @@ export async function POST(req: NextRequest) {
     const token = authHeader.split("Bearer ")[1];
     const decoded = await adminAuth.verifyIdToken(token);
 
-    const { name, phone } = await req.json();
+    const { name, phone, googleAccessEmail } = await req.json();
+    const normalizedAccessEmail =
+      (googleAccessEmail || decoded.email || "").trim().toLowerCase();
 
-    await adminDb.collection("users").doc(decoded.uid).update({
+    await adminDb.collection("users").doc(decoded.uid).set({
       name,
       phone,
-      tier: "free",
+      tier: "paid",
+      googleAccessEmail: normalizedAccessEmail || null,
       upgradedAt: new Date(),
-    });
+    }, { merge: true });
 
-    return NextResponse.json({ success: true });
+    const configuredResourceIds = getConfiguredDriveResourceIds();
+
+    if (normalizedAccessEmail && configuredResourceIds.length > 0) {
+      await grantDriveAccessToEmail(normalizedAccessEmail, configuredResourceIds);
+    }
+
+    return NextResponse.json({
+      success: true,
+      tier: "paid",
+      googleAccessEmail: normalizedAccessEmail || null,
+      driveAccessGranted:
+        normalizedAccessEmail.length > 0 && configuredResourceIds.length > 0,
+    });
 
   } catch (err) {
     console.error("Upgrade error:", err);

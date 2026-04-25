@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
   await adminDb.collection("users").doc(decoded.uid).set({
     email: decoded.email ?? null,
     tier: defaultTier,
+    googleAccessEmail: decoded.email ?? null,
     source: decoded.firebase.sign_in_provider,
     createdAt: new Date().toISOString(),
   });
@@ -77,6 +78,8 @@ export async function POST(req: NextRequest) {
       valid: true,
       tier: userDoc.data()?.tier ?? "guest",
       email: userDoc.data()?.email ?? null,
+      googleAccessEmail:
+        userDoc.data()?.googleAccessEmail ?? userDoc.data()?.email ?? null,
     });
 
   } catch (err) {
