@@ -11,13 +11,40 @@ export interface AccessModule {
 }
 
 export const FREE_CHAPTER_PREVIEW_LIMIT = 4;
+export const FREE_WEEKLY_MOCK_PREVIEW_LIMIT = 3;
 
 export function isPaidTier(tier: AppTier) {
   return tier === "paid";
 }
 
+export function getMockAccess(tier: AppTier) {
+  if (tier === "paid") {
+    return {
+      allowed: true,
+      mode: "full" as const,
+      weeklyQuestionLimit: null,
+    };
+  }
+
+  if (tier === "free") {
+    return {
+      allowed: true,
+      mode: "preview" as const,
+      weeklyQuestionLimit: FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
+    };
+  }
+
+  return {
+    allowed: false,
+    mode: "locked" as const,
+    weeklyQuestionLimit: null,
+    requiredTier: "free" as const,
+    reason: "Complete profile first to unlock the free mock preview.",
+  };
+}
+
 export function canAccessMocks(tier: AppTier) {
-  return isPaidTier(tier);
+  return getMockAccess(tier).allowed;
 }
 
 export function canAccessViva(tier: AppTier) {
@@ -165,8 +192,8 @@ export function getTierModules(tier: AppTier): AccessModule[] {
       {
         key: "mock-tests",
         label: "Mock Tests",
-        description: "Locked for free users.",
-        state: "locked",
+        description: `${FREE_WEEKLY_MOCK_PREVIEW_LIMIT} mock questions per week across mocks and grand mocks.`,
+        state: "preview",
       },
       {
         key: "grand-mocks",

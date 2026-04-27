@@ -405,8 +405,8 @@ export default function AccessSimulatorClient({
                     chapter quiz.
                   </p>
                   <p className="mt-2 text-sm leading-6 text-amber-800">
-                    AI viva, standard mocks, and grand mocks stay locked until the learner upgrades
-                    to paid.
+                    Free users also get a weekly hosted mock preview budget of 3 questions across
+                    mocks and grand mocks. AI viva stays locked until paid.
                   </p>
                 </div>
 
@@ -474,11 +474,11 @@ export default function AccessSimulatorClient({
                       },
                       {
                         label: "Mock tests",
-                        values: ["Locked", "Locked", "Full"],
+                        values: ["Locked", "3 questions per week", "Full"],
                       },
                       {
                         label: "Grand mocks",
-                        values: ["Locked", "Locked", "Full"],
+                        values: ["Locked", "3 questions per week", "Full"],
                       },
                       {
                         label: "AI viva",

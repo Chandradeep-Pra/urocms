@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { canAccessMocks } from "@/lib/appAccess";
+import { FREE_WEEKLY_MOCK_PREVIEW_LIMIT, getMockAccess } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { grantWeeklyMockPreview, getWeeklyMockPreviewUsage } from "@/lib/server/appUsage";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
 
 export async function GET(
@@ -10,12 +11,14 @@ export async function GET(
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
 
-  if (!canAccessMocks(auth.user.tier)) {
+  const mockAccess = getMockAccess(auth.user.tier);
+
+  if (!mockAccess.allowed) {
     return tierLockedResponse({
       feature: "mocks",
       tier: auth.user.tier,
-      requiredTier: "paid",
-      reason: "Mocks are available only for paid users.",
+      requiredTier: mockAccess.requiredTier ?? "free",
+      reason: mockAccess.reason ?? "Mocks are locked.",
     });
   }
 
@@ -61,6 +64,53 @@ export async function GET(
       }));
     }
 
+    let visibleQuestions = questions;
+    let accessPayload: Record<string, unknown> = {
+      tier: auth.user.tier,
+      allowed: true,
+      mode: mockAccess.mode,
+      weeklyQuestionLimit: mockAccess.weeklyQuestionLimit,
+      totalQuestionCount: questions.length,
+      returnedQuestionCount: questions.length,
+    };
+
+    if (auth.user.tier === "free") {
+      const usageBefore = await getWeeklyMockPreviewUsage(
+        auth.user.uid,
+        FREE_WEEKLY_MOCK_PREVIEW_LIMIT
+      );
+
+      const grant = await grantWeeklyMockPreview({
+        uid: auth.user.uid,
+        contentId: id,
+        weeklyLimit: FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
+        availableQuestionCount: questions.length,
+      });
+
+      if (grant.grantedQuestions <= 0) {
+        return tierLockedResponse({
+          feature: "mocks",
+          tier: auth.user.tier,
+          requiredTier: "paid",
+          reason: "Your free weekly mock preview is exhausted. Upgrade to paid to continue.",
+        });
+      }
+
+      visibleQuestions = questions.slice(0, grant.grantedQuestions);
+      accessPayload = {
+        tier: auth.user.tier,
+        allowed: true,
+        mode: "preview",
+        weeklyQuestionLimit: FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
+        totalQuestionCount: questions.length,
+        returnedQuestionCount: visibleQuestions.length,
+        weeklyConsumedQuestions: grant.consumedQuestions,
+        weeklyRemainingQuestions: grant.remainingQuestions,
+        reusedExistingGrant: grant.reusedExistingGrant,
+        previouslyGrantedQuestions: usageBefore.usage.previewByContent?.[id] ?? 0,
+      };
+    }
+
     return NextResponse.json({
       mock: {
         id: mockDoc.id,
@@ -74,8 +124,9 @@ export async function GET(
           id: quizDoc.id,
           ...quizData,
         },
-        questions,
+        questions: visibleQuestions,
       },
+      access: accessPayload,
     });
   } catch (error) {
     console.error("App mock fetch error:", error);

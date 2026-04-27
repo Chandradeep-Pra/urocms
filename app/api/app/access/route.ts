@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FREE_CHAPTER_PREVIEW_LIMIT, getTierModules } from "@/lib/appAccess";
+import {
+  FREE_CHAPTER_PREVIEW_LIMIT,
+  FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
+  getTierModules,
+} from "@/lib/appAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
@@ -17,6 +21,7 @@ export async function GET(req: NextRequest) {
     },
     policy: {
       freeChapterPreviewLimit: FREE_CHAPTER_PREVIEW_LIMIT,
+      freeWeeklyMockPreviewLimit: FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
       modules: getTierModules(auth.user.tier),
     },
   });

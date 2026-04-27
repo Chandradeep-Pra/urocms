@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { canAccessMocks } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
 
@@ -11,12 +10,12 @@ export async function POST(
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
 
-  if (!canAccessMocks(auth.user.tier)) {
+  if (auth.user.tier !== "paid") {
     return tierLockedResponse({
       feature: "mocks",
       tier: auth.user.tier,
       requiredTier: "paid",
-      reason: "Mocks are available only for paid users.",
+      reason: "Submitting hosted mock attempts is available only for paid users.",
     });
   }
 

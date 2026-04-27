@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      tier: "paid",
+      tier: "free",
       googleAccessEmail: normalizedAccessEmail || null,
       driveAccessGranted:
         normalizedAccessEmail.length > 0 && configuredResourceIds.length > 0,

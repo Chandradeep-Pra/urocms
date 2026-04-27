@@ -11,7 +11,7 @@ Support this user journey consistently across backend and React Native:
 Rules:
 
 - `guest`: profile not completed yet, chapter quiz access locked
-- `free`: chapter quiz preview only, limited to `4` questions
+- `free`: chapter quiz preview limited to `4` questions, plus hosted mock and grand-mock preview limited to `3` questions per week total
 - `paid`: full access to chapter quizzes, mocks, grand mocks, AI viva, and paid videos
 
 ## Existing Identity Routes
@@ -36,6 +36,7 @@ Response now includes:
 - `email`
 - `googleAccessEmail`
 - `policy.freeChapterPreviewLimit`
+- `policy.freeWeeklyMockPreviewLimit`
 - `policy.modules`
 
 Use this route immediately after app launch / login to determine the user tier.
@@ -72,6 +73,7 @@ Store:
 
 - `tier`
 - `policy.freeChapterPreviewLimit`
+- `policy.freeWeeklyMockPreviewLimit`
 - `policy.modules`
 
 ### 2. Guest flow
@@ -88,10 +90,13 @@ If `tier === "free"`:
 
 - fetch quiz list from `GET /api/app/quizzes`
 - show chapter quizzes as preview-enabled
-- show mocks / grand mocks / AI viva as locked
+- show hosted mocks / grand mocks as weekly preview-enabled
+- show AI viva as locked
 - when opening a chapter quiz, use `GET /api/app/quizzes/:id`
 - read `access.mode === "preview"`
 - use `access.returnedQuestionCount` and `access.totalQuestionCount` to show preview messaging
+- when opening a hosted mock, use `GET /api/app/mocks/:id`
+- use `access.weeklyRemainingQuestions` to show remaining weekly allowance
 
 ### 4. Paid flow
 
@@ -112,6 +117,7 @@ Returns:
 - profile info
 - policy modules
 - free preview limit
+- free weekly mock preview limit
 
 Use this as a convenience route if you want one app-wide access payload after login.
 
@@ -146,13 +152,16 @@ For locked content:
 
 ### `GET /api/app/mocks`
 
-- `paid` only
-- returns `403` for `guest` and `free`
+- `guest` returns `403`
+- `free` gets hosted mock cards with weekly preview metadata
+- `paid` gets full access
 
 ### `GET /api/app/mocks/:id`
 
-- `paid` only
-- returns full mock detail and questions
+- `guest` returns `403`
+- `free` can preview up to `3` hosted mock questions per week total across mocks and grand mocks
+- reopening the same mock in the same week does not consume the budget again
+- `paid` gets full mock detail and questions
 
 ### `POST /api/app/mocks/:id/attempts`
 
@@ -164,6 +173,7 @@ Expected body:
 }
 ```
 
+Only `paid` users can submit hosted mock attempts.
 User identity is derived from the verified token, not from body fields.
 
 ### `GET /api/app/viva-cases`
@@ -339,8 +349,8 @@ export async function getVideoLibrary(sectionId?: string) {
   - AI viva: locked
 - `free`
   - chapter quiz card: preview badge
-  - mocks: locked
-  - grand mocks: locked
+  - mocks: weekly preview badge
+  - grand mocks: weekly preview badge
   - AI viva: locked
 - `paid`
   - all unlocked
@@ -361,7 +371,8 @@ Run this once after wiring the mobile app:
    - `POST /api/validate-user` returns `tier: "free"`
    - `GET /api/app/quizzes` shows chapter quizzes with `access.mode: "preview"`
    - `GET /api/app/quizzes/:id` returns only `4` questions
-   - `GET /api/app/mocks` returns `403`
+   - `GET /api/app/mocks` returns preview metadata
+   - `GET /api/app/mocks/:id` returns only the allowed weekly preview slice
    - `GET /api/app/viva-cases` returns `403`
 
 3. Upgrade the same user to paid.
