@@ -1,11 +1,11 @@
 //@ts-ignore
-import { getGuestUsers } from "@/lib/server/guestService";
+import { getAllUsers } from "@/lib/server/guestService";
 import UsersClient from "./UserClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
-  const guests = await getGuestUsers();
+  const users = await getAllUsers();
 
-  return <UsersClient guests={guests} />;
+  return <UsersClient users={users} />;
 }

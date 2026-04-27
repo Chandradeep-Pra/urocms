@@ -77,8 +77,9 @@ export async function GET() {
     const users = usersSnap.docs.map((doc) => doc.data());
 
     const totalUsers = users.length;
+    const guestUsers = users.filter((u) => u.tier === "guest").length;
+    const freeUsers = users.filter((u) => u.tier === "free").length;
     const paidUsers = users.filter((u) => u.tier === "paid").length;
-    const freeUsers = Math.max(totalUsers - paidUsers, 0);
 
     const userCreatedAt = users
       .map((u) => parseFirestoreDate(u.createdAt))
@@ -93,6 +94,8 @@ export async function GET() {
     return NextResponse.json({
       stats: {
         totalUsers,
+        guestUsers,
+        freeUsers,
         paidUsers,
         totalQuestions: questionsSnap.size,
         mockTests,
@@ -103,6 +106,7 @@ export async function GET() {
       },
       userGrowth,
       tierData: [
+        { name: "Guest", value: guestUsers },
         { name: "Paid", value: paidUsers },
         { name: "Free", value: freeUsers },
       ],

@@ -14,6 +14,7 @@ import {
   PanelLeftOpen,
   Settings,
   Sparkles,
+  Smartphone,
   Users,
   Video,
 } from "lucide-react";
@@ -80,6 +81,7 @@ export const nav = [
     icon: Settings,
     children: [
       { name: "Settings", href: "/dashboard/settings", icon: Settings },
+      { name: "Access Simulator", href: "/dashboard/system/access-simulator", icon: Smartphone },
       // { name: "Roles & Access", href: "/dashboard/roles", icon: ShieldCheck },
     ],
   },

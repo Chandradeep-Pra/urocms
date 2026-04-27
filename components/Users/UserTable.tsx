@@ -8,89 +8,105 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Trash2, Eye } from "lucide-react";
+import { Crown, MoreHorizontal, Trash2, UserCheck, UserRoundPlus } from "lucide-react";
 import { DataTable } from "./DataTable";
 
 interface User {
   id: string;
   name: string;
   email: string;
-  tier: "paid" | "guest";
+  tier: "paid" | "guest" | "free";
   createdAt: string;
 }
 
 interface Props {
   data: User[];
-  onToggleTier: (id: string) => void;
+  onSetTier: (id: string, tier: User["tier"]) => void;
   onDelete: (id: string) => void;
 }
 
-export function UserTable({
-  data,
-  onToggleTier,
-  onDelete,
-}: Props) {
+function getBadgeClass(tier: User["tier"]) {
+  if (tier === "paid") return "bg-teal-600 text-white";
+  if (tier === "free") return "bg-amber-100 text-amber-800";
+  return "bg-slate-200 text-slate-700";
+}
+
+function getTierAction(user: User) {
+  if (user.tier === "guest") {
+    return {
+      label: "Move to Free",
+      nextTier: "free" as const,
+      icon: UserRoundPlus,
+    };
+  }
+
+  if (user.tier === "free") {
+    return {
+      label: "Move to Paid",
+      nextTier: "paid" as const,
+      icon: Crown,
+    };
+  }
+
+  return {
+    label: "Move to Free",
+    nextTier: "free" as const,
+    icon: UserCheck,
+  };
+}
+
+export function UserTable({ data, onSetTier, onDelete }: Props) {
   return (
     <DataTable
       data={data}
       columns={[
         {
           header: "Name",
-          accessor: (u) => (
-            <span className="font-medium">{u.name !== "" ? u.name : "No Name"}</span>
+          accessor: (user) => (
+            <span className="font-medium">{user.name?.trim() ? user.name : "No Name"}</span>
           ),
         },
         {
           header: "Email",
-          accessor: (u) => (
-            <span className="text-slate-500">{u.email}</span>
-          ),
+          accessor: (user) => <span className="text-slate-500">{user.email}</span>,
         },
         {
           header: "Status",
-          accessor: (u) => (
-            <Badge
-              className={`cursor-pointer ${
-                u.tier === "paid"
-                  ? "bg-teal-600 text-white"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-              onClick={() => onToggleTier(u.id)}
-            >
-              {u.tier}
-            </Badge>
-          ),
+          accessor: (user) => <Badge className={getBadgeClass(user.tier)}>{user.tier}</Badge>,
         },
         {
           header: "Date",
-          accessor: (u) => (
-            <span className="text-slate-500">{u.createdAt}</span>
-          ),
+          accessor: (user) => <span className="text-slate-500">{user.createdAt}</span>,
         },
         {
           header: "",
-          accessor: (u) => (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Eye className="mr-2 h-4 w-4" />
-                  View
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={() => onDelete(u.id)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ),
+          accessor: (user) => {
+            const action = getTierAction(user);
+            const ActionIcon = action.icon;
+
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onSetTier(user.id, action.nextTier)}>
+                    <ActionIcon className="mr-2 h-4 w-4" />
+                    {action.label}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => onDelete(user.id)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          },
         },
       ]}
     />

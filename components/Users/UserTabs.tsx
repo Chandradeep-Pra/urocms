@@ -1,22 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RequestTable } from "./RequestTable";
 import { UserTable } from "./UserTable";
-
-
 
 interface User {
   id: string;
   name: string;
   email: string;
-  tier: "paid" | "guest";
+  tier: "paid" | "guest" | "free";
   createdAt: string;
 }
 
@@ -34,7 +27,14 @@ interface Props {
   search: string;
   onApprove: (id: string) => void;
   onDelete: (id: string) => void;
-  onToggleTier: (id: string) => void;
+  onSetTier: (id: string, tier: User["tier"]) => void;
+}
+
+function matchesSearch(user: User, search: string) {
+  const query = search.trim().toLowerCase();
+  if (!query) return true;
+
+  return (user.name ?? "").toLowerCase().includes(query) || (user.email ?? "").toLowerCase().includes(query);
 }
 
 export default function UserTabs({
@@ -43,80 +43,56 @@ export default function UserTabs({
   search,
   onApprove,
   onDelete,
-  onToggleTier,
+  onSetTier,
 }: Props) {
-  /* -------- FILTER LOGIC -------- */
-  console.log("Rendering UserTabs with users:", users);
   const filteredRequests = useMemo(() => {
-    return requests.filter(
-      (r) =>
-        r.name.toLowerCase().includes(search.toLowerCase()) ||
-        r.email.toLowerCase().includes(search.toLowerCase())
-    );
+    const query = search.trim().toLowerCase();
+
+    return requests.filter((request) => {
+      const name = (request.name ?? "").toLowerCase();
+      const email = (request.email ?? "").toLowerCase();
+      return !query || name.includes(query) || email.includes(query);
+    });
   }, [requests, search]);
 
-  const paidUsers = useMemo(() => {
-    return users.filter(
-      (u) =>
-        u.tier === "paid" &&
-        (u.name.toLowerCase().includes(search.toLowerCase()) ||
-          u.email.toLowerCase().includes(search.toLowerCase()))
-    );
-  }, [users, search]);
+  const guestUsers = useMemo(
+    () => users.filter((user) => user.tier === "guest" && matchesSearch(user, search)),
+    [users, search]
+  );
 
-  const freeUsers = useMemo(() => {
-    return users.filter(
-      (u) =>
-        u.tier === "guest" &&
-        (u?.name.toLowerCase().includes(search.toLowerCase()) ||
-          u.email.toLowerCase().includes(search.toLowerCase()))
-    );
-  }, [users, search]);
+  const freeUsers = useMemo(
+    () => users.filter((user) => user.tier === "free" && matchesSearch(user, search)),
+    [users, search]
+  );
 
-  console.log("Free Users:", freeUsers);
-
-  /* -------- UI -------- */
+  const paidUsers = useMemo(
+    () => users.filter((user) => user.tier === "paid" && matchesSearch(user, search)),
+    [users, search]
+  );
 
   return (
-    <Tabs defaultValue="requests" className="w-full space-y-6">
-      <TabsList className="grid w-full max-w-md grid-cols-3">
-        <TabsTrigger value="requests">
-          Requests ({filteredRequests.length})
-        </TabsTrigger>
-
-        <TabsTrigger value="paid">
-          Paid Users ({paidUsers.length})
-        </TabsTrigger>
-
-        <TabsTrigger value="free">
-          Free Users ({freeUsers.length})
-        </TabsTrigger>
+    <Tabs defaultValue="guest" className="w-full space-y-6">
+      <TabsList className="grid w-full max-w-3xl grid-cols-4">
+        <TabsTrigger value="guest">Guest ({guestUsers.length})</TabsTrigger>
+        <TabsTrigger value="free">Free ({freeUsers.length})</TabsTrigger>
+        <TabsTrigger value="paid">Paid ({paidUsers.length})</TabsTrigger>
+        <TabsTrigger value="requests">Requests ({filteredRequests.length})</TabsTrigger>
       </TabsList>
 
-      {/* REQUESTS */}
-      <TabsContent value="requests">
-        <RequestTable
-          data={filteredRequests}
-          onApprove={onApprove}
-        />
+      <TabsContent value="guest">
+        <UserTable data={guestUsers} onDelete={onDelete} onSetTier={onSetTier} />
       </TabsContent>
 
-      {/* PAID */}
-      <TabsContent value="paid">
-        <UserTable
-          data={paidUsers}
-          onDelete={onDelete}
-          onToggleTier={onToggleTier}
-        />
-      </TabsContent>
-
-      {/* FREE */}
       <TabsContent value="free">
-        <UserTable
-          data={freeUsers}
-          onDelete={onDelete}
-          onToggleTier={onToggleTier}
-        />
+        <UserTable data={freeUsers} onDelete={onDelete} onSetTier={onSetTier} />
+      </TabsContent>
+
+      <TabsContent value="paid">
+        <UserTable data={paidUsers} onDelete={onDelete} onSetTier={onSetTier} />
+      </TabsContent>
+
+      <TabsContent value="requests">
+        <RequestTable data={filteredRequests} onApprove={onApprove} />
       </TabsContent>
     </Tabs>
   );

@@ -1,40 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
-
-// export async function POST(req: NextRequest) {
-//   try {
-//     const authHeader = req.headers.get("authorization");
-
-//     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-//       return NextResponse.json({ valid: false }, { status: 401 });
-//     }
-
-//     const token = authHeader.split("Bearer ")[1];
-
-//     // 🔐 Verify Firebase ID token
-//     const decoded = await adminAuth.verifyIdToken(token);
-//     const uid = decoded.uid;
-
-//     // 🔍 Check Firestore
-//     const userDoc = await adminDb.collection("users").doc(uid).get();
-
-//     if (!userDoc.exists) {
-//       return NextResponse.json({ valid: false }, { status: 401 });
-//     }
-
-//     const data = userDoc.data();
-
-//     return NextResponse.json({
-//       valid: true,
-//       tier: data?.tier ?? "guest",
-//     });
-
-//   } catch (err) {
-//     return NextResponse.json({ valid: false }, { status: 401 });
-//   }
-// }
+import { FREE_CHAPTER_PREVIEW_LIMIT, getTierModules } from "@/lib/appAccess";
+import { requireAppUser } from "@/lib/server/appSession";
 
 export async function POST(req: NextRequest) {
+<<<<<<< Updated upstream
   try {
     const authHeader = req.headers.get("authorization");
 
@@ -66,12 +35,23 @@ export async function POST(req: NextRequest) {
     source: decoded.firebase.sign_in_provider,
     createdAt: new Date().toISOString(),
   });
+=======
+  const auth = await requireAppUser(req);
+  if ("response" in auth) return auth.response;
+>>>>>>> Stashed changes
 
   return NextResponse.json({
     valid: true,
-    tier: defaultTier,
+    tier: auth.user.tier,
+    email: auth.user.email,
+    googleAccessEmail: auth.user.googleAccessEmail,
+    policy: {
+      freeChapterPreviewLimit: FREE_CHAPTER_PREVIEW_LIMIT,
+      modules: getTierModules(auth.user.tier),
+    },
   });
 }
+<<<<<<< Updated upstream
 
     return NextResponse.json({
       valid: true,
@@ -85,3 +65,5 @@ export async function POST(req: NextRequest) {
   }
 }
 
+=======
+>>>>>>> Stashed changes
