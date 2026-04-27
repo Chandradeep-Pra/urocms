@@ -15,6 +15,7 @@ export async function GET(req: Request) {
 
   const videos = snapshot.docs.map(doc => ({
     id: doc.id,
+    accessTier: "free",
     ...doc.data()
   }))
 
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const body = await req.json()
-  const { title, description, videoUrl, sectionId } = body
+  const { title, description, videoUrl, sectionId, accessTier = "free" } = body
 
   if (!title || !videoUrl) {
     return Response.json({ error: "Missing fields" }, { status: 400 })
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
     provider: parsed.provider,
     driveFileId: parsed.driveFileId || null,
     sectionId,
+    accessTier,
     createdAt: new Date()
   })
 

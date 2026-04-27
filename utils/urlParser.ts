@@ -3,12 +3,14 @@ export function parseVideo(url: string) {
     return { provider: "youtube" }
   }
 
-  const match = url.match(/\/d\/([^/]+)/)
+  const directMatch = url.match(/\/d\/([^/]+)/)
+  const queryMatch = url.match(/[?&]id=([^&]+)/)
+  const driveFileId = directMatch?.[1] || queryMatch?.[1]
 
-  if (match) {
+  if (driveFileId) {
     return {
       provider: "drive",
-      driveFileId: match[1]
+      driveFileId
     }
   }
 
