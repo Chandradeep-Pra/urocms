@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     await adminDb.collection("users").doc(decoded.uid).set({
       name,
       phone,
+      country,
       tier: "free",
       googleAccessEmail: normalizedAccessEmail || null,
       upgradedAt: new Date(),
