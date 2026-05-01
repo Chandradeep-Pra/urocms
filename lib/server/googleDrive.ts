@@ -98,6 +98,97 @@ async function getDriveAccessToken() {
   return cachedToken.accessToken;
 }
 
+export async function fetchDriveFileStream(
+  fileId: string,
+  rangeHeader?: string | null
+) {
+  if (!fileId) {
+    throw new Error("Google Drive file id is required");
+  }
+
+  const accessToken = await getDriveAccessToken();
+  const response = await fetch(
+    `${GOOGLE_DRIVE_API_BASE}/files/${fileId}?alt=media&supportsAllDrives=true`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...(rangeHeader ? { Range: rangeHeader } : {}),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to stream Drive file: ${errorText}`);
+  }
+
+  return response;
+}
+
+export async function getDriveFileMetadata(fileId: string) {
+  if (!fileId) {
+    throw new Error("Google Drive file id is required");
+  }
+
+  const accessToken = await getDriveAccessToken();
+  const params = new URLSearchParams({
+    fields: "id,name,mimeType,size",
+    supportsAllDrives: "true",
+  });
+
+  const response = await fetch(
+    `${GOOGLE_DRIVE_API_BASE}/files/${fileId}?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch Drive metadata: ${errorText}`);
+  }
+
+  const data = await response.json();
+
+  return {
+    id: data.id,
+    name: data.name || `${fileId}.mp4`,
+    mimeType: data.mimeType || "video/mp4",
+    size: data.size || null,
+  };
+}
+
+export async function getDriveFileDebugInfo(fileId: string) {
+  if (!fileId) {
+    throw new Error("Google Drive file id is required");
+  }
+
+  const accessToken = await getDriveAccessToken();
+  const params = new URLSearchParams({
+    fields:
+      "id,name,mimeType,size,webViewLink,owners(emailAddress,displayName),capabilities(canDownload,canEdit,canShare),copyRequiresWriterPermission,downloadRestrictions,shortcutDetails",
+    supportsAllDrives: "true",
+  });
+
+  const response = await fetch(
+    `${GOOGLE_DRIVE_API_BASE}/files/${fileId}?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch Drive debug info: ${errorText}`);
+  }
+
+  return response.json();
+}
+
 export function getConfiguredDriveVideoFolderId() {
   return (
     process.env.GOOGLE_DRIVE_VIDEO_FOLDER_ID ||
@@ -159,6 +250,65 @@ export async function listDriveFolderVideos(folderId: string) {
     }));
 }
 
+export async function listDriveFolderContents(folderId: string) {
+  if (!folderId) {
+    throw new Error("Google Drive folder id is required");
+  }
+
+  const accessToken = await getDriveAccessToken();
+  const params = new URLSearchParams({
+    q: `'${folderId}' in parents and trashed = false`,
+    fields:
+      "files(id,name,mimeType,webViewLink,thumbnailLink,iconLink,modifiedTime,size),nextPageToken",
+    orderBy: "modifiedTime desc",
+    pageSize: "100",
+    includeItemsFromAllDrives: "true",
+    supportsAllDrives: "true",
+  });
+
+  const response = await fetch(`${GOOGLE_DRIVE_API_BASE}/files?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to list Drive folder contents: ${errorText}`);
+  }
+
+  const data = await response.json();
+  const files = Array.isArray(data.files) ? data.files : [];
+
+  const folders = files
+    .filter((file) => file?.mimeType === "application/vnd.google-apps.folder")
+    .map((file) => ({
+      id: file.id,
+      name: file.name,
+      webViewLink: file.webViewLink || `https://drive.google.com/drive/folders/${file.id}`,
+      modifiedTime: file.modifiedTime || null,
+    }));
+
+  const videos = files
+    .filter((file) => typeof file?.mimeType === "string" && file.mimeType.startsWith("video/"))
+    .map((file) => ({
+      id: file.id,
+      name: file.name,
+      mimeType: file.mimeType,
+      webViewLink: file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`,
+      previewUrl: `https://drive.google.com/file/d/${file.id}/preview`,
+      thumbnailLink: file.thumbnailLink || null,
+      iconLink: file.iconLink || null,
+      modifiedTime: file.modifiedTime || null,
+      size: file.size || null,
+    }));
+
+  return {
+    folders,
+    videos,
+  };
+}
+
 export async function listAccessibleDriveFolders() {
   const accessToken = await getDriveAccessToken();
   const params = new URLSearchParams({
@@ -190,6 +340,156 @@ export async function listAccessibleDriveFolders() {
     webViewLink: file.webViewLink || `https://drive.google.com/drive/folders/${file.id}`,
     modifiedTime: file.modifiedTime || null,
   }));
+}
+
+export async function listDriveItemPermissions(itemId: string) {
+  if (!itemId) {
+    throw new Error("Google Drive item id is required");
+  }
+
+  const accessToken = await getDriveAccessToken();
+  const params = new URLSearchParams({
+    fields:
+      "id,name,permissions(id,type,role,emailAddress,displayName,domain,allowFileDiscovery,deleted)",
+    supportsAllDrives: "true",
+  });
+
+  const response = await fetch(
+    `${GOOGLE_DRIVE_API_BASE}/files/${itemId}?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to list Drive permissions: ${errorText}`);
+  }
+
+  const data = await response.json();
+  const permissions = Array.isArray(data.permissions) ? data.permissions : [];
+
+  return permissions.map((permission) => ({
+    id: permission.id,
+    type: permission.type || "unknown",
+    role: permission.role || "unknown",
+    emailAddress: permission.emailAddress || null,
+    displayName: permission.displayName || null,
+    domain: permission.domain || null,
+    allowFileDiscovery:
+      typeof permission.allowFileDiscovery === "boolean"
+        ? permission.allowFileDiscovery
+        : null,
+    deleted: Boolean(permission.deleted),
+  }));
+}
+
+export async function createDrivePermission({
+  itemId,
+  emailAddress,
+  role,
+}: {
+  itemId: string;
+  emailAddress: string;
+  role: string;
+}) {
+  if (!itemId) {
+    throw new Error("Google Drive item id is required");
+  }
+
+  if (!emailAddress) {
+    throw new Error("Email address is required");
+  }
+
+  const accessToken = await getDriveAccessToken();
+  const response = await fetch(
+    `${GOOGLE_DRIVE_API_BASE}/files/${itemId}/permissions?supportsAllDrives=true&sendNotificationEmail=false`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: "user",
+        role,
+        emailAddress,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to create Drive permission: ${errorText}`);
+  }
+
+  return response.json();
+}
+
+export async function updateDrivePermissionRole({
+  itemId,
+  permissionId,
+  role,
+}: {
+  itemId: string;
+  permissionId: string;
+  role: string;
+}) {
+  if (!itemId || !permissionId) {
+    throw new Error("Google Drive item id and permission id are required");
+  }
+
+  const accessToken = await getDriveAccessToken();
+  const response = await fetch(
+    `${GOOGLE_DRIVE_API_BASE}/files/${itemId}/permissions/${permissionId}?supportsAllDrives=true`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ role }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to update Drive permission: ${errorText}`);
+  }
+
+  return response.json();
+}
+
+export async function deleteDrivePermission({
+  itemId,
+  permissionId,
+}: {
+  itemId: string;
+  permissionId: string;
+}) {
+  if (!itemId || !permissionId) {
+    throw new Error("Google Drive item id and permission id are required");
+  }
+
+  const accessToken = await getDriveAccessToken();
+  const response = await fetch(
+    `${GOOGLE_DRIVE_API_BASE}/files/${itemId}/permissions/${permissionId}?supportsAllDrives=true`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to delete Drive permission: ${errorText}`);
+  }
+
+  return { success: true };
 }
 
 export async function grantDriveReaderAccess(resourceId: string, emailAddress: string) {

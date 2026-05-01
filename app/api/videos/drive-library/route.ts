@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getConfiguredDriveVideoFolderId,
-  listDriveFolderVideos,
+  listDriveFolderContents,
 } from "@/lib/server/googleDrive";
 
 export async function GET(req: NextRequest) {
@@ -17,11 +17,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const videos = await listDriveFolderVideos(folderId);
+    const { folders, videos } = await listDriveFolderContents(folderId);
 
     return NextResponse.json({
       folderId,
+      folderCount: folders.length,
       count: videos.length,
+      folders,
       videos,
     });
   } catch (error) {

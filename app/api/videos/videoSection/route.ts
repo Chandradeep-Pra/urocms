@@ -1,27 +1,22 @@
-import { adminDb } from "@/lib/firebaseAdmin"
+import {
+  createVideoSection,
+  listVideoSections,
+} from "@/lib/server/videoSectionService";
 
 export async function GET() {
-  const snapshot = await adminDb.collection("videoSections").get()
-
-  const sections = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }))
-
+  const sections = await listVideoSections();
   return Response.json(sections)
 }
 
 export async function POST(req: Request) {
-  const { title } = await req.json()
-
-  if (!title) {
-    return Response.json({ error: "Title required" }, { status: 400 })
+  try {
+    const { title, accessTier } = await req.json()
+    const result = await createVideoSection({ title, accessTier });
+    return Response.json(result)
+  } catch (error: any) {
+    return Response.json(
+      { error: error.message || "Could not create section" },
+      { status: 400 }
+    )
   }
-
-  const docRef = await adminDb.collection("videoSections").add({
-    title,
-    createdAt: new Date()
-  })
-
-  return Response.json({ id: docRef.id })
 }

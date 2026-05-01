@@ -24,6 +24,7 @@ export default function AddSectionDialog({
   onCreated,
 }: Props) {
   const [title, setTitle] = useState("");
+  const [accessTier, setAccessTier] = useState<"free" | "paid">("free");
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
@@ -37,10 +38,11 @@ export default function AddSectionDialog({
     await fetch("/api/videos/videoSection", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({ title, accessTier }),
     });
 
     setTitle("");
+    setAccessTier("free");
     setLoading(false);
     setOpen(false);
     onCreated();
@@ -70,6 +72,28 @@ export default function AddSectionDialog({
               onChange={(e) => setTitle(e.target.value)}
               className="h-11"
             />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Default Access</label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(["free", "paid"] as const).map((tier) => (
+                <button
+                  key={tier}
+                  type="button"
+                  onClick={() => setAccessTier(tier)}
+                  className={`rounded-2xl border px-4 py-3 text-left transition ${
+                    accessTier === tier
+                      ? tier === "paid"
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-950"
+                        : "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  <p className="text-sm font-medium capitalize">{tier}</p>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">

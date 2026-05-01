@@ -27,14 +27,14 @@ export default function VideoHeader({
 
   return (
     <div className="w-full border-b bg-[linear-gradient(180deg,#ffffff,#f8fafc)]">
-      <div className="space-y-8 px-12 py-10">
+      <div className="space-y-6 px-5 py-6 md:px-6 lg:px-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-3">
             <div className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
               Student-facing content
             </div>
             <div className="space-y-2">
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-950">
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
                 Video Library
               </h1>
               <p className="max-w-2xl text-sm leading-6 text-slate-500">
@@ -63,7 +63,7 @@ export default function VideoHeader({
           </div>
         </div>
 
-        <div className="max-w-[640px]">
+        <div className="max-w-[560px]">
           <SearchBar
             data={data}
             keys={["title", "description"]}

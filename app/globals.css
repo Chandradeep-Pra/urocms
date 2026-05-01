@@ -151,6 +151,18 @@
   .animate-marquee-slow {
     animation: uro-marquee 34s linear infinite;
   }
+
+  .landing-phone-stack {
+    animation: uro-phone-stack-base 1s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+  }
+
+  .landing-phone-stack-delay-one {
+    animation: uro-phone-stack-one 1.05s cubic-bezier(0.22, 1, 0.36, 1) 0.62s both;
+  }
+
+  .landing-phone-stack-delay-two {
+    animation: uro-phone-stack-two 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.74s both;
+  }
 }
 
 @keyframes uro-float {
@@ -202,3 +214,35 @@
   }
 }
 
+@keyframes uro-phone-stack-base {
+  0% {
+    opacity: 0;
+    transform: rotate(0deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes uro-phone-stack-one {
+  0% {
+    opacity: 0;
+    transform: rotate(0deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(24deg) scale(1);
+  }
+}
+
+@keyframes uro-phone-stack-two {
+  0% {
+    opacity: 0;
+    transform: rotate(0deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(45deg) scale(1);
+  }
+}

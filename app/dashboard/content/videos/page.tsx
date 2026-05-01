@@ -6,11 +6,12 @@ import SectionSidebar from "@/components/videos/SelectionSidebar";
 import VideoGrid from "@/components/videos/VideoGrid";
 import VideoHeader from "@/components/videos/VideoHeader";
 import VideoPlayerLayout from "@/components/videos/VideoPlayerLayout";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export interface Section {
   id: string;
   title: string;
+  accessTier?: "free" | "paid";
 }
 
 export interface VideoItem {
@@ -20,7 +21,8 @@ export interface VideoItem {
   videoUrl: string;
   sectionId: string;
   accessTier?: "free" | "paid";
-  provider?: "youtube" | "drive";
+  provider?: "youtube" | "drive" | "storage";
+  thumbnailUrl?: string;
 }
 
 export default function AdminVideoPage() {
@@ -43,27 +45,36 @@ export default function AdminVideoPage() {
     setVideos(data);
   };
 
+  const refreshLibrary = async () => {
+    await Promise.all([fetchSections(), fetchVideos()]);
+  };
+
   useEffect(() => {
     fetchSections();
     fetchVideos();
   }, []);
 
   // 🔥 Section filtering
-  const sectionFiltered =
-    activeSection === "all"
-      ? videos
-      : videos.filter(
-          (v) => v.sectionId === activeSection
-        );
+  const sectionFiltered = useMemo(
+    () =>
+      activeSection === "all"
+        ? videos
+        : videos.filter((v) => v.sectionId === activeSection),
+    [videos, activeSection]
+  );
 
   // 🔥 Keep filteredVideos synced
   useEffect(() => {
     setFilteredVideos(sectionFiltered);
-  }, [videos, activeSection]);
+  }, [sectionFiltered]);
+
+  const sectionsWithCounts = sections.map((section) => ({
+    ...section,
+    videoCount: videos.filter((video) => video.sectionId === section.id).length,
+  }));
 
   return (
     <div className="min-h-screen w-full bg-zinc-50">
-
       <VideoHeader
         data={sectionFiltered}
         onSearchResults={setFilteredVideos}
@@ -72,19 +83,26 @@ export default function AdminVideoPage() {
         onVideoCreated={fetchVideos}
       />
 
-      <div className="flex w-full">
+      <div className="flex min-h-[calc(100vh-160px)] w-full items-start">
         <SectionSidebar
-          sections={sections}
+          sections={sectionsWithCounts}
           activeSection={activeSection}
           setActiveSection={setActiveSection}
+          onSectionsChanged={refreshLibrary}
         />
 
-        <VideoGrid
-          videos={filteredVideos}
-          sections={sections}
-          onDelete={(id) => setDeleteId(id)}
-          onPlay={(video) => setActiveVideo(video)}
-        />
+        <div className="min-w-0 flex-1">
+          <VideoGrid
+            activeSection={activeSection}
+            videos={filteredVideos}
+            sections={sections}
+            onDelete={(id) => setDeleteId(id)}
+            onPlay={(video) => setActiveVideo(video)}
+            onVideosUpdated={fetchVideos}
+            onSectionsUpdated={fetchSections}
+          />
+        </div>
+
         <DriveVideoPanel />
         <VideoPlayerLayout
           video={activeVideo}

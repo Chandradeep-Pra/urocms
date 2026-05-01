@@ -19,14 +19,17 @@ export async function GET(req: NextRequest) {
     const snapshot = await query.get();
     const allVideos = snapshot.docs.map((doc) => ({
       id: doc.id,
-      accessTier: "free",
+      accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
+      effectiveAccessTier:
+        doc.data().effectiveAccessTier === "paid" ? "paid" : "free",
+      requiresGoogleSession: false,
       ...doc.data(),
     }));
 
     const videos =
       auth.user.tier === "paid"
         ? allVideos
-        : allVideos.filter((video) => video.accessTier !== "paid");
+        : allVideos.filter((video) => video.effectiveAccessTier !== "paid");
 
     return NextResponse.json({
       tier: auth.user.tier,

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Play, Pause, X, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface Props {
   video: any | null;
@@ -56,11 +57,82 @@ export default function VideoPlayerLayout({
   const [progress, setProgress] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [resolvedPlayback, setResolvedPlayback] = useState<any | null>(null);
+  const [loadingPlayback, setLoadingPlayback] = useState(false);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
 
   const parsed = useMemo(
-    () => (video ? parseVideo(video.videoUrl) : null),
-    [video]
+    () => {
+      if (!video) return null;
+
+      if (resolvedPlayback?.playback?.provider === "storage") {
+        return {
+          provider: "file",
+          streamUrl: resolvedPlayback.playback.url,
+        };
+      }
+
+      if (resolvedPlayback?.playback?.provider === "drive") {
+        return {
+          provider: "file",
+          streamUrl:
+            resolvedPlayback.playback.streamUrl ||
+            `/api/videos/videoItem/${video.id}/stream`,
+        };
+      }
+
+      return parseVideo(video.videoUrl);
+    },
+    [resolvedPlayback, video]
   );
+
+  useEffect(() => {
+    if (!video?.id) {
+      setResolvedPlayback(null);
+      setPlaybackError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadPlayback = async () => {
+      try {
+        setLoadingPlayback(true);
+        setPlaybackError(null);
+        const res = await fetch(`/api/videos/videoItem/${video.id}/play`);
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+          throw new Error(data?.error || "Failed to load video playback");
+        }
+
+        if (!cancelled) {
+          setResolvedPlayback(data);
+        }
+      } catch (error: any) {
+        if (!cancelled) {
+          setResolvedPlayback(null);
+          setPlaybackError(error.message || "Failed to load video playback");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingPlayback(false);
+        }
+      }
+    };
+
+    loadPlayback();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [video]);
+
+  useEffect(() => {
+    if (!video) {
+      setPlaybackError(null);
+    }
+  }, [video]);
 
   /* Autoplay */
   useEffect(() => {
@@ -175,7 +247,18 @@ export default function VideoPlayerLayout({
                 <div className="absolute inset-0 rounded-2xl shadow-[0_0_120px_rgba(0,0,0,0.7)] pointer-events-none" />
               )}
 
-              {parsed?.provider === "youtube" ? (
+              {loadingPlayback ? (
+                <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-slate-950 text-white">
+                  <div className="flex items-center gap-3 text-sm">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Preparing video...
+                  </div>
+                </div>
+              ) : playbackError ? (
+                <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-slate-950 px-8 text-center text-sm text-white/80">
+                  {playbackError}
+                </div>
+              ) : parsed?.provider === "youtube" ? (
                 <iframe
                   src={`https://www.youtube.com/embed/${parsed.youtubeId}?autoplay=1`}
                   className={`${
@@ -184,17 +267,6 @@ export default function VideoPlayerLayout({
                       : "w-full aspect-video rounded-2xl"
                   }`}
                   allow="autoplay; encrypted-media"
-                  allowFullScreen
-                />
-              ) : parsed?.provider === "drive" ? (
-                <iframe
-                  src={parsed.previewUrl}
-                  className={`${
-                    isFullscreen
-                      ? "w-full h-full"
-                      : "w-full aspect-video rounded-2xl"
-                  }`}
-                  allow="autoplay"
                   allowFullScreen
                 />
               ) : (
@@ -207,6 +279,8 @@ export default function VideoPlayerLayout({
                       : "w-full aspect-video rounded-2xl object-contain"
                   }`}
                   onTimeUpdate={handleTimeUpdate}
+                  controls={false}
+                  preload="metadata"
                   playsInline
                   muted
                   autoPlay

@@ -1,0 +1,9 @@
+export { LandingHeader } from "./Header";
+export { HeroSection } from "./HeroSection";
+export { TopicMarquee } from "./TopicMarquee";
+export { WhySection } from "./WhySection";
+export { PlatformSection } from "./PlatformSection";
+export { AiVivaSection } from "./AiVivaSection";
+export { MentorSection } from "./MentorSection";
+export { PricingSection } from "./PricingSection";
+export { LandingFooter } from "./Footer";
