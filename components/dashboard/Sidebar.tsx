@@ -5,6 +5,7 @@ import {
   Brain,
   ChevronRight,
   ClipboardList,
+  Crown,
   FileText,
   Folder,
   HelpCircle,
@@ -80,6 +81,7 @@ export const nav = [
     label: "System",
     icon: Settings,
     children: [
+      { name: "Plan Creator", href: "/dashboard/system/plan-creator", icon: Crown },
       { name: "Settings", href: "/dashboard/settings", icon: Settings },
       { name: "Access Simulator", href: "/dashboard/system/access-simulator", icon: Smartphone },
       // { name: "Roles & Access", href: "/dashboard/roles", icon: ShieldCheck },

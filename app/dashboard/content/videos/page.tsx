@@ -1,6 +1,7 @@
 "use client";
 
 import DeleteVideoDialog from "@/components/videos/DeleteDialog";
+import DriveVideoPanel from "@/components/videos/DriveVideoPanel";
 import SectionSidebar from "@/components/videos/SelectionSidebar";
 import VideoGrid from "@/components/videos/VideoGrid";
 import VideoHeader from "@/components/videos/VideoHeader";
@@ -84,6 +85,7 @@ export default function AdminVideoPage() {
           onDelete={(id) => setDeleteId(id)}
           onPlay={(video) => setActiveVideo(video)}
         />
+        <DriveVideoPanel />
         <VideoPlayerLayout
           video={activeVideo}
           onClose={() => setActiveVideo(null)}

@@ -80,18 +80,28 @@ const valuePoints = [
 ];
 
 const marqueeItems = [...topics, ...topics];
+const landingPanelClass =
+  "border border-[#c8ab52]/14 bg-[linear-gradient(180deg,rgba(8,20,40,0.97),rgba(4,11,23,0.985))] backdrop-blur-xl shadow-[0_34px_110px_rgba(0,4,14,0.7)]";
+const landingChipClass =
+  "inline-flex items-center rounded-full border border-[#c8ab52]/14 bg-[rgba(200,171,82,0.08)] px-3 py-1 text-xs text-white/78";
 
 export default function Page() {
   return (
-    <main className="uro-radial min-h-screen overflow-x-hidden text-white">
+    <main className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,rgba(200,171,82,0.12),transparent_14%),radial-gradient(circle_at_82%_18%,rgba(25,54,102,0.22),transparent_18%),radial-gradient(circle_at_50%_100%,rgba(10,24,47,0.28),transparent_30%),linear-gradient(180deg,#030813_0%,#08152a_24%,#0c2c53_58%,#050c18_100%)] text-white">
       <div className="pointer-events-none absolute inset-0 uro-grid opacity-20" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[620px] bg-[radial-gradient(circle_at_top,rgba(120,255,210,0.14),transparent_42%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[620px] bg-[radial-gradient(circle_at_top,rgba(210,184,92,0.12),transparent_32%)]" />
 
-      <header className="sticky top-0 z-40 border-b border-white/8 bg-[#07110f]/70 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/8 bg-[#061325]/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 text-sm font-bold text-emerald-200">
-              U
+            <div className="relative h-12 w-12 shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Urologics logo"
+                fill
+                className="object-contain"
+                sizes="48px"
+              />
             </div>
             <div>
               <p className="text-lg font-semibold tracking-tight text-white">Urologics</p>
@@ -114,7 +124,7 @@ export default function Page() {
             >
               <Link href="/pricing">View Pricing</Link>
             </Button>
-            <Button className="rounded-full bg-emerald-300 text-black hover:bg-emerald-200">
+            <Button className="rounded-full bg-[#d8bd67] text-[#09172d] hover:bg-[#e7cb74]">
               Get Early Access
             </Button>
           </div>
@@ -125,16 +135,16 @@ export default function Page() {
         <div className="mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-[1.02fr_0.98fr]">
           <div className="animate-slide-up space-y-8">
             <div className="flex flex-wrap gap-3">
-              <span className="uro-chip border-emerald-400/20 bg-emerald-400/10 text-emerald-100">
+              <span className={`${landingChipClass} border-[#d8bd67]/20 bg-[rgba(216,189,103,0.12)] text-[#f3df9a]`}>
                 Premium platform for FRCS medical candidates
               </span>
-              <span className="uro-chip">Under the direction of Dr. Ankit Goel</span>
+              <span className={landingChipClass}>Under the direction of Dr. Ankit Goel</span>
             </div>
 
             <div className="space-y-5">
               <h1 className="max-w-4xl text-5xl font-semibold leading-[0.94] tracking-[-0.05em] text-white sm:text-6xl lg:text-7xl">
                 FRCS urology preparation
-                <span className="block bg-[linear-gradient(135deg,#ffffff_10%,#81f7c6_42%,#8ecbff_88%)] bg-clip-text text-transparent">
+                <span className="block bg-[linear-gradient(135deg,#fff8db_4%,#f1d77c_46%,#c8ab52_88%)] bg-clip-text text-transparent">
                   that actually feels worth using.
                 </span>
               </h1>
@@ -147,7 +157,7 @@ export default function Page() {
             </div>
 
             <div className="flex flex-wrap gap-4">
-              <Button className="rounded-full bg-emerald-300 px-6 py-6 text-base text-black hover:bg-emerald-200">
+              <Button className="rounded-full bg-[#d8bd67] px-6 py-6 text-[#09172d] hover:bg-[#e7cb74]">
                 Join Waitlist
               </Button>
               <Button
@@ -166,9 +176,9 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="relative animate-slide-up">
-            <div className="absolute -left-8 top-10 h-40 w-40 rounded-full bg-emerald-300/15 blur-3xl animate-float-slow" />
-            <div className="absolute right-6 top-0 h-44 w-44 rounded-full bg-sky-300/10 blur-3xl animate-float-delay" />
+          <div className="relative animate-slide-up lg:pl-8 xl:pl-36">
+            <div className="absolute -left-8 top-10 h-40 w-40 rounded-full bg-[#d8bd67]/12 blur-3xl animate-float-slow" />
+            <div className="absolute right-6 top-0 h-44 w-44 rounded-full bg-[#7f95bb]/10 blur-3xl animate-float-delay" />
 
             <div className="grid gap-6 xl:grid-cols-[1.08fr_0.82fr]">
               {/* <div className="uro-panel rounded-[34px] p-5">
@@ -210,12 +220,12 @@ export default function Page() {
                 </div>
               </div> */}
 
-              <div className="relative mx-auto w-full max-w-[330px]">
-                <div className="relative mx-auto w-[300px] rounded-[48px] border border-white/12 bg-[#0a1310] p-[10px] shadow-[0_30px_90px_rgba(0,0,0,0.42)]">
+              <div className="relative mx-auto w-full max-w-[330px] lg:ml-auto lg:mr-0">
+                <div className="relative mx-auto w-[300px] rounded-[48px] border border-[#c8ab52]/14 bg-[#040c18] p-[10px] shadow-[0_36px_110px_rgba(0,4,14,0.74)]">
                   <div className="absolute left-1/2 top-[10px] h-[28px] w-[112px] -translate-x-1/2 rounded-full bg-black/80" />
                   <div className="absolute left-[10px] right-[10px] top-[10px] h-[calc(100%-20px)] rounded-[40px] border border-white/8" />
 
-                  <div className="relative overflow-hidden rounded-[38px] border border-white/10 bg-[linear-gradient(180deg,#0d1916,#070d0c)] px-5 pb-6 pt-10">
+                  <div className="relative overflow-hidden rounded-[38px] border border-[#c8ab52]/10 bg-[linear-gradient(180deg,#0c2140,#04101f)] px-5 pb-6 pt-10">
                     <div className="absolute inset-0">
                       <Image
                         src="/background.jpg"
@@ -253,7 +263,7 @@ export default function Page() {
                             Revise oncology cases, then attempt the AI viva station.
                           </p>
                         </div>
-                        <div className="rounded-[24px] border border-emerald-300/15 bg-emerald-300/10 p-4 text-sm text-emerald-50">
+                        <div className="rounded-[24px] border border-[#d8bd67]/14 bg-[rgba(216,189,103,0.12)] p-4 text-sm text-[#f4e2a8]">
                           Built to feel valuable the moment a student lands here.
                         </div>
                       </div>
@@ -271,7 +281,7 @@ export default function Page() {
         <div className="overflow-hidden whitespace-nowrap">
           <div className="animate-marquee inline-flex min-w-max gap-3 px-4">
             {marqueeItems.map((item, index) => (
-              <span key={`${item}-${index}`} className="uro-chip">
+              <span key={`${item}-${index}`} className={landingChipClass}>
                 {item}
               </span>
             ))}
@@ -283,7 +293,7 @@ export default function Page() {
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="space-y-5">
-              <p className="text-sm uppercase tracking-[0.22em] text-emerald-200/60">Why it matters</p>
+              <p className="text-sm uppercase tracking-[0.22em] text-[#e1c777]/70">Why it matters</p>
               <h2 className="text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
                 Students should immediately feel this helps them prepare better.
               </h2>
@@ -295,9 +305,9 @@ export default function Page() {
 
             <div className="grid gap-4">
               {valuePoints.map((item) => (
-                <div key={item.title} className="uro-panel rounded-[28px] p-6">
+                <div key={item.title} className={`${landingPanelClass} rounded-[28px] p-6`}>
                   <div className="flex items-start gap-4">
-                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-300/10 text-emerald-200">
+                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#d8bd67]/10 text-[#f1d77c]">
                       <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
@@ -315,7 +325,7 @@ export default function Page() {
       <section className="px-6 py-24">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 max-w-3xl">
-            <p className="text-sm uppercase tracking-[0.22em] text-emerald-200/60">Platform stack</p>
+              <p className="text-sm uppercase tracking-[0.22em] text-[#e1c777]/70">Platform stack</p>
             <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
               The full exam-prep workflow, not just one feature.
             </h2>
@@ -328,12 +338,12 @@ export default function Page() {
               return (
                 <div
                   key={item.title}
-                  className={`uro-panel rounded-[30px] p-6 transition duration-300 hover:-translate-y-1 hover:border-white/18 ${
-                    index === 5 ? "bg-[linear-gradient(180deg,rgba(88,255,191,0.12),rgba(255,255,255,0.04))]" : ""
+                  className={`${landingPanelClass} rounded-[30px] p-6 transition duration-300 hover:-translate-y-1 hover:border-white/22 ${
+                    index === 5 ? "bg-[linear-gradient(180deg,rgba(216,189,103,0.12),rgba(255,255,255,0.03))]" : ""
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/[0.05] text-emerald-200">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#d8bd67]/10 text-[#f1d77c]">
                       <Icon className="h-5 w-5" />
                     </div>
                     <ChevronRight className="h-4 w-4 text-white/30" />
@@ -351,8 +361,8 @@ export default function Page() {
 
       <section id="ai-viva" className="px-6 py-24">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="uro-panel rounded-[34px] p-8">
-            <p className="text-sm uppercase tracking-[0.22em] text-emerald-200/60">Signature differentiator</p>
+          <div className={`${landingPanelClass} rounded-[34px] p-8`}>
+            <p className="text-sm uppercase tracking-[0.22em] text-[#e1c777]/70">Signature differentiator</p>
             <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white">
               The AI viva system makes the product feel unmistakably more valuable.
             </h2>
@@ -380,15 +390,15 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="uro-panel rounded-[34px] p-5">
-            <div className="rounded-[28px] border border-white/10 bg-[#081310] p-5">
+          <div className={`${landingPanelClass} rounded-[34px] p-5`}>
+            <div className="rounded-[28px] border border-[#c8ab52]/10 bg-[#061224] p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-white/40">AI Viva frame</p>
               <h3 className="mt-2 text-2xl font-semibold text-white">Reserved for your real recording</h3>
-              <div className="relative mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,#0d1915,#08100d)]">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(94,234,212,0.14),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.15),transparent_28%)]" />
+              <div className="relative mt-5 overflow-hidden rounded-[28px] border border-[#c8ab52]/10 bg-[linear-gradient(135deg,#0a203e,#04101f)]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(216,189,103,0.12),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(79,104,150,0.12),transparent_26%)]" />
                 <div className="relative flex min-h-[420px] items-center justify-center px-8 py-12">
                   <div className="text-center">
-                    <button className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-white text-black shadow-[0_22px_60px_rgba(83,255,198,0.22)] transition hover:scale-105">
+                    <button className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-white text-black shadow-[0_22px_60px_rgba(61,104,165,0.18)] transition hover:scale-105">
                       <Play className="ml-1 h-8 w-8 fill-current" />
                     </button>
                     <p className="mt-6 text-lg font-medium text-white">AI viva demo placeholder</p>
@@ -405,11 +415,11 @@ export default function Page() {
 
       <section id="mentor" className="px-6 py-24">
         <div className="mx-auto grid max-w-7xl items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="uro-panel rounded-[34px] p-5">
-            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#13201b,#0a110f)] p-6">
+          <div className={`${landingPanelClass} rounded-[34px] p-5`}>
+            <div className="relative overflow-hidden rounded-[28px] border border-[#c8ab52]/10 bg-[linear-gradient(180deg,#0a203e,#04101f)] p-6">
               <div className="relative flex min-h-[360px] items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-white/[0.03] text-center">
                 <div className="max-w-xs space-y-3">
-                  <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-300/10 text-emerald-100">
+                  <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#d8bd67]/10 text-[#f1d77c]">
                     <GraduationCap className="h-9 w-9" />
                   </div>
                   <p className="text-lg font-semibold text-white">Dr. Ankit Goel</p>
@@ -421,8 +431,8 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="uro-panel rounded-[34px] p-8">
-            <p className="text-sm uppercase tracking-[0.22em] text-emerald-200/60">Academic direction</p>
+          <div className={`${landingPanelClass} rounded-[34px] p-8`}>
+            <p className="text-sm uppercase tracking-[0.22em] text-[#e1c777]/70">Academic direction</p>
             <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white">
               Made under the direction of Dr. Ankit Goel.
             </h2>
@@ -455,11 +465,11 @@ export default function Page() {
 
       <section className="px-6 pb-24 pt-10">
         <div className="mx-auto max-w-7xl">
-          <div className="relative overflow-hidden rounded-[40px] border border-white/10 bg-[linear-gradient(135deg,rgba(18,34,29,0.98),rgba(8,16,14,0.98))] px-8 py-10 sm:px-12 sm:py-14">
-            <div className="absolute -right-14 top-0 h-56 w-56 rounded-full bg-emerald-300/10 blur-3xl" />
+          <div className="relative overflow-hidden rounded-[40px] border border-[#c8ab52]/10 bg-[linear-gradient(135deg,rgba(10,32,62,0.98),rgba(4,16,31,0.98))] px-8 py-10 sm:px-12 sm:py-14">
+            <div className="absolute -right-14 top-0 h-56 w-56 rounded-full bg-[#d8bd67]/8 blur-3xl" />
             <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl">
-                <p className="text-sm uppercase tracking-[0.22em] text-emerald-200/60">Pricing</p>
+                <p className="text-sm uppercase tracking-[0.22em] text-[#e1c777]/70">Pricing</p>
                 <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
                   Explore plans built for serious candidates.
                 </h2>
@@ -468,7 +478,7 @@ export default function Page() {
                 </p>
               </div>
 
-              <Button asChild className="rounded-full bg-emerald-300 px-6 py-6 text-base text-black hover:bg-emerald-200">
+              <Button asChild className="rounded-full bg-[#d8bd67] px-6 py-6 text-base text-[#09172d] hover:bg-[#e7cb74]">
                 <Link href="/pricing">
                   View Pricing
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -482,8 +492,14 @@ export default function Page() {
       <footer className="border-t border-white/8 px-6 py-10">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 text-sm text-white/40 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-2xl border border-emerald-400/25 bg-emerald-400/10 text-sm font-bold text-emerald-200">
-              U
+            <div className="relative h-11 w-11 shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Urologics logo"
+                fill
+                className="object-contain"
+                sizes="44px"
+              />
             </div>
             <div>
               <p className="font-medium text-white/80">Urologics</p>
@@ -495,7 +511,7 @@ export default function Page() {
             <p>© {new Date().getFullYear()} Urologics · Under the direction of Dr. Ankit Goel</p>
             <Link
               href="/login"
-              className="text-xs uppercase tracking-[0.18em] text-emerald-200/80 underline underline-offset-4 hover:text-white"
+              className="text-xs uppercase tracking-[0.18em] text-[#e1c777]/80 underline underline-offset-4 hover:text-white"
             >
               Admin Login
             </Link>
@@ -516,7 +532,7 @@ function HeroMetric({
   text: string;
 }) {
   return (
-    <div className="uro-panel rounded-[28px] px-5 py-5">
+    <div className={`${landingPanelClass} rounded-[28px] px-5 py-5`}>
       <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">{label}</p>
       <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-white">{value}</p>
       <p className="mt-2 text-sm leading-6 text-white/55">{text}</p>
@@ -526,7 +542,7 @@ function HeroMetric({
 
 function MiniPanel({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-[20px] border border-white/8 bg-white/[0.04] p-3">
+    <div className="rounded-[20px] border border-[#c8ab52]/10 bg-[rgba(255,255,255,0.04)] p-3">
       <p className="text-sm font-medium text-white">{title}</p>
       <p className="mt-1 text-xs leading-6 text-white/50">{text}</p>
     </div>
@@ -542,7 +558,7 @@ function PhoneLine({ label, width }: { label: string; width: string }) {
       </div>
       <div className="h-2 rounded-full bg-white/8">
         <div
-          className="h-2 rounded-full bg-[linear-gradient(90deg,#7bf4bf,#8ecbff)]"
+          className="h-2 rounded-full bg-[linear-gradient(90deg,#f1d77c,#c8ab52)]"
           style={{ width }}
         />
       </div>
@@ -561,7 +577,7 @@ function ValueRow({
 }) {
   return (
     <div className="flex gap-4 rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-300/10 text-emerald-200">
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#d8bd67]/10 text-[#f1d77c]">
         <Icon className="h-5 w-5" />
       </div>
       <div>
