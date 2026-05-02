@@ -5,7 +5,7 @@ export const panelInsetClass =
   "rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015))]";
 
 export const chipClass =
-  "inline-flex items-center rounded-full border border-[rgba(214,190,130,0.18)] bg-[linear-gradient(180deg,rgba(214,190,130,0.11),rgba(214,190,130,0.04))] px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-[#e7d6a6]";
+  "inline-flex items-center rounded-full border border-[rgba(214,190,130,0.18)] bg-[linear-gradient(180deg,rgba(214,190,130,0.11),rgba(214,190,130,0.04))] px-3 py-1 text-[20px] uppercase tracking-[0.22em] text-[#e7d6a6]";
 
 export const goldGradient =
   "bg-[linear-gradient(135deg,#fff1c7_0%,#dfc17b_32%,#ba8b38_64%,#f1db9f_100%)]";

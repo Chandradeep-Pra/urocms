@@ -152,6 +152,29 @@
     animation: uro-marquee 34s linear infinite;
   }
 
+  .success-marquee {
+    animation: uro-marquee 30s linear infinite;
+  }
+
+  .gold-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(214, 190, 130, 0.8) rgba(255, 255, 255, 0.04);
+  }
+
+  .gold-scrollbar::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .gold-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 999px;
+  }
+
+  .gold-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, rgba(241, 219, 159, 0.92), rgba(186, 139, 56, 0.92));
+    border-radius: 999px;
+  }
+
   .landing-phone-stack {
     animation: uro-phone-stack-base 1s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
   }

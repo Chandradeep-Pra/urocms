@@ -3,6 +3,8 @@
 import { useState } from "react";
 import {
   Check,
+  CloudUpload,
+  ImageUp,
   Loader2,
   Lock,
   Pencil,
@@ -18,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import SectionActionPanel from "@/components/videos/SectionActionPanel";
 import { VideoItem } from "@/app/dashboard/content/videos/page";
+import { syncVideoToStorage } from "@/lib/services/videoAdminClient";
 
 interface Props {
   activeSection: string;
@@ -47,7 +50,18 @@ export default function VideoGrid({
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [uploadingThumbnailId, setUploadingThumbnailId] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<VideoItem>>({});
+
+  const stopCardPreview = (
+    event:
+      | React.MouseEvent<HTMLElement>
+      | React.PointerEvent<HTMLElement>
+      | React.KeyboardEvent<HTMLElement>
+  ) => {
+    event.stopPropagation();
+  };
 
   const getSectionName = (id: string) =>
     sections.find((section) => section.id === id)?.title || "Unassigned";
@@ -108,6 +122,66 @@ export default function VideoGrid({
     }
   };
 
+  const uploadThumbnail = async (
+    id: string,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "video-thumbnails");
+
+    const toastId = toast.loading("Uploading thumbnail...");
+    setUploadingThumbnailId(id);
+
+    try {
+      const res = await fetch("/api/cloudinary-upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || "Thumbnail upload failed");
+      }
+
+      setForm((current) => ({
+        ...current,
+        thumbnailUrl: data.url,
+      }));
+      toast.success("Thumbnail uploaded", { id: toastId });
+    } catch (error: any) {
+      toast.error(error.message || "Thumbnail upload failed", { id: toastId });
+    } finally {
+      setUploadingThumbnailId(null);
+      event.target.value = "";
+    }
+  };
+
+  const syncToStorage = async (video: VideoItem) => {
+    const toastId = toast.loading("Syncing Drive video to Firebase Storage...");
+    setSyncingId(video.id);
+
+    try {
+      const result = await syncVideoToStorage(video.id);
+      await onVideosUpdated();
+      toast.success(
+        result.alreadySynced
+          ? "Video was already synced to Firebase Storage"
+          : "Video synced to Firebase Storage and ready for in-app playback",
+        { id: toastId }
+      );
+    } catch (error: any) {
+      toast.error(error.message || "Failed to sync video to Firebase Storage", {
+        id: toastId,
+      });
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
   return (
     <div className="min-w-0 flex-1 p-4 md:p-5 lg:p-6">
       <div className="mb-5 flex items-end justify-between gap-4 rounded-3xl border border-slate-200 bg-white px-5 py-4">
@@ -150,6 +224,7 @@ export default function VideoGrid({
             const thumbnail =
               video.thumbnailUrl ||
               (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null);
+            const isStorageSynced = Boolean(video.storagePath);
 
             return (
               <Card
@@ -178,7 +253,11 @@ export default function VideoGrid({
 
                   <div className="absolute left-4 top-4 flex gap-2">
                     <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-slate-700 backdrop-blur">
-                      {video.provider === "drive" ? "Google Drive" : "YouTube"}
+                      {isStorageSynced
+                        ? "Firebase Storage"
+                        : video.provider === "drive"
+                          ? "Google Drive"
+                          : "YouTube"}
                     </span>
                     <span
                       className={`rounded-full px-3 py-1 text-[11px] font-medium backdrop-blur ${
@@ -189,6 +268,11 @@ export default function VideoGrid({
                     >
                       {video.accessTier === "paid" ? "Paid" : "Free"}
                     </span>
+                    {isStorageSynced ? (
+                      <span className="rounded-full bg-amber-400/95 px-3 py-1 text-[11px] font-medium text-slate-950 backdrop-blur">
+                        Synced
+                      </span>
+                    ) : null}
                   </div>
 
                   {video.accessTier === "paid" && (
@@ -208,19 +292,49 @@ export default function VideoGrid({
                       variant="secondary"
                       size="icon"
                       className="h-9 w-9 rounded-full border border-white/60 bg-white/90 backdrop-blur hover:bg-white"
+                      onPointerDown={stopCardPreview}
                       onClick={(event) => {
-                        event.stopPropagation();
+                        stopCardPreview(event);
                         startEditing(video);
                       }}
                     >
                       <Pencil className="h-4 w-4 text-slate-700" />
                     </Button>
+                    {video.provider === "drive" ? (
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        disabled={syncingId === video.id || isStorageSynced}
+                        className="h-9 w-9 rounded-full border border-white/60 bg-white/90 backdrop-blur hover:bg-white disabled:opacity-100"
+                        onPointerDown={stopCardPreview}
+                        onClick={(event) => {
+                          stopCardPreview(event);
+                          syncToStorage(video);
+                        }}
+                        title={
+                          isStorageSynced
+                            ? "Already synced to Firebase Storage"
+                            : "Sync to Firebase Storage"
+                        }
+                      >
+                        {syncingId === video.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-slate-700" />
+                        ) : (
+                          <CloudUpload
+                            className={`h-4 w-4 ${
+                              isStorageSynced ? "text-amber-600" : "text-slate-700"
+                            }`}
+                          />
+                        )}
+                      </Button>
+                    ) : null}
                     <Button
                       variant="secondary"
                       size="icon"
                       className="h-9 w-9 rounded-full border border-white/60 bg-white/90 backdrop-blur hover:bg-white"
+                      onPointerDown={stopCardPreview}
                       onClick={(event) => {
-                        event.stopPropagation();
+                        stopCardPreview(event);
                         onDelete(video.id);
                       }}
                     >
@@ -268,6 +382,39 @@ export default function VideoGrid({
                         }
                         placeholder="Thumbnail URL override (optional)"
                       />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="inline-flex cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={(event) => uploadThumbnail(video.id, event)}
+                            disabled={uploadingThumbnailId === video.id}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={uploadingThumbnailId === video.id}
+                          >
+                            {uploadingThumbnailId === video.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Uploading
+                              </>
+                            ) : (
+                              <>
+                                <ImageUp className="h-4 w-4" />
+                                Upload Thumbnail
+                              </>
+                            )}
+                          </Button>
+                        </label>
+                        {form.thumbnailUrl ? (
+                          <span className="text-xs text-slate-500">
+                            Cloudinary image ready
+                          </span>
+                        ) : null}
+                      </div>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <select
                           className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-900"
@@ -325,12 +472,19 @@ export default function VideoGrid({
                       <h3 className="line-clamp-2 text-base font-semibold text-slate-900">
                         {video.title}
                       </h3>
-                      <ChevronBadge label={getSectionName(video.sectionId)} />
+                      {/* <ChevronBadge label={getSectionName(video.sectionId)} /> */}
                     </div>
 
                     <p className="line-clamp-2 text-sm leading-6 text-slate-500">
                       {video.description || "No description added yet."}
                     </p>
+                    {video.provider === "drive" ? (
+                      <p className="text-xs font-medium text-slate-400">
+                        {isStorageSynced
+                          ? "Playback now uses Firebase Storage."
+                          : "Sync this Drive video to Firebase Storage for in-app playback."}
+                      </p>
+                    ) : null}
                   </div>
                 )}
               </Card>

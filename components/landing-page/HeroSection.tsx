@@ -1,35 +1,43 @@
-import { CirclePlay, GraduationCap } from "lucide-react";
+import { Apple, CirclePlay, Laptop, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { panelClass, chipClass, goldGradient } from "@/components/landing-page/theme";
-import { HeroMetric, LandingBadge, PhoneMock } from "@/components/landing-page/primitives";
+import {
+  panelClass,
+  chipClass,
+  goldGradient,
+} from "@/components/landing-page/theme";
+import {
+  HeroMetric,
+  LandingBadge,
+  PhoneMock,
+} from "@/components/landing-page/primitives";
 
 export function HeroSection() {
   return (
     <section className="relative px-6 pb-24 pt-16 sm:pt-20">
       <div className="mx-auto grid max-w-7xl items-start gap-14 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="animate-slide-up space-y-8">
-          <div className="flex flex-wrap gap-3">
+          {/* <div className="flex flex-wrap gap-3">
             <span className={chipClass}>Advanced prep for FRCS candidates</span>
             <span className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-white/62">
               Under the direction of Dr. Ankit Goel
             </span>
-          </div>
+          </div> */}
 
           <div className="space-y-6">
             <h1 className="max-w-4xl text-5xl font-semibold leading-[0.92] tracking-[-0.06em] text-white sm:text-6xl lg:text-[78px]">
-              A premium prep platform
-              <span className={`mt-2 block bg-clip-text text-transparent ${goldGradient}`}>
-                where clinical education meets advanced exam technology.
+              World's First #
+              <span
+                className={`mt-2 block bg-clip-text text-transparent ${goldGradient}`}
+              >
+                App based Learning Platform for FRCS Urology
               </span>
             </h1>
+            <span className={chipClass}>Powered by Urologics AI</span>
 
-            <p className="max-w-2xl text-lg leading-8 text-[#d5def0]/72 sm:text-xl">
-              Urologics combines structured video learning, chapter-wise quizzes, weekly and grand mocks, progress
-              analytics, and a standout AI viva system into one serious FRCS preparation environment.
-            </p>
+            
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-[1.2fr_0.8fr]">
+          {/* <div className="grid gap-4 sm:grid-cols-[1.2fr_0.8fr]">
             <div className={`${panelClass} p-5`}>
               <div className="absolute inset-x-6 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(233,210,149,0.7),transparent)]" />
               <p className="text-[11px] uppercase tracking-[0.24em] text-[#ebd9aa]/78">Why it converts</p>
@@ -57,7 +65,7 @@ export function HeroSection() {
                 Designed to feel closer to a premium clinical learning system than a generic edtech app.
               </p>
             </div>
-          </div>
+          </div> */}
 
           <div className="flex flex-wrap gap-4">
             <Button
@@ -75,9 +83,18 @@ export function HeroSection() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <HeroMetric label="Learning layers" value="6" text="core preparation surfaces in one product" />
-            <HeroMetric label="Standout edge" value="AI Viva" text="high-value simulation experience" />
-            <HeroMetric label="Progress loop" value="Tracked" text="consumption, mocks, and growth signals" />
+            <HeroMetric
+              label="iOS Store"
+              valueIcon={Apple}
+            />
+            <HeroMetric
+              label="Play Store"
+              valueIcon={Smartphone}
+            />
+            <HeroMetric
+              label="Web Platform"
+              valueIcon={Laptop}
+            />
           </div>
         </div>
 
@@ -91,16 +108,7 @@ export function HeroSection() {
                 <PhoneMock imageSrc="/phone-sc-3.jpeg" />
               </div>
             </div>
-            <div className="absolute left-1/2 -top-24 z-20 -translate-x-1/2">
-              <div className="landing-phone-stack-delay-one origin-bottom transform-gpu">
-                <PhoneMock imageSrc="/phone-sc-1.jpeg" />
-              </div>
-            </div>
-            <div className="absolute left-1/2 -top-24 z-30 -translate-x-1/2">
-              <div className="landing-phone-stack-delay-two origin-bottom transform-gpu">
-                <PhoneMock imageSrc="/phone-sc-2.jpeg" />
-              </div>
-            </div>
+            
           </div>
         </div>
       </div>

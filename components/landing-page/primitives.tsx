@@ -3,20 +3,25 @@ import { type LucideIcon } from "lucide-react";
 import { panelClass } from "@/components/landing-page/theme";
 
 export function HeroMetric({
+  valueIcon: ValueIcon,
   label,
   value,
-  text,
 }: {
+  valueIcon?: LucideIcon;
   label: string;
-  value: string;
-  text: string;
+  value?: string;
 }) {
   return (
     <div className={`${panelClass} px-5 py-5`}>
       <div className="absolute inset-x-5 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(233,210,149,0.65),transparent)]" />
-      <p className="text-[11px] uppercase tracking-[0.18em] text-white/42">{label}</p>
-      <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-white">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-white/58">{text}</p>
+      <p className="text-center text-[11px] uppercase tracking-[0.18em] text-white/42">{label}</p>
+      {ValueIcon ? (
+        <div className="mt-5 flex justify-center">
+          <ValueIcon className="h-16 w-16 text-[#f3dfae]" />
+        </div>
+      ) : value ? (
+        <p className="mt-5 text-center text-3xl font-semibold tracking-[-0.04em] text-white">{value}</p>
+      ) : null}
     </div>
   );
 }
@@ -49,7 +54,7 @@ export function PhoneMock({
       <div className="absolute left-[10px] right-[10px] top-[10px] h-[calc(100%-20px)] rounded-[44px] border border-white/7" />
 
       <div className="relative min-h-[560px] overflow-hidden rounded-[42px] border border-[rgba(214,190,130,0.12)] bg-[linear-gradient(180deg,#08111f,#030814)]">
-        <Image src={imageSrc} alt="" fill className="object-cover" sizes="310px" />
+        <Image src={imageSrc} alt="" fill className="object-cover" sizes="420px" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,8,20,0.06),rgba(2,8,20,0.2))]" />
       </div>
     </div>

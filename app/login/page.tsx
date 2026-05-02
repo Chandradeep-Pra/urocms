@@ -19,8 +19,9 @@ export default function LoginPage() {
       setLoading(true)
       await signInWithEmailAndPassword(auth, email, password)
       router.push("/dashboard")
-    } catch (err) {
-      setError("Invalid email or password")
+    } catch (err: any) {
+      console.error("Admin login error:", err)
+      setError(err?.message || "Invalid email or password")
     } finally {
       setLoading(false)
     }

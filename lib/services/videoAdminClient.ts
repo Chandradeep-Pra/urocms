@@ -77,6 +77,20 @@ export async function createVideoItem(payload: {
   return parseJson<{ id: string }>(res);
 }
 
+export async function syncVideoToStorage(videoId: string) {
+  const res = await fetch(`/api/videos/videoItem/${videoId}/sync-storage`, {
+    method: "POST",
+  });
+
+  return parseJson<{
+    success: true;
+    id: string;
+    storagePath: string;
+    mimeType?: string;
+    alreadySynced: boolean;
+  }>(res);
+}
+
 export async function importDriveVideosToSection(input: {
   sectionId: string;
   sectionName: string;

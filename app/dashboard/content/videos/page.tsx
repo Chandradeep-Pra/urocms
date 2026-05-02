@@ -23,6 +23,9 @@ export interface VideoItem {
   accessTier?: "free" | "paid";
   provider?: "youtube" | "drive" | "storage";
   thumbnailUrl?: string;
+  storagePath?: string;
+  mimeType?: string;
+  syncedToStorageAt?: string;
 }
 
 export default function AdminVideoPage() {

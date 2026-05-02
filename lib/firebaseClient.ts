@@ -1,5 +1,9 @@
 import { initializeApp, getApps, getApp } from "firebase/app"
-import { getAuth } from "firebase/auth"
+import {
+  browserLocalPersistence,
+  getAuth,
+  setPersistence,
+} from "firebase/auth"
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -12,3 +16,9 @@ const app = !getApps().length
   : getApp()
 
 export const auth = getAuth(app)
+
+if (typeof window !== "undefined") {
+  setPersistence(auth, browserLocalPersistence).catch(() => {
+    // Ignore persistence setup failure and fall back to Firebase defaults.
+  })
+}

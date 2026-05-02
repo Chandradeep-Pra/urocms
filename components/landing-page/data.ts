@@ -33,7 +33,7 @@ export const topics = [
 export const features: LandingFeature[] = [
   {
     icon: Video,
-    title: "Video courses",
+    title: "FRCS Section 1",
     text: "Exam-relevant lectures and focused revision blocks designed for deliberate FRCS preparation.",
     tone: "from-[#e7d39f1a] via-[#a9823324] to-transparent",
     span: "xl:col-span-2",
@@ -41,7 +41,7 @@ export const features: LandingFeature[] = [
   },
   {
     icon: Layers3,
-    title: "Chapter wise quizzes",
+    title: "FRCS Section 2",
     text: "Turn each topic into measurable progress with targeted question practice and clearer recall loops.",
     tone: "from-[#b8c7ef14] via-[#6f8dcf18] to-transparent",
     span: "xl:col-span-1",
@@ -49,7 +49,7 @@ export const features: LandingFeature[] = [
   },
   {
     icon: Trophy,
-    title: "Weekly mock tests",
+    title: "FEBU Section 1",
     text: "Create a disciplined study rhythm and benchmark yourself against a more realistic exam cadence.",
     tone: "from-[#e7d39f17] via-[#83632f1f] to-transparent",
     span: "xl:col-span-1",
@@ -57,7 +57,7 @@ export const features: LandingFeature[] = [
   },
   {
     icon: Crown,
-    title: "Grand mocks",
+    title: "FEBU Section 2",
     text: "Full-length pressure simulations to rehearse timing, answer quality, and clinical discipline.",
     tone: "from-[#d8bc6b18] via-[#8b692d22] to-transparent",
     span: "xl:col-span-1",
@@ -65,7 +65,7 @@ export const features: LandingFeature[] = [
   },
   {
     icon: BarChart3,
-    title: "Progress intelligence",
+    title: "Viva in Dreams",
     text: "Track what has been consumed, what is improving, and where the candidate still needs focused work.",
     tone: "from-[#a9bde91a] via-[#4f699d1f] to-transparent",
     span: "xl:col-span-1",
@@ -73,7 +73,23 @@ export const features: LandingFeature[] = [
   },
   {
     icon: Brain,
-    title: "AI viva system",
+    title: "Urologics AI",
+    text: "The signature differentiator: an advanced viva experience designed to feel close to the pressure of the real room.",
+    tone: "from-[#f3e0ae22] via-[#a1782f24] to-transparent",
+    span: "xl:col-span-2",
+    points: ["Calm and rapid modes", "Exam-style questioning", "High perceived value"],
+  },
+  {
+    icon: BarChart3,
+    title: "Practice with Mentor",
+    text: "Track what has been consumed, what is improving, and where the candidate still needs focused work.",
+    tone: "from-[#a9bde91a] via-[#4f699d1f] to-transparent",
+    span: "xl:col-span-1",
+    points: ["Consumption analytics", "Attempt history", "Clear next-step signals"],
+  },
+  {
+    icon: Brain,
+    title: "Urologics Resident Teaching",
     text: "The signature differentiator: an advanced viva experience designed to feel close to the pressure of the real room.",
     tone: "from-[#f3e0ae22] via-[#a1782f24] to-transparent",
     span: "xl:col-span-2",

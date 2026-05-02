@@ -1,12 +1,13 @@
 import {
   AiVivaSection,
+  FaceToFaceSection,
   HeroSection,
   LandingFooter,
   LandingHeader,
   MentorSection,
   PlatformSection,
   PricingSection,
-  TopicMarquee,
+  SuccessStoriesSection,
   WhySection,
 } from "@/components/landing-page";
 
@@ -20,11 +21,13 @@ export default function Page() {
       <LandingHeader />
       <div className="h-[92px]" aria-hidden="true" />
       <HeroSection />
-      <TopicMarquee />
-      <WhySection />
-      <PlatformSection />
-      <AiVivaSection />
       <MentorSection />
+      <PlatformSection />
+      <FaceToFaceSection />
+      <AiVivaSection />
+      <SuccessStoriesSection />
+      {/* Different different question like ( daily quiz, grand mocks, weekly mocks) */}
+      {/* <WhySection /> */}
       <PricingSection />
       <LandingFooter />
     </main>

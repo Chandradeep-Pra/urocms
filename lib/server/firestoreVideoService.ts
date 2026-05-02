@@ -1,5 +1,16 @@
-import { adminDb, adminStorage } from "@/lib/firebaseAdmin";
-import { grantDriveAccessToEmail } from "@/lib/server/googleDrive";
+import { extname } from "path";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
+import {
+  adminDb,
+  adminStorage,
+  getResolvedAdminStorageBucket,
+} from "@/lib/firebaseAdmin";
+import {
+  fetchDriveFileStream,
+  getDriveFileMetadata,
+  grantDriveAccessToEmail,
+} from "@/lib/server/googleDrive";
 import { parseVideo } from "@/utils/urlParser";
 
 export type VideoAccessTier = "free" | "paid";
@@ -26,6 +37,26 @@ export interface PlayVideoFromFirestoreInput {
     tier?: VideoAccessTier | "guest";
   };
   mode: "admin" | "app";
+}
+
+function sanitizeFilenamePart(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9.-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function getExtensionFromMetadata(name: string, mimeType: string) {
+  const existingExtension = extname(name || "").trim();
+  if (existingExtension) return existingExtension;
+
+  if (mimeType === "video/mp4") return ".mp4";
+  if (mimeType === "video/quicktime") return ".mov";
+  if (mimeType === "video/x-matroska") return ".mkv";
+  if (mimeType === "video/webm") return ".webm";
+
+  return ".mp4";
 }
 
 function normalizeTier(value: unknown): VideoAccessTier {
@@ -147,8 +178,16 @@ export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
   return { id: docRef.id, effectiveAccessTier };
 }
 
-async function getStorageSignedUrl(storagePath: string, mimeType?: string) {
-  const [url] = await adminStorage.file(storagePath).getSignedUrl({
+async function getStorageSignedUrl(
+  storagePath: string,
+  mimeType?: string,
+  storageBucketName?: string
+) {
+  const bucket = storageBucketName
+    ? adminStorage.storage.bucket(storageBucketName)
+    : await getResolvedAdminStorageBucket();
+
+  const [url] = await bucket.file(storagePath).getSignedUrl({
     action: "read",
     expires: Date.now() + 1000 * 60 * 15,
     responseDisposition: "inline",
@@ -156,6 +195,66 @@ async function getStorageSignedUrl(storagePath: string, mimeType?: string) {
   });
 
   return url;
+}
+
+export async function syncDriveVideoToStorage(videoId: string) {
+  const videoRef = adminDb.collection("videoItems").doc(videoId);
+  const videoDoc = await videoRef.get();
+
+  if (!videoDoc.exists) {
+    throw new Error("Video not found");
+  }
+
+  const data = videoDoc.data() ?? {};
+  if (data.provider !== "drive" || !data.driveFileId) {
+    throw new Error("Only Drive videos can be synced to Firebase Storage");
+  }
+
+  if (data.storagePath) {
+    return {
+      id: videoId,
+      storagePath: String(data.storagePath),
+      alreadySynced: true,
+    };
+  }
+
+  const metadata = await getDriveFileMetadata(String(data.driveFileId));
+  const extension = getExtensionFromMetadata(metadata.name, metadata.mimeType);
+  const titlePart = sanitizeFilenamePart(String(data.title || metadata.name || "video"));
+  const filename = `${titlePart || "video"}${extension}`;
+  const storagePath = `videos/${videoId}/${Date.now()}-${filename}`;
+
+  const upstream = await fetchDriveFileStream(String(data.driveFileId));
+  if (!upstream.body) {
+    throw new Error("Drive response did not include a stream body");
+  }
+
+  const bucket = await getResolvedAdminStorageBucket();
+
+  const uploadStream = bucket.file(storagePath).createWriteStream({
+    resumable: false,
+    metadata: {
+      contentType: metadata.mimeType || "video/mp4",
+      cacheControl: "private, max-age=3600",
+    },
+  });
+
+  await pipeline(Readable.fromWeb(upstream.body as globalThis.ReadableStream), uploadStream);
+
+  await videoRef.update({
+    storagePath,
+    storageBucket: bucket.name,
+    mimeType: metadata.mimeType || data.mimeType || "video/mp4",
+    updatedAt: new Date(),
+    syncedToStorageAt: new Date(),
+  });
+
+  return {
+    id: videoId,
+    storagePath,
+    mimeType: metadata.mimeType || "video/mp4",
+    alreadySynced: false,
+  };
 }
 
 export async function playVideoFromFirestore(input: PlayVideoFromFirestoreInput) {
@@ -192,7 +291,8 @@ export async function playVideoFromFirestore(input: PlayVideoFromFirestoreInput)
   if (provider === "storage" && data.storagePath) {
     const signedUrl = await getStorageSignedUrl(
       String(data.storagePath),
-      typeof data.mimeType === "string" ? data.mimeType : undefined
+      typeof data.mimeType === "string" ? data.mimeType : undefined,
+      typeof data.storageBucket === "string" ? data.storageBucket : undefined
     );
 
     playback = {
