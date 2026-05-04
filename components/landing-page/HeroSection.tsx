@@ -2,6 +2,7 @@ import { Apple, CirclePlay, Laptop, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { chipClass, goldGradient } from "@/components/landing-page/theme";
 import { HeroMetric, PhoneMock } from "@/components/landing-page/primitives";
+import { StoreButton } from "./StoreButton";
 
 export function HeroSection() {
   return (
@@ -29,11 +30,28 @@ export function HeroSection() {
             </Button>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <HeroMetric label="iOS Store" valueIcon={Apple} />
-            <HeroMetric label="Play Store" valueIcon={Smartphone} />
-            <HeroMetric label="Web Platform" valueIcon={Laptop} />
-          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+  <StoreButton
+    href="#"
+    icon="/apple-logo.png"
+    eyebrow="Download on the"
+    label="App Store"
+  />
+
+  <StoreButton
+    href="#"
+    icon="/google-play.png"
+    eyebrow="Get it on"
+    label="Google Play"
+  />
+
+  <StoreButton
+    href="#"
+    icon="/web.png"
+    eyebrow="Continue on"
+    label="Web Platform"
+  />
+</div>
         </div>
 
         <div className="relative animate-slide-up self-start pt-16 lg:pl-8 xl:pl-16">

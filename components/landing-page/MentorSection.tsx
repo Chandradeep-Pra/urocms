@@ -49,16 +49,16 @@ export function MentorSection() {
     <section ref={sectionRef} id="mentor" className="bg-white px-6 py-24">
       <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="relative overflow-hidden rounded-[32px] border border-[#0f7896]/18 bg-white p-3 shadow-[0_18px_50px_rgba(15,120,150,0.08)]">
-          <div className="relative min-h-[560px] overflow-hidden rounded-[24px]">
-            <Image
-              src="/my-mentor-2.jpeg"
-              alt="Dr. Ankit Goel"
-              fill
-              className="object-cover object-center"
-              sizes="(max-width: 1024px) 100vw, 52vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          </div>
+         <div className="overflow-hidden rounded-[24px]">
+  <Image
+    src="/my-mentor-2.jpeg"
+    alt="Dr. Ankit Goel"
+    width={800}   // adjust if needed
+    height={1000} // maintain your image ratio
+    className="h-auto w-full object-contain"
+    priority
+  />
+</div>
         </div>
 
         <div>
@@ -76,40 +76,60 @@ export function MentorSection() {
             Gold Medalist
           </div>
 
-          <div className="mt-10 space-y-5">
-            {mentorHighlights.map((item, index) => (
-              <div
-                key={item.title}
-                className={`group flex items-start gap-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                  isInView
-                    ? "translate-y-0 opacity-100"
-                    : "translate-y-5 opacity-0"
-                }`}
-                style={{
-                  transitionDelay: isInView ? `${index * 130}ms` : "0ms",
-                }}
-              >
-                <div
-                  className={`mt-3 h-2.5 w-2.5 shrink-0 rounded-full bg-[#0f7896] shadow-[0_0_0_6px_rgba(15,120,150,0.10)] transition-all duration-500 ${
-                    isInView ? "scale-100 opacity-100" : "scale-0 opacity-0"
-                  }`}
-                  style={{
-                    transitionDelay: isInView ? `${index * 130}ms` : "0ms",
-                  }}
-                />
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+  {mentorHighlights.map((item, index) => {
+    const colorStyles = [
+      {
+        bg: "bg-[#0f7896]/8",
+        border: "border-[#0f7896]/20",
+        title: "text-[#0f7896]",
+      },
+      {
+        bg: "bg-[#7c6ee6]/10",
+        border: "border-[#7c6ee6]/20",
+        title: "text-[#7c6ee6]",
+      },
+      {
+        bg: "bg-[#e6a63a]/12",
+        border: "border-[#e6a63a]/25",
+        title: "text-[#e6a63a]",
+      },
+      {
+        bg: "bg-[#3bb273]/12",
+        border: "border-[#3bb273]/25",
+        title: "text-[#3bb273]",
+      },
+    ];
 
-                <div className="border-b border-[#0f7896]/10 pb-5">
-                  <p className="inline-flex rounded-full bg-[#0f7896]/10 px-3 py-1 text-lg font-bold tracking-[-0.03em] text-[#0f7896] transition duration-300 group-hover:bg-[#0f7896] group-hover:text-white">
-                    {item.title}
-                  </p>
+    const style = colorStyles[index % colorStyles.length];
 
-                  <p className="mt-3 text-lg leading-7 text-[#071014]/72">
-                    {item.text}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+    return (
+      <div
+        key={item.title}
+        className={`rounded-[22px] border p-5 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${style.bg} ${style.border} ${
+          isInView
+            ? "translate-y-0 opacity-100"
+            : "translate-y-5 opacity-0"
+        }`}
+        style={{
+          transitionDelay: isInView ? `${index * 120}ms` : "0ms",
+        }}
+      >
+        {/* Title */}
+        <p
+          className={`text-xl font-bold tracking-[-0.03em] ${style.title}`}
+        >
+          {item.title}
+        </p>
+
+        {/* Text */}
+        <p className="mt-3 text-sm leading-6 text-[#071014]/65">
+          {item.text}
+        </p>
+      </div>
+    );
+  })}
+</div>
         </div>
       </div>
     </section>
