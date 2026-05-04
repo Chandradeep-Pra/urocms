@@ -32,7 +32,7 @@ export const features: LandingFeature[] = [
     textPoints: ["Chapter Wise Test","Grand Mock Test","Live Lectures","Recorded Lectures","Practice With Mentor"],
   },
   {
-    title: "FRCS Section 2",
+    title: "FRCS Urology Section 2",
     textPoints: ["Chapter Wise Test","Grand Mock Test","Live Lectures","Recorded Lectures","Practice With Mentor"],
   },
   {

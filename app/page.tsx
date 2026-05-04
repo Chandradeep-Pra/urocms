@@ -10,6 +10,7 @@ import {
   PricingSection,
   SuccessStoriesSection,
 } from "@/components/landing-page";
+import { AppScreensSection } from "@/components/landing-page/AppScreensSection";
 
 const newsreader = Newsreader({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function Page() {
       <FaceToFaceSection />
       <AiVivaSection />
       <SuccessStoriesSection />
+      <AppScreensSection />
       <PricingSection />
       <LandingFooter />
     </main>

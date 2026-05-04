@@ -4,14 +4,13 @@ import { CirclePlay, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const youtubeVideosOnTop = [
-  "https://youtu.be/igYg4nmUsLg?si=tB8GYJV_QkhYxPsH",
-  "https://youtu.be/-HlSjGsLD1w?si=CVR-l7dXFx4SYFso",
-  "https://youtu.be/ZQ6nakKoDu4?si=MjliHaoT0nbrqMBE",
-  "https://youtu.be/pQHa4WBgRaU?si=kEYiFRQdO1BZASet",
-  "https://youtu.be/nNqlihhRNfo?si=zhyU4ibI1P6mT09J",
-  "https://youtu.be/PmWXC4O4V0A?si=2lbO5PBKZuAkkFqK",
-];
-
+ "https://youtu.be/TiEs3ueXQoY?si=5pYCm1tRu7M0H_dR",
+  "https://youtu.be/zySXS62n8Do?si=nFNrSCTs-620gyXZ",
+  "https://youtu.be/eZsHuI6RuRQ?si=w3DGJvmc11WixCUu",
+  "https://youtu.be/4IUBKTmbOQw?si=GzkJbZl9Flkbplul",
+  "https://youtu.be/fgXljlx3_IU?si=KU1ld0SVOEY9WUO3",
+  "https://youtu.be/8yo5WKr-zfI?si=lxVvDIGfUdk_nxGP",
+]
 function getYoutubeId(url: string) {
   return url.match(/youtu\.be\/([^?]+)/)?.[1] || "";
 }
