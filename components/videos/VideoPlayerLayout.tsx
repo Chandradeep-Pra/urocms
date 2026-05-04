@@ -74,10 +74,13 @@ export default function VideoPlayerLayout({
 
       if (resolvedPlayback?.playback?.provider === "drive") {
         return {
-          provider: "file",
-          streamUrl:
-            resolvedPlayback.playback.streamUrl ||
-            `/api/videos/videoItem/${video.id}/stream`,
+          provider: "drive-embed",
+          previewUrl:
+            resolvedPlayback.playback.previewUrl ||
+            `https://drive.google.com/file/d/${resolvedPlayback.playback.driveFileId}/preview`,
+          webViewUrl:
+            resolvedPlayback.playback.webViewUrl ||
+            `https://drive.google.com/file/d/${resolvedPlayback.playback.driveFileId}/view`,
         };
       }
 
@@ -269,6 +272,24 @@ export default function VideoPlayerLayout({
                   allow="autoplay; encrypted-media"
                   allowFullScreen
                 />
+              ) : parsed?.provider === "drive-embed" ? (
+                <div className="space-y-3">
+                  <iframe
+                    src={parsed.previewUrl}
+                    className={`${
+                      isFullscreen
+                        ? "h-[calc(100vh-120px)] w-full"
+                        : "w-full aspect-video rounded-2xl"
+                    }`}
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  />
+                  {!isFullscreen ? (
+                    <p className="text-center text-xs text-white/60">
+                      Google Drive controls this playback experience for unsynced videos.
+                    </p>
+                  ) : null}
+                </div>
               ) : (
                 <video
                   ref={videoRef}

@@ -1,11 +1,13 @@
 export const panelClass =
-  "relative overflow-hidden rounded-[32px] border border-[rgba(214,190,130,0.18)] bg-[linear-gradient(180deg,rgba(10,22,41,0.94),rgba(5,12,24,0.98))] shadow-[0_34px_110px_rgba(0,3,10,0.58)] backdrop-blur-xl";
+  "relative overflow-hidden rounded-[24px] border border-[#0f7896]/18 bg-white shadow-[0_14px_40px_rgba(15,120,150,0.08)]";
 
 export const panelInsetClass =
-  "rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015))]";
+  "rounded-[20px] border border-[#0f7896]/14 bg-cyan-50";
 
 export const chipClass =
-  "inline-flex items-center rounded-full border border-[rgba(214,190,130,0.18)] bg-[linear-gradient(180deg,rgba(214,190,130,0.11),rgba(214,190,130,0.04))] px-3 py-1 text-[20px] uppercase tracking-[0.22em] text-[#e7d6a6]";
+  "inline-flex items-center rounded-full border-2 border-[#0f7896] bg-white font-semibold px-3 py-1 text-[16px] uppercase tracking-[0.22em] text-[#0f7896]";
 
-export const goldGradient =
-  "bg-[linear-gradient(135deg,#fff1c7_0%,#dfc17b_32%,#ba8b38_64%,#f1db9f_100%)]";
+export const goldGradient = "text-[#0f7896]";
+
+export const darkSectionClass =
+  "rounded-[32px] border border-[#0f7896]/18 bg-white shadow-[0_18px_50px_rgba(15,120,150,0.08)]";

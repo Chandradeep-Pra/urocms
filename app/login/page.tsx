@@ -1,29 +1,88 @@
 "use client"
 
-import { signInWithEmailAndPassword } from "firebase/auth"
+import {
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signOut,
+  signInWithPopup,
+} from "firebase/auth"
 import { auth } from "@/lib/firebaseClient"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Chrome, Loader2 } from "lucide-react"
+
+async function verifyAdminAccess(idToken: string) {
+  const response = await fetch("/api/admin/session", {
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(data?.error || "Admin access denied");
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState("")
 
   const login = async () => {
-    setError("")
-    try {
-      setLoading(true)
-      await signInWithEmailAndPassword(auth, email, password)
+      setError("")
+      try {
+        setLoading(true)
+      const credential = await signInWithEmailAndPassword(auth, email, password)
+      const token = await credential.user.getIdToken()
+      await verifyAdminAccess(token)
       router.push("/dashboard")
     } catch (err: any) {
       console.error("Admin login error:", err)
+      await signOut(auth).catch(() => {})
       setError(err?.message || "Invalid email or password")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loginWithGoogle = async () => {
+    setError("")
+
+    try {
+      setGoogleLoading(true)
+      const provider = new GoogleAuthProvider()
+      provider.setCustomParameters({
+        prompt: "select_account",
+      })
+
+      const credential = await signInWithPopup(auth, provider)
+      const token = await credential.user.getIdToken()
+      await verifyAdminAccess(token)
+
+      const response = await fetch("/api/auth/google/complete", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to finalize Google sign-in")
+      }
+
+      router.push("/dashboard")
+    } catch (err: any) {
+      console.error("Admin Google login error:", err)
+      await signOut(auth).catch(() => {})
+      setError(err?.message || "Google sign-in failed")
+    } finally {
+      setGoogleLoading(false)
     }
   }
 
@@ -75,10 +134,36 @@ export default function LoginPage() {
         {/* Action */}
         <Button
           onClick={login}
-          disabled={loading}
+          disabled={loading || googleLoading}
           className="w-full bg-emerald-500 hover:bg-emerald-400 text-black rounded-2xl py-6 text-base font-semibold shadow-lg shadow-emerald-500/30"
         >
           {loading ? "Signing in..." : "Sign in to Dashboard"}
+        </Button>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-emerald-900/40" />
+          <span className="text-xs uppercase tracking-[0.2em] text-slate-500">or</span>
+          <div className="h-px flex-1 bg-emerald-900/40" />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={loginWithGoogle}
+          disabled={loading || googleLoading}
+          className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-6 text-base font-semibold text-white hover:bg-white/[0.07]"
+        >
+          {googleLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Signing in with Google...
+            </>
+          ) : (
+            <>
+              <Chrome className="h-4 w-4" />
+              Continue with Google
+            </>
+          )}
         </Button>
 
         {/* Footer */}

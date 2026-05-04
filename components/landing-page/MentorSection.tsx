@@ -1,46 +1,114 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { DirectionCard } from "@/components/landing-page/primitives";
-import { panelClass } from "@/components/landing-page/theme";
+
+const mentorHighlights = [
+  {
+    text: "Trained 200+ Candidates Worldwide",
+    title: "200+",
+  },
+  {
+    text: "The most trusted FRCS Urology mentor for evidence based teaching",
+    title: "Gold Medalist",
+  },
+  {
+    text: "Structured teaching with Tips & Tricks & Mnemonics",
+    title: "Innovative Educator",
+  },
+  {
+    text: "90%+ pass rates in both SBAs and Viva",
+    title: "Guaranteed Success",
+  },
+];
 
 export function MentorSection() {
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [isInView, setIsInView] = useState(false);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+   const observer = new IntersectionObserver(
+  ([entry]) => {
+    if (entry.isIntersecting) {
+      setIsInView(true);
+      observer.disconnect();
+    }
+  },
+  { threshold: 0.6 } 
+);
+
+    observer.observe(section);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section id="mentor" className="px-6 py-24">
-      <div className="mx-auto grid max-w-7xl items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className={`${panelClass} p-5`}>
-          <div className="relative overflow-hidden rounded-[28px] border border-[rgba(214,190,130,0.14)] bg-[linear-gradient(180deg,#0a1f3a,#06111f)] p-6">
-            <div className="relative min-h-[420px] overflow-hidden rounded-[24px] border border-[rgba(214,190,130,0.16)] bg-[#09111d]">
-              <Image
-                src="/my-mentor-2.jpeg"
-                alt="Dr. Ankit Goel"
-                fill
-                className="object-cover object-center"
-                sizes="(max-width: 1024px) 100vw, 40vw"
-              />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,10,20,0.04),rgba(4,10,20,0.34))]" />
-              <div className="absolute inset-x-0 bottom-0 p-6">
-                <div className="rounded-[20px] border border-white/10 bg-[rgba(5,10,19,0.62)] px-5 py-4 backdrop-blur-sm">
-                  <p className="text-lg font-semibold text-white">Dr. Ankit Goel</p>
-                  <p className="mt-1 text-sm leading-6 text-white/62">Clinical mentorship and academic direction behind the platform.</p>
-                </div>
-              </div>
-            </div>
+    <section ref={sectionRef} id="mentor" className="bg-white px-6 py-24">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="relative overflow-hidden rounded-[32px] border border-[#0f7896]/18 bg-white p-3 shadow-[0_18px_50px_rgba(15,120,150,0.08)]">
+          <div className="relative min-h-[560px] overflow-hidden rounded-[24px]">
+            <Image
+              src="/my-mentor-2.jpeg"
+              alt="Dr. Ankit Goel"
+              fill
+              className="object-cover object-center"
+              sizes="(max-width: 1024px) 100vw, 52vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           </div>
         </div>
 
-        <div className={`${panelClass} p-8`}>
-          <p className="text-sm uppercase tracking-[0.24em] text-[#e7d39f]/76">Your Mentor</p>
-          <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white">
-            Urologics launched by the Founder of FRCS Urology course<span className="text-[#e7d39f]"> Dr. Ankit Goel</span> <span className="text-sm italic tracking-1 font-normal"> ,(  Gold Medalist ).</span>
-          </h2>
-          {/* <p className="mt-4 text-md leading-6 text-[#d2dbef]/66">
-            Specializes in Urology, Renal Transplant, and Robotic Surgery. Dr. Goel brings a wealth of expertise in Endourology, Reconstructive Urology, Andrology, Laparoscopy, and Robotic Uro-oncology. His strong academic focus on research and teaching further strengthens his commitment to advancing patient care and urological education.
-          </p> */}
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#0f7896]">
+            Your Mentor
+          </p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <DirectionCard title="200+" text="Mentored successfully over 200 candidates worldwide." />
-            <DirectionCard title="Gold Medalist" text="Learn from the " />
-            <DirectionCard title="Technology with purpose" text="Analytics, AI viva, and gated content should feel like meaningful infrastructure." />
-            <DirectionCard title="Better exam readiness" text="Everything points back to preparation quality, confidence, and final performance." />
+          <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-[#071014] md:text-5xl">
+            <span className="text-[#0f7896]">Urologics</span> launched by the
+            Founder of FRCS Urology course{" "}
+            <span className="text-[#0f7896]">Dr. Ankit Goel</span>
+          </h2>
+
+          <div className="mt-3 inline-flex items-center rounded-full border border-[#0f7896]/30 bg-white px-3 py-1 text-sm font-medium text-[#0f7896]">
+            Gold Medalist
+          </div>
+
+          <div className="mt-10 space-y-5">
+            {mentorHighlights.map((item, index) => (
+              <div
+                key={item.title}
+                className={`group flex items-start gap-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  isInView
+                    ? "translate-y-0 opacity-100"
+                    : "translate-y-5 opacity-0"
+                }`}
+                style={{
+                  transitionDelay: isInView ? `${index * 130}ms` : "0ms",
+                }}
+              >
+                <div
+                  className={`mt-3 h-2.5 w-2.5 shrink-0 rounded-full bg-[#0f7896] shadow-[0_0_0_6px_rgba(15,120,150,0.10)] transition-all duration-500 ${
+                    isInView ? "scale-100 opacity-100" : "scale-0 opacity-0"
+                  }`}
+                  style={{
+                    transitionDelay: isInView ? `${index * 130}ms` : "0ms",
+                  }}
+                />
+
+                <div className="border-b border-[#0f7896]/10 pb-5">
+                  <p className="inline-flex rounded-full bg-[#0f7896]/10 px-3 py-1 text-lg font-bold tracking-[-0.03em] text-[#0f7896] transition duration-300 group-hover:bg-[#0f7896] group-hover:text-white">
+                    {item.title}
+                  </p>
+
+                  <p className="mt-3 text-lg leading-7 text-[#071014]/72">
+                    {item.text}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

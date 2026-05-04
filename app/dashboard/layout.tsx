@@ -1,3 +1,4 @@
+import AdminGuard from "@/components/dashboard/AdminGuard";
 import Sidebar from "@/components/dashboard/Sidebar";
 
 export default function DashboardLayout({
@@ -6,11 +7,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="h-screen flex-1 overflow-y-auto p-6">
-        {children}
-      </main>
-    </div>
+    <AdminGuard>
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar />
+        <main className="h-screen flex-1 overflow-y-auto p-6">
+          {children}
+        </main>
+      </div>
+    </AdminGuard>
   );
 }

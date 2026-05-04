@@ -1,45 +1,110 @@
-import { CalendarDays, GraduationCap, MessagesSquare, Users2 } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { ArrowUpRight, Presentation, GraduationCap, MessagesSquare, Users2, X, Check } from "lucide-react";
 
 const liveCourses = [
-  { title: "Section 1 ( FRCS / FEBU ) - Live Online Course", icon: CalendarDays },
-  { title: "Section 2 ( FRCS / FEBU ) - Live Online Course", icon: GraduationCap },
-  { title: "Section 1 Test x Discussion", icon: MessagesSquare },
-  { title: "Section 2 Viva in Dreams", icon: Users2 },
-  { title: "Live One to One Session", icon: CalendarDays },
+  {
+    title: "Section 1 (FRCS / FEBU) - Live Online Course",
+    icon: Presentation,
+    points: ["Live interactive sessions", "Structured syllabus", "Exam-focused teaching"],
+  },
+  {
+    title: "Section 2 (FRCS / FEBU) - Live Online Course",
+    icon: GraduationCap,
+    points: ["Advanced topics", "Viva preparation", "Clinical discussions"],
+  },
+  {
+    title: "Section 1 Test x Discussion",
+    icon: MessagesSquare,
+    points: ["Test-based learning", "Discussion sessions", "Doubt solving"],
+  },
+  {
+    title: "Section 2 Viva in Dreams",
+    icon: Users2,
+    points: ["Simulated viva", "Real exam feel", "Confidence building"],
+  },
+  {
+    title: "Live One to One Session",
+    icon: Presentation,
+    points: ["Personal mentoring", "Flexible schedule", "Custom preparation"],
+  },
 ];
 
+
 export function FaceToFaceSection() {
+  const [activeCard, setActiveCard] = useState<string | null>(null);
+
   return (
-    <section className="px-6 py-20">
+    <section className="bg-cyan-50 px-6 py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-12 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
-              Face to Face Live Online Classes
-            </h2>
-          </div>
-          
+        
+        {/* Header */}
+        <div className="mb-12 flex flex-col items-center text-center">
+          <h2 className="max-w-3xl text-4xl font-semibold tracking-[-0.04em] text-[#071014] sm:text-5xl">
+            Face to Face Live Online Classes
+          </h2>
         </div>
 
-        <div className="gold-scrollbar flex gap-4 overflow-x-auto px-1 pb-4 pt-2">
+        {/* Cards */}
+        <div className="grid auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {liveCourses.map((course) => {
-            const Icon = course.icon;
+            const isActive = activeCard === course.title;
 
             return (
               <div
                 key={course.title}
-                className="relative min-w-[220px] shrink-0 overflow-hidden rounded-[32px] border border-[rgba(124,160,223,0.28)] bg-[linear-gradient(180deg,#112a4d,#0a1a31)] p-5 transition duration-300 hover:-translate-y-1 hover:border-[rgba(196,216,255,0.42)] sm:min-w-[250px]"
+                className={`group relative flex flex-col rounded-[28px] p-6 transition-all duration-500 ${
+                  isActive
+                    ? "min-h-[320px] bg-[#0f7896] text-white shadow-[0_24px_60px_rgba(15,120,150,0.25)] sm:col-span-2"
+                    : "min-h-[160px] border border-[#0f7896]/12 bg-white text-[#071014] shadow-[0_16px_40px_rgba(15,120,150,0.09)] hover:-translate-y-1 hover:border-[#0f7896]/30"
+                }`}
               >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(174,200,255,0.12),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent)]" />
-                <div className="absolute inset-x-5 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(196,216,255,0.78),transparent)]" />
-                <div className="relative">
-                  <div className="flex items-center gap-4">
-                    <div className="grid h-12 w-12 place-items-center rounded-2xl border border-[rgba(175,202,255,0.2)] bg-[rgba(175,202,255,0.08)] text-[#cfe0ff]">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-lg font-semibold tracking-[-0.03em] text-[#eef4ff]">{course.title}</h3>
+                {/* Close */}
+                {isActive && (
+                  <button
+                    onClick={() => setActiveCard(null)}
+                    className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white hover:text-[#0f7896]"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+
+                {/* Title */}
+                <h3
+                  className={`font-semibold tracking-[-0.04em] ${
+                    isActive
+                      ? "text-2xl text-left"
+                      : "text-xl text-center my-auto"
+                  }`}
+                >
+                  {course.title}
+                </h3>
+
+                {/* Expanded */}
+                {isActive && (
+                  <div className="mt-6 space-y-3">
+                    {course.points.map((point) => (
+                      <div key={point} className="flex items-start gap-3">
+                        <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[#0f7896]">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <p className="text-sm text-white/90">{point}</p>
+                      </div>
+                    ))}
                   </div>
-                </div>
+                )}
+
+                {/* Explore */}
+                {!isActive && (
+                  <button
+                    onClick={() => setActiveCard(course.title)}
+                    className="mt-auto mx-auto inline-flex items-center gap-2 rounded-full border border-[#0f7896]/20 px-4 py-2 text-sm font-semibold text-[#0f7896] transition duration-300 group-hover:bg-[#0f7896] group-hover:text-white"
+                  >
+                    Explore
+                    <ArrowUpRight className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             );
           })}

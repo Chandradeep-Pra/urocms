@@ -9,12 +9,8 @@ import {
 } from "lucide-react";
 
 export type LandingFeature = {
-  icon: LucideIcon;
-  title: string;
-  text: string;
-  tone: string;
-  span: string;
-  points: string[];
+    title: string;
+    textPoints?: string[];
 };
 
 export const topics = [
@@ -32,68 +28,37 @@ export const topics = [
 
 export const features: LandingFeature[] = [
   {
-    icon: Video,
-    title: "FRCS Section 1",
-    text: "Exam-relevant lectures and focused revision blocks designed for deliberate FRCS preparation.",
-    tone: "from-[#e7d39f1a] via-[#a9823324] to-transparent",
-    span: "xl:col-span-2",
-    points: ["Structured learning tracks", "Private premium content", "Built for serious revision"],
+    title: "FRCS Urology Section 1",
+    textPoints: ["Chapter Wise Test","Grand Mock Test","Live Lectures","Recorded Lectures","Practice With Mentor"],
   },
   {
-    icon: Layers3,
     title: "FRCS Section 2",
-    text: "Turn each topic into measurable progress with targeted question practice and clearer recall loops.",
-    tone: "from-[#b8c7ef14] via-[#6f8dcf18] to-transparent",
-    span: "xl:col-span-1",
-    points: ["Topic-by-topic revision", "Repeatable performance checks", "Immediate feedback structure"],
+    textPoints: ["Chapter Wise Test","Grand Mock Test","Live Lectures","Recorded Lectures","Practice With Mentor"],
   },
   {
-    icon: Trophy,
     title: "FEBU Section 1",
-    text: "Create a disciplined study rhythm and benchmark yourself against a more realistic exam cadence.",
-    tone: "from-[#e7d39f17] via-[#83632f1f] to-transparent",
-    span: "xl:col-span-1",
-    points: ["Scheduled assessment cycles", "Leaderboard-ready scoring", "Progress history"],
+    textPoints: ["Chapter Wise Test","Grand Mock Test","Live Lectures","Recorded Lectures","Practice With Mentor"],
   },
   {
-    icon: Crown,
     title: "FEBU Section 2",
-    text: "Full-length pressure simulations to rehearse timing, answer quality, and clinical discipline.",
-    tone: "from-[#d8bc6b18] via-[#8b692d22] to-transparent",
-    span: "xl:col-span-1",
-    points: ["Full exam simulation", "Higher-pressure rehearsal", "Admin-managed scoring"],
+    textPoints: ["Chapter Wise Test","Grand Mock Test","Live Lectures","Recorded Lectures","Practice With Mentor"],
   },
   {
-    icon: BarChart3,
     title: "Viva in Dreams",
-    text: "Track what has been consumed, what is improving, and where the candidate still needs focused work.",
-    tone: "from-[#a9bde91a] via-[#4f699d1f] to-transparent",
-    span: "xl:col-span-1",
-    points: ["Consumption analytics", "Attempt history", "Clear next-step signals"],
+    textPoints: ["One to one Single day grand mock exam","Simulate Real Exam consitions"],
   },
   {
-    icon: Brain,
     title: "Urologics AI",
-    text: "The signature differentiator: an advanced viva experience designed to feel close to the pressure of the real room.",
-    tone: "from-[#f3e0ae22] via-[#a1782f24] to-transparent",
-    span: "xl:col-span-2",
-    points: ["Calm and rapid modes", "Exam-style questioning", "High perceived value"],
+    textPoints:["AI UROLOGY MENTOR","Experiment different examiners temperament","Choose your examiner from the credits","More thank 100+ AI Viva Scenarios","Personalised feedback scoreing after each viva","Monitor your progress during FRCS preparation"],
   },
   {
-    icon: BarChart3,
     title: "Practice with Mentor",
-    text: "Track what has been consumed, what is improving, and where the candidate still needs focused work.",
-    tone: "from-[#a9bde91a] via-[#4f699d1f] to-transparent",
-    span: "xl:col-span-1",
-    points: ["Consumption analytics", "Attempt history", "Clear next-step signals"],
+    textPoints: ["Live online one to one teaching","Flexible class schedules","Customisation as per the candidate's requirement"],
   },
   {
-    icon: Brain,
     title: "Urologics Resident Teaching",
-    text: "The signature differentiator: an advanced viva experience designed to feel close to the pressure of the real room.",
-    tone: "from-[#f3e0ae22] via-[#a1782f24] to-transparent",
-    span: "xl:col-span-2",
-    points: ["Calm and rapid modes", "Exam-style questioning", "High perceived value"],
+    textPoints: ["Campbell based Online videos","Monthly Master Classes","Recent Advances update","EAU Guidelines update"],
+   
   },
 ];
 

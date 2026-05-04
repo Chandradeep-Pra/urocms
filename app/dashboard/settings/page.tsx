@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react";
-import { Save, User, Shield, Bell } from "lucide-react";
+import { LogOut, Save, User, Shield, Bell } from "lucide-react";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,13 +11,29 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { auth } from "@/lib/firebaseClient";
 
 const SettingsPage = () => {
-  const [profile, setProfile] = useState({ name: "Admin User", email: "admin@uroedu.com" });
+  const router = useRouter();
+  const [profile, setProfile] = useState({ name: "Admin User", email: "admin@urologics.com" });
   const [notifications, setNotifications] = useState({ email: true, newUser: true, mockComplete: false });
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const handleSave = () => {
     toast.success("Settings saved successfully");
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await signOut(auth);
+      router.replace("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out");
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -92,9 +110,21 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
-      <Button onClick={handleSave} className="bg-primary text-primary-foreground hover:bg-primary/90">
-        <Save className="mr-2 h-4 w-4" /> Save Settings
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        <Button onClick={handleSave} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Save className="mr-2 h-4 w-4" /> Save Settings
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          {loggingOut ? "Logging out..." : "Logout"}
+        </Button>
+      </div>
     </div>
   );
 };

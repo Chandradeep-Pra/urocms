@@ -97,6 +97,56 @@
     background-size: 64px 64px;
   }
 
+  .rev-card{
+    position: relative;
+  }
+  .rev-card-contianer{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    height: 100vh;
+    gap: 0.625rem;
+    padding: 1.25rem;
+  }
+  .rev-card-content{
+     width: 25rem;
+    height: 25rem;
+    border-radius: 1.25rem;
+    border: 0.5rem solid var(--border-color);
+    overflow: hidden;
+    position: relative;
+  }
+  .rev-card-tag{
+      width: 12.5rem;
+    height: 3.75rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-color);
+    border-top: 0.5rem solid var(--border-color);
+    border-left: 0.5rem solid var(--border-color);
+    border-radius: 1rem 0 0 0;
+    padding: 0.3rem;
+  }
+
+    .rev-card-tag::after{
+      width: 1.125rem;
+    height: 1.25rem;
+    content: "";
+    position: absolute;
+    background-color: transparent;
+    right: 0.5rem;
+    top: -1.75rem;
+    border-bottom-right-radius: 0.5rem;
+    box-shadow: 0.375rem 0.375rem var(--border-color);
+  }
+  .rev-card-curve-1 {}
+  .rev-card-curve-2 {}
+
   .uro-radial {
     background:
       radial-gradient(circle at top, rgba(67, 208, 161, 0.2), transparent 28%),
@@ -158,7 +208,7 @@
 
   .gold-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(214, 190, 130, 0.8) rgba(255, 255, 255, 0.04);
+    scrollbar-color: rgba(59, 130, 246, 0.8) rgba(255, 255, 255, 0.05);
   }
 
   .gold-scrollbar::-webkit-scrollbar {
@@ -171,8 +221,15 @@
   }
 
   .gold-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(90deg, rgba(241, 219, 159, 0.92), rgba(186, 139, 56, 0.92));
+    background: linear-gradient(90deg, rgba(143, 220, 255, 0.92), rgba(59, 130, 246, 0.92));
     border-radius: 999px;
+  }
+
+  .bg-mesh {
+    background-color: #101415;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(217, 100%, 50%, 0.15) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(230, 100%, 50%, 0.1) 0, transparent 50%);
   }
 
   .landing-phone-stack {
@@ -255,7 +312,7 @@
   }
   100% {
     opacity: 1;
-    transform: rotate(24deg) scale(1);
+    transform: rotate(8deg) scale(1);
   }
 }
 
@@ -266,6 +323,28 @@
   }
   100% {
     opacity: 1;
-    transform: rotate(45deg) scale(1);
+    transform: rotate(16deg) scale(1);
   }
 }
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+

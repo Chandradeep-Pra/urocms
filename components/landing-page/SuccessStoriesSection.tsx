@@ -1,66 +1,100 @@
-import { Quote, Star } from "lucide-react";
+"use client";
 
-const stories = [
-  {
-    name: "A. Sharma",
-    role: "FRCS Candidate",
-    quote:
-      "The platform gave me structure. I could finally see what I had covered, where I was weak, and how to revise more intelligently.",
-  },
-  {
-    name: "R. Mehta",
-    role: "Viva Preparation Cohort",
-    quote:
-      "The AI viva experience was the closest thing to feeling pressure before the actual exam. That changed how I prepared.",
-  },
-  {
-    name: "S. Khan",
-    role: "Grand Mock User",
-    quote:
-      "Mocks, analytics, and topic-wise revision all being in one place made the preparation process feel far less scattered.",
-  },
+import { CirclePlay, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const youtubeVideosOnTop = [
+  "https://youtu.be/igYg4nmUsLg?si=tB8GYJV_QkhYxPsH",
+  "https://youtu.be/-HlSjGsLD1w?si=CVR-l7dXFx4SYFso",
+  "https://youtu.be/ZQ6nakKoDu4?si=MjliHaoT0nbrqMBE",
+  "https://youtu.be/pQHa4WBgRaU?si=kEYiFRQdO1BZASet",
+  "https://youtu.be/nNqlihhRNfo?si=zhyU4ibI1P6mT09J",
+  "https://youtu.be/PmWXC4O4V0A?si=2lbO5PBKZuAkkFqK",
 ];
 
+function getYoutubeId(url: string) {
+  return url.match(/youtu\.be\/([^?]+)/)?.[1] || "";
+}
+
 export function SuccessStoriesSection() {
-  const marqueeStories = [...stories, ...stories];
+  const [titles, setTitles] = useState<Record<string, string>>({});
+
+  const marqueeVideos = [...youtubeVideosOnTop, ...youtubeVideosOnTop]; // loop
+
+  useEffect(() => {
+    youtubeVideosOnTop.forEach(async (url) => {
+      try {
+        const res = await fetch(
+          `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
+        );
+        const data = await res.json();
+
+        setTitles((prev) => ({
+          ...prev,
+          [url]: data.title,
+        }));
+      } catch {
+        setTitles((prev) => ({
+          ...prev,
+          [url]: "Success Story",
+        }));
+      }
+    });
+  }, []);
 
   return (
-    <section className="px-6 py-24">
+    <section id="stories" className="bg-cyan-50 px-6 py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-12 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-sm uppercase tracking-[0.24em] text-[#e7d39f]/76">Success Stories</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
-              Candidates should feel this is already helping serious learners prepare better
-            </h2>
-          </div>
+        <div className="mb-12 flex justify-center">
+          <h2 className="max-w-3xl text-center text-4xl font-semibold tracking-[-0.04em] text-[#071014] sm:text-5xl">
+            Success Stories
+          </h2>
         </div>
 
-        <div className="group overflow-hidden">
-          <div className="success-marquee flex min-w-max gap-5 group-hover:[animation-play-state:paused]">
-            {marqueeStories.map((story, index) => (
-              <div
-                key={`${story.name}-${index}`}
-                className="relative w-[340px] shrink-0 overflow-hidden rounded-[30px] border border-[rgba(214,190,130,0.16)] bg-[linear-gradient(180deg,rgba(10,22,41,0.92),rgba(5,12,24,0.98))] p-6 shadow-[0_24px_70px_rgba(0,3,10,0.34)]"
-              >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(214,190,130,0.08),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)]" />
-                <div className="relative">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-[#efd79b]">
-                      {Array.from({ length: 5 }).map((_, starIndex) => (
-                        <Star key={starIndex} className="h-4 w-4 fill-current" />
+        <div className="group ">
+          <div className="flex min-w-max gap-5 animate-marquee group-hover:[animation-play-state:paused]">
+            {marqueeVideos.map((url, index) => {
+              const videoId = getYoutubeId(url);
+              const title = titles[url] || "Loading story...";
+
+              return (
+                <a
+                  key={`${url}-${index}`}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-[320px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)] transition-all duration-300 hover:-translate-y-1 hover:border-[#0f7896]/28 hover:shadow-[0_22px_55px_rgba(15,120,150,0.16)]"
+                >
+                  <div className="relative aspect-video overflow-hidden bg-cyan-50">
+                    <img
+                      src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+                      alt={title}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10" />
+
+                    <div className="absolute inset-0 grid place-items-center">
+                      <div className="grid h-14 w-14 place-items-center rounded-full bg-white/95 text-[#0f7896] shadow-[0_14px_35px_rgba(0,0,0,0.18)] transition group-hover:scale-110">
+                        <CirclePlay className="h-7 w-7" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    <div className="mb-3 flex gap-1 text-[#D4A017]">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-current" />
                       ))}
                     </div>
-                    <Quote className="h-5 w-5 text-[#efd79b]/60" />
+
+                    <h3 className="line-clamp-2 text-base font-semibold leading-snug text-[#071014]">
+                      {title}
+                    </h3>
                   </div>
-                  <p className="mt-5 text-base leading-8 text-[#eef3ff]/88">"{story.quote}"</p>
-                  <div className="mt-6">
-                    <p className="text-base font-semibold text-white">{story.name}</p>
-                    <p className="text-sm text-white/52">{story.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+                </a>
+              );
+            })}
           </div>
         </div>
       </div>
