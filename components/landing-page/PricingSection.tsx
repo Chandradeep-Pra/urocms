@@ -24,7 +24,7 @@ export function PricingSection() {
             className="rounded-full border border-[#0f7896] bg-[#0f7896] px-6 py-6 text-base text-white transition-colors duration-300 hover:bg-[#0d6b85]"
           >
             <Link href="/pricing">
-              View Pricing
+              Enroll Now
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>

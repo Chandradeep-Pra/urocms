@@ -165,233 +165,192 @@ export default async function PricingPage() {
   const plans = await getPricingPlans();
 
   return (
-    <main className={`${pageBackground} min-h-screen overflow-x-hidden px-6 py-10 text-white`}>
-      <div className="pointer-events-none absolute inset-0 uro-grid opacity-20" />
+    <main className="min-h-screen overflow-x-hidden bg-cyan-50 px-6 py-10 text-[#071014]">
+  <div className="mx-auto max-w-7xl">
+    <div className="mb-14 flex items-start justify-between gap-6">
+      <div className="max-w-4xl">
+        <Link
+          href="/"
+          className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-[#0f7896] transition hover:text-[#0b5f77]"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to home
+        </Link>
 
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-12 flex items-start justify-between gap-6">
-          <div className="max-w-4xl">
-            <Link
-              href="/"
-              className="mb-4 inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-[#f1d77c]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to home
-            </Link>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#0f7896]">
+          Pricing
+        </p>
 
-            <p className="text-sm uppercase tracking-[0.22em] text-[#e1c777]/70">Pricing</p>
-            <h1 className="mt-4 text-5xl font-semibold tracking-[-0.05em] text-white sm:text-6xl">
-              Simple plans for serious FRCS preparation.
-            </h1>
-            <p className="mt-4 max-w-3xl text-lg leading-8 text-white/72">
-              Urologics is designed as a focused premium preparation platform. The value comes
-              from structured learning, regular testing, clear progress visibility, and an AI viva
-              system that feels closer to the real exam.
-            </p>
-          </div>
+        <h1 className="mt-4 text-5xl font-semibold tracking-[-0.05em] text-[#071014] sm:text-6xl">
+          Simple plans for serious FRCS preparation.
+        </h1>
 
-          <Button
-            asChild
-            className="hidden rounded-full bg-[#d8bd67] text-[#09172d] hover:bg-[#e7cb74] md:inline-flex"
-          >
-            <Link href="/">Return Home</Link>
-          </Button>
-        </div>
-
-        <div className="mb-12 grid gap-4 md:grid-cols-3">
-          <TopStat icon={Video} title="Video + quiz" text="Structured learning, not fragmented revision." />
-          <TopStat icon={BadgeCheck} title="Mocks + analytics" text="Progress becomes visible and actionable." />
-          <TopStat icon={Brain} title="AI viva system" text="The strongest premium differentiator in the product." />
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-3">
-          {plans.length === 0 ? (
-            <div className={`rounded-[34px] p-10 lg:col-span-3 ${panelClass}`}>
-              <p className="text-lg font-semibold text-white">No pricing plans published yet.</p>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-white/78">
-                Plans created and marked active in `Plan Creator` will appear here automatically.
-              </p>
-            </div>
-          ) : (
-            plans.map((plan) => (
-              <details
-                key={plan.id}
-                className={`group/plan rounded-[34px] ${plan.highlight ? panelClass : subtlePanelClass}`}
-              >
-                <summary className="cursor-pointer list-none px-8 py-9 [&::-webkit-details-marker]:hidden">
-                  <div className="flex items-start justify-between gap-5">
-                    <div className="space-y-3">
-                      <p className="text-[2rem] font-semibold leading-none text-white">{plan.name}</p>
-                    </div>
-                    {plan.tag ? (
-                      <span className="rounded-full bg-[#d8bd67] px-3 py-1 text-xs font-medium text-[#09172d]">
-                        {plan.tag}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-5 rounded-[24px] border border-[#d8bd67]/14 bg-[rgba(216,189,103,0.08)] px-5 py-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#f1d77c]">
-                      Description
-                    </p>
-                    <p className="mt-3 text-sm leading-7 text-[#f5f8ff]">
-                      {plan.subtitle || "Custom access plan built from selected Urologics content."}
-                    </p>
-                  </div>
-
-                  <div className="mt-5 rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-7">
-                    <p className="text-5xl font-semibold tracking-[-0.05em] text-white">
-                      {formatGbp(plan.price)}
-                    </p>
-                    <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-[#f1d77c]">
-                      <Clock3 className="h-4 w-4" />
-                      <span>Valid for {pluralize(plan.expiryMonths, "month")}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm text-white/88 transition group-open/plan:border-[#d8bd67]/20 group-open/plan:bg-white/[0.06]">
-                    <span>Expand to see full plan details</span>
-                    <span className="font-medium text-[#f1d77c] group-open/plan:hidden">Show details</span>
-                    <span className="hidden font-medium text-[#f1d77c] group-open/plan:inline">Hide details</span>
-                  </div>
-
-                  <div className="mt-6 flex items-center gap-3">
-                    <Button
-                      className={`flex-1 rounded-full ${
-                        plan.highlight
-                          ? "bg-[#d8bd67] text-[#09172d] hover:bg-[#e7cb74]"
-                          : "border border-white/16 bg-white/[0.05] text-white hover:bg-white/[0.1]"
-                      }`}
-                      variant={plan.highlight ? "default" : "outline"}
-                    >
-                      Choose {plan.name}
-                    </Button>
-                  </div>
-                </summary>
-
-                <div className="space-y-4 px-8 pb-9">
-                  <div className="h-px bg-white/10" />
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f1d77c]">
-                      Included access
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    {plan.items.length === 0 ? (
-                      <div className="rounded-2xl border border-white/12 bg-[rgba(255,255,255,0.08)] px-4 py-5">
-                        <p className="text-sm font-semibold text-white">Custom access bundle</p>
-                      </div>
-                    ) : (
-                      plan.items.map((item) => {
-                        const compactLabel = `${item.count} ${item.label}`;
-
-                        return (
-                          <div key={`${plan.id}-${item.key}`} className="group/item relative">
-                            <div className="rounded-[24px] border border-white/12 bg-[rgba(255,255,255,0.08)] px-4 py-5 transition hover:border-[#d8bd67]/35 hover:bg-[rgba(255,255,255,0.11)]">
-                              <div className="flex items-start gap-3">
-                                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#f1d77c]" />
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-base font-semibold text-white">{compactLabel}</p>
-                                  <p className="mt-2 text-xs leading-6 text-[#dce8ff]/90">
-                                    Hover to view the exact included {item.count === 1 ? "item" : "items"}
-                                  </p>
-                                </div>
-                                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-[#f1d77c] transition group-hover/item:translate-x-0.5" />
-                              </div>
-                            </div>
-
-                            <div className="pointer-events-none absolute left-[calc(100%+18px)] top-0 z-30 hidden w-[320px] rounded-[24px] border border-[#d8bd67]/18 bg-[linear-gradient(180deg,#0b274a,#06182f)] p-5 shadow-[0_26px_70px_rgba(0,4,14,0.72)] group-hover/item:block">
-                              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#f1d77c]">
-                                Included {item.label}
-                              </p>
-                              <div className="space-y-2">
-                                {item.details.slice(0, 6).map((detail) => (
-                                  <div
-                                    key={detail}
-                                    className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white/92"
-                                  >
-                                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#f1d77c]" />
-                                    <span>{detail}</span>
-                                  </div>
-                                ))}
-                                {item.details.length > 6 ? (
-                                  <div className="px-1 pt-1 text-xs text-white/62">
-                                    +{item.details.length - 6} more
-                                  </div>
-                                ) : null}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              </details>
-            ))
-          )}
-        </div>
-
-        <div className="mt-16 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className={`rounded-[34px] p-8 ${panelClass}`}>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#e1c777]/70">Why premium</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white">
-              The value is not just content volume.
-            </h2>
-            <p className="mt-4 text-lg leading-8 text-white/72">
-              Urologics becomes valuable because it combines content, testing, progress visibility,
-              and realistic viva preparation into one study system that students can trust and return
-              to consistently.
-            </p>
-          </div>
-
-          <div className="rounded-[34px] border border-[#c8ab52]/12 bg-[linear-gradient(135deg,rgba(10,32,62,0.98),rgba(4,16,31,0.98))] p-8 shadow-[0_30px_100px_rgba(0,4,14,0.62)]">
-            <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#d8bd67]/10 text-[#f1d77c]">
-                <Crown className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xl font-semibold text-white">Premium prep, clearer outcomes</p>
-                <p className="text-sm text-white/62">Built for candidates who want to prepare with intent.</p>
-              </div>
-            </div>
-
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Button className="rounded-full bg-[#d8bd67] text-[#09172d] hover:bg-[#e7cb74]">
-                Get Early Access
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="rounded-full border-[#c8ab52]/14 bg-white/[0.04] text-white hover:bg-white/[0.08]"
-              >
-                <Link href="/login">Admin Login</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
+        <p className="mt-5 max-w-3xl text-lg leading-8 text-[#071014]/65">
+          Choose structured access to Urologics courses, tests, analytics, and AI viva preparation.
+        </p>
       </div>
-    </main>
+
+      <Button
+        asChild
+        className="hidden rounded-full bg-[#0f7896] px-5 text-white hover:bg-[#0b647d] md:inline-flex"
+      >
+        <Link href="/">Return Home</Link>
+      </Button>
+    </div>
+
+    <div className="mb-12 grid gap-4 md:grid-cols-3">
+      <TopStat icon={Video} title="Video + quiz" text="Structured learning, not scattered revision." />
+      <TopStat icon={BadgeCheck} title="Mocks + analytics" text="Track what is improving clearly." />
+      <TopStat icon={Brain} title="AI viva system" text="Practice closer to the real exam room." />
+    </div>
+
+    <div className="grid gap-6 lg:grid-cols-3">
+      {plans.length === 0 ? (
+        <div className="rounded-[32px] border border-[#0f7896]/12 bg-white p-10 shadow-[0_18px_50px_rgba(15,120,150,0.08)] lg:col-span-3">
+          <p className="text-lg font-semibold text-[#071014]">No pricing plans published yet.</p>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#071014]/65">
+            Plans created and marked active in Plan Creator will appear here automatically.
+          </p>
+        </div>
+      ) : (
+        plans.map((plan) => (
+          <details
+            key={plan.id}
+            className={`group/plan overflow-hidden rounded-[32px] transition-all duration-300 ${
+              plan.highlight
+                ? "bg-[#0f7896] text-white shadow-[0_24px_65px_rgba(15,120,150,0.24)]"
+                : "border border-[#0f7896]/12 bg-white text-[#071014] shadow-[0_16px_40px_rgba(15,120,150,0.09)]"
+            }`}
+          >
+            <summary className="cursor-pointer list-none px-7 py-8 [&::-webkit-details-marker]:hidden">
+              <div className="flex items-start justify-between gap-5">
+                <p className="text-3xl font-semibold tracking-[-0.04em]">
+                  {plan.name}
+                </p>
+
+                {plan.tag ? (
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      plan.highlight
+                        ? "bg-white text-[#0f7896]"
+                        : "bg-[#0f7896]/10 text-[#0f7896]"
+                    }`}
+                  >
+                    {plan.tag}
+                  </span>
+                ) : null}
+              </div>
+
+              <p className={`mt-4 text-sm leading-7 ${plan.highlight ? "text-white/78" : "text-[#071014]/62"}`}>
+                {plan.subtitle || "Custom access plan built from selected Urologics content."}
+              </p>
+
+              <div
+                className={`mt-6 rounded-[24px] p-6 ${
+                  plan.highlight
+                    ? "border border-white/20 bg-white/10"
+                    : "border border-[#0f7896]/10 bg-cyan-50"
+                }`}
+              >
+                <p className="text-5xl font-semibold tracking-[-0.05em]">
+                  {formatGbp(plan.price)}
+                </p>
+
+                <div className={`mt-4 flex items-center gap-2 text-sm font-semibold ${plan.highlight ? "text-white/85" : "text-[#0f7896]"}`}>
+                  <Clock3 className="h-4 w-4" />
+                  <span>Valid for {pluralize(plan.expiryMonths, "month")}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center justify-between">
+                <span className={`text-sm ${plan.highlight ? "text-white/70" : "text-[#071014]/55"}`}>
+                  Expand to see included access
+                </span>
+
+                <span
+                  className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                    plan.highlight
+                      ? "bg-white/15 text-white"
+                      : "bg-[#0f7896]/10 text-[#0f7896]"
+                  }`}
+                >
+                  Details
+                </span>
+              </div>
+
+              <Button
+                className={`mt-6 w-full rounded-full ${
+                  plan.highlight
+                    ? "bg-white text-[#0f7896] hover:bg-white/90"
+                    : "bg-[#0f7896] text-white hover:bg-[#0b647d]"
+                }`}
+              >
+                Choose {plan.name}
+              </Button>
+            </summary>
+
+            <div className="space-y-4 px-7 pb-8">
+              <div className={plan.highlight ? "h-px bg-white/18" : "h-px bg-[#0f7896]/12"} />
+
+              <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${plan.highlight ? "text-white/70" : "text-[#0f7896]"}`}>
+                Included access
+              </p>
+
+              <div className="space-y-3">
+                {plan.items.length === 0 ? (
+                  <div className={`rounded-2xl p-4 ${plan.highlight ? "bg-white/10" : "bg-cyan-50"}`}>
+                    <p className="text-sm font-semibold">Custom access bundle</p>
+                  </div>
+                ) : (
+                  plan.items.map((item) => {
+                    const compactLabel = `${item.count} ${item.label}`;
+
+                    return (
+                      <div
+                        key={`${plan.id}-${item.key}`}
+                        className={`rounded-2xl p-4 ${
+                          plan.highlight
+                            ? "border border-white/18 bg-white/10"
+                            : "border border-[#0f7896]/10 bg-cyan-50"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <CheckCircle2
+                            className={`mt-0.5 h-5 w-5 shrink-0 ${
+                              plan.highlight ? "text-white" : "text-[#0f7896]"
+                            }`}
+                          />
+                          <div>
+                            <p className="text-base font-semibold">{compactLabel}</p>
+                            <p className={`mt-1 text-xs leading-6 ${plan.highlight ? "text-white/70" : "text-[#071014]/55"}`}>
+                              {item.details.slice(0, 3).join(", ")}
+                              {item.details.length > 3 ? ` +${item.details.length - 3} more` : ""}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </details>
+        ))
+      )}
+    </div>
+  </div>
+</main>
   );
 }
 
-function TopStat({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  text: string;
-}) {
+function TopStat({ icon: Icon, title, text }) {
   return (
-    <div className={`rounded-[28px] p-6 ${panelClass}`}>
-      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#d8bd67]/10 text-[#f1d77c]">
+    <div className="rounded-[24px] border border-[#0f7896]/12 bg-white p-5 shadow-[0_14px_36px_rgba(15,120,150,0.08)]">
+      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#0f7896]/10 text-[#0f7896]">
         <Icon className="h-5 w-5" />
       </div>
-      <p className="mt-5 text-xl font-semibold text-white">{title}</p>
-      <p className="mt-2 text-sm leading-7 text-white/68">{text}</p>
+      <p className="text-lg font-semibold tracking-[-0.03em] text-[#071014]">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-[#071014]/62">{text}</p>
     </div>
   );
 }

@@ -45,7 +45,7 @@ export function LandingHeader() {
             asChild
             className="rounded-full border border-[#0f7896] bg-[#0f7896] px-5 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#0d6b85]"
           >
-            <Link href="/early-access">Enroll Now</Link>
+            <Link href="/pricing">Enroll Now</Link>
           </Button>
         </div>
       </div>
