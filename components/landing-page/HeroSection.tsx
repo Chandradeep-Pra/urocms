@@ -1,18 +1,19 @@
 import { CirclePlay } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { chipClass, goldGradient } from "@/components/landing-page/theme";
-import { PhoneMock } from "@/components/landing-page/primitives";
-import { StoreButton } from "./StoreButton";
+import { chipClass } from "@/components/landing-page/theme";
+import { LaunchSoonDialog } from "./LaunchSoonDialog";
+import { WaitlistDialog } from "./WaitlistDialog";
+import Image from "next/image";
 
 export function HeroSection() {
   return (
     <section className="relative px-5 pb-20 pt-36 sm:px-6 sm:pb-24 sm:pt-40 lg:pt-36">
-      <div className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-14">
+      <div className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-[64fr_36fr] lg:gap-10">
         <div className="animate-slide-up space-y-7 text-center lg:space-y-8 lg:text-left">
           <div className="space-y-5 sm:space-y-6">
-            <h1 className="mx-auto max-w-4xl text-5xl font-bold leading-[1.05] tracking-tight text-[#071014] sm:text-6xl lg:mx-0 lg:text-[72px] lg:leading-[1.05]">
-              World's First
-              <span className={`mt-2 block bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent`}>
+            <h1 className="mx-auto max-w-4xl text-5xl font-extrabold leading-[1.05] tracking-tight text-[#071014] sm:text-6xl lg:mx-0 lg:text-[72px] lg:leading-[1.1]">
+              World&apos;s First
+              <span className={`mt-3 block bg-gradient-to-r from-[#0f7896] via-[#1294ba] to-[#0f7896] bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient-x`}>
                 App based Learning Platform for FRCS Urology
               </span>
             </h1>
@@ -23,29 +24,25 @@ export function HeroSection() {
           </div>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start">
-            <Button className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-8 py-7 text-base font-bold text-white shadow-lg shadow-[#0f7896]/25 transition-all duration-300 hover:scale-105 hover:shadow-[#0f7896]/40">
-              Join Waitlist
-            </Button>
+            <WaitlistDialog />
 
             <Button
               variant="outline"
-              className="rounded-full border-2 border-[#0f7896]/20 bg-white/50 backdrop-blur-md px-8 py-7 text-base font-bold text-[#0f7896] shadow-sm transition-all duration-300 hover:bg-white hover:border-[#0f7896]/30 hover:scale-105"
+              className="rounded-full border-2 border-[#0f7896]/20 bg-white/50 backdrop-blur-md px-8 py-7 text-base font-bold text-[#0f7896] shadow-sm transition-all duration-300 hover:bg-white hover:border-[#0f7896]/40 hover:-translate-y-1 hover:scale-105 hover:shadow-md hover:text-[#0f7896]"
             >
-              <CirclePlay className="mr-2 h-5 w-5 text-current" />
+              <CirclePlay className="mr-2 h-5 w-5 text-[#0f7896]" />
               Watch AI Viva Demo
             </Button>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:justify-center lg:justify-start">
-  <StoreButton
-    href="#"
+  <LaunchSoonDialog
     icon="/apple-logo.png"
     eyebrow="Download on the"
     label="App Store"
   />
 
-  <StoreButton
-    href="#"
+  <LaunchSoonDialog
     icon="/google-play.png"
     eyebrow="Get it on"
     label="Google Play"
@@ -61,12 +58,17 @@ export function HeroSection() {
 </div>
         </div>
 
-        <div className="relative animate-slide-up self-start pt-4 lg:pt-16 lg:pl-8 xl:pl-16 mt-8">
-          <div className="relative mx-auto flex min-h-[430px] w-full max-w-[360px] justify-center sm:min-h-[520px] sm:max-w-[460px] lg:min-h-[560px] lg:max-w-[560px]">
-            <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 lg:-top-24">
-              <div className="landing-phone-stack origin-bottom scale-[0.78] transform-gpu sm:scale-[0.9] lg:scale-100">
-                <PhoneMock imageSrc="/phone-sc-3.jpeg" />
-              </div>
+        <div className="relative animate-slide-up self-start pt-4 lg:pt-8">
+          <div className="relative mx-auto flex min-h-[300px] w-full justify-center sm:min-h-[440px]">
+            <div className="absolute left-1/2 top-0 z-10 w-full max-w-[273px] -translate-x-1/2 lg:-top-10 xl:max-w-[294px]">
+              <Image
+                src="/ai-screen-phone.png"
+                alt="Urologics AI viva phone screen"
+                width={450}
+                height={920}
+                className="h-auto w-full"
+                priority
+              />
             </div>
           </div>
         </div>

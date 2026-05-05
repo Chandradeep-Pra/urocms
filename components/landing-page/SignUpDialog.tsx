@@ -177,7 +177,7 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
           variant="outline"
           onClick={handleGoogleSignUp}
           disabled={loading || googleLoading}
-          className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-6 text-base font-semibold text-white hover:bg-white/[0.07]"
+          className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-6 text-base font-semibold text-black hover:bg-white/[0.07] hover:text-black"
         >
           {googleLoading ? (
             <>

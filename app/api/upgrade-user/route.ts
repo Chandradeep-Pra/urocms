@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const token = authHeader.split("Bearer ")[1];
     const decoded = await adminAuth.verifyIdToken(token);
 
-    const { name, phone, googleAccessEmail } = await req.json();
+    const { name, phone, country, googleAccessEmail } = await req.json();
     const normalizedAccessEmail =
       (googleAccessEmail || decoded.email || "").trim().toLowerCase();
 

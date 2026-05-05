@@ -38,10 +38,12 @@ export async function requireAppUser(req: NextRequest) {
       const defaultTier = getDefaultTier(decoded.firebase.sign_in_provider);
       const nextUser = {
         email: decoded.email ?? null,
+        name: decoded.name ?? null,
         tier: defaultTier,
         googleAccessEmail: decoded.email ?? null,
         source: decoded.firebase.sign_in_provider ?? null,
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       await userRef.set(nextUser, { merge: true });
