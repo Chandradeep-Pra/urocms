@@ -5,12 +5,12 @@ import { darkSectionClass } from "@/components/landing-page/theme";
 
 export function PricingSection() {
   return (
-    <section className="px-6 pb-24 pt-10">
+    <section className="px-4 pb-16 pt-8 sm:px-6 sm:pb-24 sm:pt-10">
       <div className={`mx-auto max-w-7xl overflow-hidden ${darkSectionClass} px-8 py-10 sm:px-12 sm:py-14`}>
         <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <p className="text-sm uppercase tracking-[0.24em] text-[#0f7896]">Plan</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-[#071014] sm:text-5xl">
+            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-[#071014] sm:text-5xl">
               Choose a plan that fits how you want to prepare.
             </h2>
             <p className="mt-4 text-lg leading-8 text-[#071014]/66">

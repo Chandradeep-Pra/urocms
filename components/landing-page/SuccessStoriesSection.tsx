@@ -54,10 +54,10 @@ export function SuccessStoriesSection() {
   }, []);
 
   return (
-    <section id="stories" className="bg-cyan-50 px-6 py-24">
+    <section id="stories" className="bg-cyan-50 px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-7xl">
         <div className="mb-20 text-center">
-          <h2 className="text-5xl font-extrabold tracking-tight text-[#071014] sm:text-6xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-[#071014] sm:text-6xl">
             Success <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Stories</span>
           </h2>
         </div>

@@ -7,11 +7,11 @@ import Image from "next/image";
 
 export function HeroSection() {
   return (
-    <section className="relative px-5 pb-20 pt-36 sm:px-6 sm:pb-24 sm:pt-40 lg:pt-36">
+    <section className="relative px-4 pb-16 pt-32 sm:px-6 sm:pb-24 sm:pt-40 lg:pt-36">
       <div className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-[64fr_36fr] lg:gap-10">
         <div className="animate-slide-up space-y-7 text-center lg:space-y-8 lg:text-left">
           <div className="space-y-5 sm:space-y-6">
-            <h1 className="mx-auto max-w-4xl text-5xl font-extrabold leading-[1.05] tracking-tight text-[#071014] sm:text-6xl lg:mx-0 lg:text-[72px] lg:leading-[1.1]">
+            <h1 className="mx-auto max-w-4xl text-4xl font-extrabold leading-[1.05] tracking-tight text-[#071014] sm:text-6xl lg:mx-0 lg:text-[72px] lg:leading-[1.1]">
               World&apos;s First
               <span className={`mt-3 block bg-gradient-to-r from-[#0f7896] via-[#1294ba] to-[#0f7896] bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient-x`}>
                 App based Learning Platform for FRCS Urology

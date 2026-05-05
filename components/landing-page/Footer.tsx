@@ -4,7 +4,7 @@ import { Instagram, Youtube, Mail } from "lucide-react";
 
 export function LandingFooter() {
   return (
-    <footer className="border-t border-[#0f7896]/12 bg-white px-6 py-14">
+    <footer className="border-t border-[#0f7896]/12 bg-white px-4 py-12 sm:px-6 sm:py-14">
       <div className="mx-auto max-w-7xl">
 
         {/* Top Grid */}

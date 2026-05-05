@@ -4,12 +4,12 @@ import { panelClass } from "@/components/landing-page/theme";
 
 export function WhySection() {
   return (
-    <section id="why" className="px-6 py-24">
+    <section id="why" className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-10 lg:grid-cols-[0.88fr_1.12fr]">
           <div className="space-y-5">
             <p className="text-sm uppercase tracking-[0.24em] text-[#e7d39f]/76">Why Urologics</p>
-            <h2 className="text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
+            <h2 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
               It should feel like a serious exam-prep operating system, not a content dump.
             </h2>
             <p className="text-lg leading-8 text-[#d2dbef]/66">

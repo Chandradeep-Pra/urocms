@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { Award } from "lucide-react";
 
 const mentorHighlights = [
   {
@@ -49,10 +50,10 @@ export function MentorSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="mentor" className="bg-white px-6 py-20 lg:py-28">
+    <section ref={sectionRef} id="mentor" className="bg-white px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
       <div className="mx-auto w-full">
         <div className="mb-16 text-center">
-          <h2 className="mt-3 text-5xl font-bold tracking-tight text-[#071014] sm:text-6xl">
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#071014] sm:text-6xl">
             Your <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Mentor</span>
           </h2>
         </div>
@@ -72,14 +73,19 @@ export function MentorSection() {
           </div>
 
           <div>
-            <h3 className="text-4xl font-bold tracking-tight text-[#071014] md:text-5xl leading-tight">
+            <h3 className="text-3xl font-bold tracking-tight text-[#071014] md:text-5xl leading-tight">
               <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Urologics</span> launched by the
               Founder of FRCS Urology course{" "}
               <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Dr. Ankit Goel</span>
             </h3>
 
-            <div className="mt-6 inline-flex items-center rounded-full border border-[#0f7896]/20 bg-[#0f7896]/5 px-5 py-2 text-sm font-bold tracking-wide text-[#0f7896] shadow-sm">
-              Gold Medalist
+            <div className="mt-6 flex items-center gap-3">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#d6a735]/30 bg-gradient-to-br from-[#fff8dc] via-white to-[#f4d46a]/30 shadow-[0_12px_28px_rgba(214,167,53,0.16)]">
+                <Award className="h-6 w-6 text-[#b98516]" />
+              </div>
+              <p className="text-2xl font-black tracking-[-0.04em] text-[#071014]">
+                Gold Medalist
+              </p>
             </div>
 
             <div className="mt-10 grid gap-4 sm:grid-cols-2">
