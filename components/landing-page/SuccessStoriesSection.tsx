@@ -10,6 +10,13 @@ const youtubeVideosOnTop = [
   "https://youtu.be/4IUBKTmbOQw?si=GzkJbZl9Flkbplul",
   "https://youtu.be/fgXljlx3_IU?si=KU1ld0SVOEY9WUO3",
   "https://youtu.be/8yo5WKr-zfI?si=lxVvDIGfUdk_nxGP",
+  "https://youtu.be/3UUYtFTw8fg?si=-Mln1iiEDF96dUj9",
+  "https://youtu.be/6zIGbtT9JRM?si=xto53skD8b82zs9i",
+  "https://youtu.be/porL_VVvEoA?si=l0pi54oLP6b2WkPu",
+  "https://youtu.be/Ci9sXUNot30?si=7AAKZU0U3jpS-TaH",
+  "https://youtu.be/8La7HbM9g8Y?si=GhmE6s-Rb9pMFn9J",
+  "https://youtu.be/1wM5Rdk7bTs?si=3lvbSWpKtF7w_-Q7"
+  
 ]
 function getYoutubeId(url: string) {
   return url.match(/youtu\.be\/([^?]+)/)?.[1] || "";
