@@ -30,15 +30,18 @@ export function MentorSection() {
     const section = sectionRef.current;
     if (!section) return;
 
-   const observer = new IntersectionObserver(
-  ([entry]) => {
-    if (entry.isIntersecting) {
-      setIsInView(true);
-      observer.disconnect();
-    }
-  },
-  { threshold: 0.6 } 
-);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: 0.25,
+        rootMargin: "0px 0px -10% 0px",
+      }
+    );
 
     observer.observe(section);
 
@@ -46,90 +49,75 @@ export function MentorSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="mentor" className="bg-white px-6 py-24">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="relative overflow-hidden rounded-[32px] border border-[#0f7896]/18 bg-white p-3 shadow-[0_18px_50px_rgba(15,120,150,0.08)]">
-         <div className="overflow-hidden rounded-[24px]">
-  <Image
-    src="/my-mentor-2.jpeg"
-    alt="Dr. Ankit Goel"
-    width={800}   // adjust if needed
-    height={1000} // maintain your image ratio
-    className="h-auto w-full object-contain"
-    priority
-  />
-</div>
+    <section ref={sectionRef} id="mentor" className="bg-white px-6 py-12">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-14 text-center">
+
+          <h2 className="mt-3 text-5xl font-semibold tracking-[-0.05em] text-[#071014] sm:text-6xl">
+            Your Mentor
+          </h2>
         </div>
 
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#0f7896]">
-            Your Mentor
-          </p>
-
-          <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-[#071014] md:text-5xl">
-            <span className="text-[#0f7896]">Urologics</span> launched by the
-            Founder of FRCS Urology course{" "}
-            <span className="text-[#0f7896]">Dr. Ankit Goel</span>
-          </h2>
-
-          <div className="mt-3 inline-flex items-center rounded-full border border-[#0f7896]/30 bg-white px-3 py-1 text-sm font-medium text-[#0f7896]">
-            Gold Medalist
+        <div className="grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="flex justify-center lg:justify-start">
+            <div className="overflow-hidden rounded-[32px] border border-[#0f7896]/14 bg-white p-3 shadow-[0_18px_50px_rgba(15,120,150,0.08)]">
+              <Image
+                src="/my-mentor-2.jpeg"
+                alt="Dr. Ankit Goel"
+                width={800}
+                height={1000}
+                className="h-auto w-auto max-w-full rounded-[24px] object-contain"
+                priority
+              />
+            </div>
           </div>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-2">
-  {mentorHighlights.map((item, index) => {
-    const colorStyles = [
-      {
-        bg: "bg-[#0f7896]/8",
-        border: "border-[#0f7896]/20",
-        title: "text-[#0f7896]",
-      },
-      {
-        bg: "bg-[#7c6ee6]/10",
-        border: "border-[#7c6ee6]/20",
-        title: "text-[#7c6ee6]",
-      },
-      {
-        bg: "bg-[#e6a63a]/12",
-        border: "border-[#e6a63a]/25",
-        title: "text-[#e6a63a]",
-      },
-      {
-        bg: "bg-[#3bb273]/12",
-        border: "border-[#3bb273]/25",
-        title: "text-[#3bb273]",
-      },
-    ];
+          <div>
+            <h3 className="text-4xl font-semibold tracking-[-0.04em] text-[#071014] md:text-5xl">
+              <span className="text-[#0f7896]">Urologics</span> launched by the
+              Founder of FRCS Urology course{" "}
+              <span className="text-[#0f7896]">Dr. Ankit Goel</span>
+            </h3>
 
-    const style = colorStyles[index % colorStyles.length];
+            <div className="mt-4 inline-flex items-center rounded-full border border-[#0f7896]/30 bg-cyan-50 px-4 py-1.5 text-sm font-semibold text-[#0f7896]">
+              Gold Medalist
+            </div>
+
+            <div className="mt-10 grid gap-4 sm:grid-cols-2">
+  {mentorHighlights.map((item, index) => {
+    const accents = ["#0f7896", "#7c6ee6", "#e6a63a", "#3bb273"];
+    const accent = accents[index % accents.length];
 
     return (
       <div
         key={item.title}
-        className={`rounded-[22px] border p-5 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${style.bg} ${style.border} ${
-          isInView
-            ? "translate-y-0 opacity-100"
-            : "translate-y-5 opacity-0"
+        className={`group relative overflow-hidden rounded-[24px] border border-[#0f7896]/10 bg-white p-6 shadow-[0_14px_36px_rgba(15,120,150,0.08)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:shadow-[0_20px_48px_rgba(15,120,150,0.13)] ${
+          isInView ? "translate-y-0 opacity-100" : "translate-y-5 opacity-0"
         }`}
         style={{
           transitionDelay: isInView ? `${index * 120}ms` : "0ms",
         }}
       >
-        {/* Title */}
+        <div
+          className="absolute inset-x-0 top-0 h-1.5"
+          style={{ backgroundColor: accent }}
+        />
+
         <p
-          className={`text-xl font-bold tracking-[-0.03em] ${style.title}`}
+          className="text-3xl font-bold tracking-[-0.05em]"
+          style={{ color: accent }}
         >
           {item.title}
         </p>
 
-        {/* Text */}
-        <p className="mt-3 text-sm leading-6 text-[#071014]/65">
+        <p className="mt-4 text-lg font-semibold leading-7 text-black">
           {item.text}
         </p>
       </div>
     );
   })}
 </div>
+          </div>
         </div>
       </div>
     </section>

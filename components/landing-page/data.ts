@@ -33,7 +33,7 @@ export const features: LandingFeature[] = [
   },
   {
     title: "FRCS Urology Section 2",
-    textPoints: ["Chapter Wise Test","Grand Mock Test","Live Lectures","Recorded Lectures","Practice With Mentor"],
+    textPoints: ["Live Lectures & Viva Practice","Recorded Lectures","Grand Mock Test","Urologics AI","Practice With Mentor"],
   },
   {
     title: "FEBU Section 1",
@@ -41,7 +41,7 @@ export const features: LandingFeature[] = [
   },
   {
     title: "FEBU Section 2",
-    textPoints: ["Chapter Wise Test","Grand Mock Test","Live Lectures","Recorded Lectures","Practice With Mentor"],
+    textPoints: ["Live Lectures & Viva Practice","Recorded Lectures","Grand Mock Test","Urologics AI","Practice With Mentor"],
   },
   {
     title: "Viva in Dreams",

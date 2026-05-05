@@ -5,7 +5,7 @@ export const panelInsetClass =
   "rounded-[20px] border border-[#0f7896]/14 bg-cyan-50";
 
 export const chipClass =
-  "inline-flex items-center rounded-full border-2 border-[#0f7896] bg-white font-semibold px-3 py-1 text-[16px] uppercase tracking-[0.22em] text-[#0f7896]";
+  "inline-flex items-center rounded-full border-2 border-[#0f7896] bg-white font-semibold px-3 py-1 md:text-[16px] text-[8px] uppercase tracking-[0.22em] text-[#0f7896]";
 
 export const goldGradient = "text-[#0f7896]";
 

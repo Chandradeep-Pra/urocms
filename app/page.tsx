@@ -22,7 +22,7 @@ export default function Page() {
   return (
     <main className={`${newsreader.variable} min-h-screen overflow-x-hidden bg-cyan-50 text-[#071014]`}>
       <LandingHeader />
-      <div className="h-[92px]" aria-hidden="true" />
+      {/* <div className=" h-[12px]" aria-hidden="true" /> */}
       <HeroSection />
       <MentorSection />
       <PlatformSection />

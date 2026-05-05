@@ -16,11 +16,11 @@ export function AppScreensSection() {
     <section className="bg-white px-6 py-24">
       <div className="mx-auto max-w-[1500px]">
         <div className="mb-12 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#0f7896]">
+          {/* <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#0f7896]">
             App Experience
-          </p>
+          </p> */}
           <h2 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[#071014] sm:text-5xl">
-            Multi Featured
+            Question Bank
           </h2>
         </div>
 

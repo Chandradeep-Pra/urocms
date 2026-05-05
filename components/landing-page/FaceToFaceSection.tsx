@@ -7,27 +7,32 @@ const liveCourses = [
   {
     title: "Section 1 (FRCS / FEBU) - Live Online Course",
     icon: Presentation,
-    points: ["Live interactive sessions", "Structured syllabus", "Exam-focused teaching"],
+    points: ["16 live online sessions", "Structured case based interactive sessions", "SBA discussion on all topics for FRCS/FEBU exam","⁠Detailed discussion on Oxford , EAU guidelines , Scientific Basis of Urology","Mnemonics , Algorithms and Flowcharts","⁠Evidence based solution to controversial questions","Statistics and Ethical scenarios"],
   },
   {
     title: "Section 2 (FRCS / FEBU) - Live Online Course",
     icon: GraduationCap,
-    points: ["Advanced topics", "Viva preparation", "Clinical discussions"],
+    points: ["16 live online sessions ", "4 to 5 viva case practice per session ", "Viva practice for candidates in each session followed by feedback","Time management, appropriate evidence quotation and communication skills highlight","Learn the 'opening gambit' in viva","Concept based algorithms","Understanding the marking scheme"],
   },
-  {
-    title: "Section 1 Test x Discussion",
-    icon: MessagesSquare,
-    points: ["Test-based learning", "Discussion sessions", "Doubt solving"],
-  },
+  // {
+  //   title: "Section 1 (FRCS / FEBU) Test & Discussion",
+  //   icon: MessagesSquare,
+  //   points: ["Test-based learning", "Discussion sessions", "Doubt solving"],
+  // },
   {
     title: "Section 2 Viva in Dreams",
     icon: Users2,
-    points: ["Simulated viva", "Real exam feel", "Confidence building"],
+    points: ["One to One Grand Mock Viva exam for Section 2 FRCS Urology ", "All 8 stations covered as actual exam", "Duration and Sequence of Mock stations individualised as a per Royal college sequence","Ideal for last minute assessment and feedback"],
   },
   {
     title: "Live One to One Session",
     icon: Presentation,
-    points: ["Personal mentoring", "Flexible schedule", "Custom preparation"],
+    points: ["Personalised mentoring for Section 1/ Section 2 FRCS Urology", "Flexible schedule for busy trainees / consultants", "Customisation as per candidate’s requirement","Discussion of Previous Exam like scenarios","Maximum viva practice on one to one basis with feedback","Limited slots only"],
+  },
+  {
+    title: "Urology Masterclass",
+    icon: Presentation,
+    points: ["Monthly Masterclass", "Recent Advances Masterclass", "EAU Guidelines Masterclass","Post Graduate Practical Exam Masterclass"],
   },
 ];
 
@@ -83,17 +88,30 @@ export function FaceToFaceSection() {
 
                 {/* Expanded */}
                 {isActive && (
-                  <div className="mt-6 space-y-3">
-                    {course.points.map((point) => (
-                      <div key={point} className="flex items-start gap-3">
-                        <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[#0f7896]">
-                          <Check className="h-3 w-3" />
-                        </div>
-                        <p className="text-sm text-white/90">{point}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+  <div className="mt-7 grid gap-3 sm:grid-cols-2">
+    {course.points.map((point, index) => (
+      <div
+        key={point}
+        className="relative overflow-hidden rounded-[18px] border border-white/18 bg-white p-4 text-[#071014] shadow-[0_10px_26px_rgba(0,0,0,0.08)]"
+      >
+        {/* Accent corner */}
+        <div className="absolute right-0 top-0 h-12 w-12 rounded-bl-[22px] bg-[#0f7896]/10" />
+
+        <div className="flex items-start gap-3">
+          {/* Number */}
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f7896] text-sm font-bold text-white">
+            {index + 1}
+          </div>
+
+          {/* Text */}
+          <p className="text-lg font-bold leading-7 tracking-[-0.03em] text-[#071014]">
+            {point}
+          </p>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
 
                 {/* Explore */}
                 {!isActive && (
