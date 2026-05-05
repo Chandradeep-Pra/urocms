@@ -1,24 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { SignUpDialog } from "./SignUpDialog";
 
 const navItems = [
   { label: "Mentor", href: "#mentor" },
   { label: "Courses", href: "#courses" },
   { label: "AI Viva", href: "#ai-viva" },
   { label: "Stories", href: "#stories" },
-  { label: "Pricing", href: "/pricing" },
+  // { label: "Pricing", href: "/pricing" },
 ];
 
 export function LandingHeader() {
   const [isOpen, setIsOpen] = useState(false);
 
+  const [showHeader, setShowHeader] = useState(true);
+const [lastScrollY, setLastScrollY] = useState(0);
+
+useEffect(() => {
+  const handleScroll = () => {
+    const currentScrollY = window.scrollY;
+
+    if (currentScrollY < 50) {
+      setShowHeader(true); // always show at top
+    } else if (currentScrollY > lastScrollY) {
+      setShowHeader(false); // scrolling down
+    } else {
+      setShowHeader(true); // scrolling up
+    }
+
+    setLastScrollY(currentScrollY);
+  };
+
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, [lastScrollY]);
+
   return (
-    <header className="inset-x-0 top-0 z-50 border-b border-[#0f7896]/12 bg-cyan-50/90 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-6 md:py-4">
+    <header
+  className={`fixed inset-x-0 top-4 z-50 mx-auto max-w-7xl px-4 sm:px-6 transition-all duration-300 ${
+    showHeader ? "translate-y-0 opacity-100" : "-translate-y-[120%] opacity-0"
+  }`}
+>
+      <div className="flex items-center justify-between rounded-full border border-white/40 bg-white/60 px-5 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl md:py-3 md:px-6">
         <Link href="/" className="group flex items-center gap-3">
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border border-[#0f7896]/16 bg-white md:h-16 md:w-16">
             <Image
@@ -30,7 +57,7 @@ export function LandingHeader() {
             />
           </div>
 
-          <p className="font-[family:var(--font-newsreader)] text-xl font-semibold tracking-[-0.04em] text-[#0f7896] md:text-2xl">
+          <p className="font-[family:var(--font-outfit)] text-xl font-bold tracking-tight text-[#0f7896] md:text-2xl">
             Urologics
           </p>
         </Link>
@@ -40,7 +67,7 @@ export function LandingHeader() {
             <Link
               key={item.label}
               href={item.href}
-              className="rounded-full px-4 py-2 text-md font-bold text-[#0f7896] transition duration-300 hover:bg-[#0f7896] hover:text-white"
+              className="rounded-full px-4 py-2 text-md font-semibold text-slate-600 transition duration-300 hover:bg-[#0f7896]/5 hover:text-[#0f7896]"
             >
               {item.label}
             </Link>
@@ -48,12 +75,19 @@ export function LandingHeader() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button
-            asChild
-            className="rounded-full border border-[#0f7896] bg-[#0f7896] px-5 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#0d6b85]"
+          <Link
+            href="/login"
+            className="rounded-full px-5 py-2 text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-100 hover:text-[#0f7896]"
           >
-            <Link href="/pricing">Enroll Now</Link>
-          </Button>
+            Login
+          </Link>
+          <SignUpDialog>
+            <Button
+              className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-6 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25 transition-all duration-300 hover:scale-105 hover:shadow-[#0f7896]/40"
+            >
+              Sign Up
+            </Button>
+          </SignUpDialog>
         </div>
 
         <button
@@ -98,14 +132,22 @@ export function LandingHeader() {
             </Link>
           ))}
 
-          <Button
-            asChild
-            className="mt-2 rounded-full bg-[#0f7896] py-6 text-sm font-semibold text-white hover:bg-[#0d6b85]"
-          >
-            <Link href="/pricing" onClick={() => setIsOpen(false)}>
-              Enroll Now
+          <div className="mt-2 flex flex-col gap-2">
+            <Link
+              href="/login"
+              onClick={() => setIsOpen(false)}
+              className="flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Login
             </Link>
-          </Button>
+            <SignUpDialog>
+              <Button
+                className="w-full rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-6 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25"
+              >
+                Sign Up
+              </Button>
+            </SignUpDialog>
+          </div>
         </div>
       </div>
     </header>

@@ -46,8 +46,8 @@ export function FaceToFaceSection() {
         
         {/* Header */}
         <div className="mb-12 flex flex-col items-center text-center">
-          <h2 className="max-w-3xl text-4xl font-semibold tracking-[-0.04em] text-[#071014] sm:text-5xl">
-            Face to Face Live Online Classes
+          <h2 className="max-w-3xl px-4 text-5xl font-bold tracking-tight text-[#071014] sm:text-5xl">
+            Face to Face <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Live Online Classes</span>
           </h2>
         </div>
 

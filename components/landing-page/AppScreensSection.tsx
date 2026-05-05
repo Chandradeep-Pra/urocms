@@ -19,8 +19,8 @@ export function AppScreensSection() {
           {/* <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#0f7896]">
             App Experience
           </p> */}
-          <h2 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[#071014] sm:text-5xl">
-            Question Bank
+          <h2 className="text-5xl font-bold tracking-[-0.06em] text-[#071014] sm:text-6xl">
+            Question <span className="text-[#0f7896]">Banks</span>
           </h2>
         </div>
 

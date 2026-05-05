@@ -1,4 +1,4 @@
-import { Newsreader } from "next/font/google";
+import { Outfit } from "next/font/google";
 import {
   AiVivaSection,
   FaceToFaceSection,
@@ -12,15 +12,15 @@ import {
 } from "@/components/landing-page";
 import { AppScreensSection } from "@/components/landing-page/AppScreensSection";
 
-const newsreader = Newsreader({
+const outfit = Outfit({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-newsreader",
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-outfit",
 });
 
 export default function Page() {
   return (
-    <main className={`${newsreader.variable} min-h-screen overflow-x-hidden bg-cyan-50 text-[#071014]`}>
+    <main className={`${outfit.variable} font-sans min-h-screen overflow-x-hidden bg-gradient-to-b from-cyan-50 via-white to-cyan-50 text-[#071014]`}>
       <LandingHeader />
       {/* <div className=" h-[12px]" aria-hidden="true" /> */}
       <HeroSection />

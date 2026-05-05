@@ -52,8 +52,8 @@ export function SuccessStoriesSection() {
     <section id="stories" className="bg-cyan-50 px-6 py-24">
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 flex justify-center">
-          <h2 className="max-w-3xl text-center text-4xl font-semibold tracking-[-0.04em] text-[#071014] sm:text-5xl">
-            Success Stories
+          <h2 className="text-5xl font-bold tracking-[-0.06em] text-[#071014] sm:text-6xl">
+            Success <span className="text-[#0f7896]">Stories</span>
           </h2>
         </div>
 
@@ -69,7 +69,7 @@ export function SuccessStoriesSection() {
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-[320px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)] transition-all duration-300 hover:-translate-y-1 hover:border-[#0f7896]/28 hover:shadow-[0_22px_55px_rgba(15,120,150,0.16)]"
+                  className="w-[420px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)] transition-all duration-300 hover:-translate-y-1 hover:border-[#0f7896]/28 hover:shadow-[0_22px_55px_rgba(15,120,150,0.16)]"
                 >
                   <div className="relative aspect-video overflow-hidden bg-cyan-50">
                     <img

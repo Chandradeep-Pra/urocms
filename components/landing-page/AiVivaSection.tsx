@@ -17,14 +17,10 @@ export function AiVivaSection() {
 
         {/* Centered Heading */}
         <div className="mb-16 text-center">
-          <h2 className="text-5xl font-semibold tracking-[-0.06em] text-[#071014] sm:text-6xl">
+          <h2 className="text-5xl font-bold tracking-[-0.06em] text-[#071014] sm:text-6xl">
             Urologics <span className="text-[#0f7896]">AI Viva</span>
           </h2>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-[#071014]/65">
-            Practice viva with examiner-style scenarios, AI feedback, and a focused
-            preparation flow built for real exam confidence.
-          </p>
         </div>
 
         {/* Content */}

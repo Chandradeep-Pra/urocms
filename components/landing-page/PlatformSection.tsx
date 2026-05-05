@@ -11,12 +11,8 @@ export function PlatformSection() {
     <section id="platform" className="bg-cyan-50 px-6 py-24">
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 flex flex-col items-center text-center">
-          {/* <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0f7896] text-white shadow-[0_16px_36px_rgba(15,120,150,0.25)]">
-            <Smartphone className="h-6 w-6" />
-          </div> */}
-
-          <h2 className="max-w-3xl px-4 text-5xl font-semibold tracking-[-0.04em] text-[#071014] sm:text-5xl">
-            App-based Courses.
+          <h2 className="max-w-3xl px-4 text-5xl font-bold tracking-tight text-[#071014] sm:text-5xl">
+            App-based <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Courses</span>
           </h2>
         </div>
 
@@ -27,10 +23,10 @@ export function PlatformSection() {
             return (
               <div
   key={item.title}
-  className={`group relative flex flex-col rounded-[28px] p-6 shadow-[0_16px_40px_rgba(15,120,150,0.09)] transition-all duration-500 ${
+  className={`group relative flex flex-col rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
   isActive
-    ? "bg-[#0f7896] text-white shadow-[0_24px_65px_rgba(15,120,150,0.25)] sm:col-span-2"
-    : "min-h-[180px] border border-[#0f7896]/12 bg-white text-[#071014] hover:-translate-y-1 hover:border-[#0f7896]/28"
+    ? "bg-gradient-to-br from-[#0f7896] to-[#1294ba] text-white shadow-[0_24px_65px_rgba(15,120,150,0.3)] sm:col-span-2 scale-[1.02]"
+    : "min-h-[220px] border border-slate-100 bg-white text-[#071014] hover:-translate-y-2 hover:shadow-[0_20px_48px_rgba(15,120,150,0.1)] hover:border-[#0f7896]/20"
 }`}
 >
                 {/* Close button */}
@@ -45,9 +41,9 @@ export function PlatformSection() {
 
                 {/* Title */}
                 <h3
-  className={`font-semibold tracking-[-0.04em] transition-all duration-300 ${
+  className={`font-bold tracking-tight transition-all duration-300 ${
     isActive
-      ? "text-3xl text-white"
+      ? "text-3xl text-white mb-4"
       : "text-2xl text-center my-auto text-[#071014]"
   }`}
 >
@@ -82,7 +78,7 @@ export function PlatformSection() {
                 {!isActive && (
                   <button
                     onClick={() => setActiveCard(item.title)}
-                    className="mt-auto mx-auto inline-flex items-center gap-2 rounded-full border border-[#0f7896]/20 px-4 py-2 text-sm font-semibold text-[#0f7896] transition duration-300 group-hover:bg-[#0f7896] group-hover:text-white"
+                    className="mt-auto mx-auto inline-flex items-center gap-2 rounded-full bg-[#0f7896]/5 px-5 py-2.5 text-sm font-bold text-[#0f7896] transition duration-300 group-hover:bg-[#0f7896] group-hover:text-white"
                   >
                     Explore
                     <ArrowUpRight className="h-4 w-4" />
