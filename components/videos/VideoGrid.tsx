@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Check,
   CloudUpload,
@@ -48,6 +48,7 @@ export default function VideoGrid({
   onVideosUpdated,
   onSectionsUpdated,
 }: Props) {
+  const thumbnailInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [uploadingThumbnailId, setUploadingThumbnailId] = useState<string | null>(null);
@@ -147,10 +148,31 @@ export default function VideoGrid({
         throw new Error(data?.error || "Thumbnail upload failed");
       }
 
+      const saveRes = await fetch(`/api/videos/videoItem/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description || "",
+          videoUrl: form.videoUrl,
+          sectionId: form.sectionId || "",
+          accessTier: form.accessTier || "free",
+          thumbnailUrl: data.url,
+        }),
+      });
+      const saveData = await saveRes.json().catch(() => null);
+
+      if (!saveRes.ok) {
+        throw new Error(saveData?.error || "Thumbnail saved to Cloudinary but could not be attached to the video");
+      }
+
       setForm((current) => ({
         ...current,
         thumbnailUrl: data.url,
       }));
+      await onVideosUpdated();
       toast.success("Thumbnail uploaded", { id: toastId });
     } catch (error: any) {
       toast.error(error.message || "Thumbnail upload failed", { id: toastId });
@@ -161,7 +183,7 @@ export default function VideoGrid({
   };
 
   const syncToStorage = async (video: VideoItem) => {
-    const toastId = toast.loading("Syncing Drive video to Firebase Storage...");
+    const toastId = toast.loading("Syncing Drive video to Google Cloud Storage...");
     setSyncingId(video.id);
 
     try {
@@ -169,12 +191,12 @@ export default function VideoGrid({
       await onVideosUpdated();
       toast.success(
         result.alreadySynced
-          ? "Video was already synced to Firebase Storage"
-          : "Video synced to Firebase Storage and ready for in-app playback",
+          ? "Video was already synced to Google Cloud Storage"
+          : "Video synced to Google Cloud Storage and ready for in-app playback",
         { id: toastId }
       );
     } catch (error: any) {
-      toast.error(error.message || "Failed to sync video to Firebase Storage", {
+      toast.error(error.message || "Failed to sync video to Google Cloud Storage", {
         id: toastId,
       });
     } finally {
@@ -254,7 +276,7 @@ export default function VideoGrid({
                   <div className="absolute left-4 top-4 flex gap-2">
                     <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-slate-700 backdrop-blur">
                       {isStorageSynced
-                        ? "Firebase Storage"
+                        ? "Google Cloud"
                         : video.provider === "drive"
                           ? "Google Drive"
                           : "YouTube"}
@@ -313,8 +335,8 @@ export default function VideoGrid({
                         }}
                         title={
                           isStorageSynced
-                            ? "Already synced to Firebase Storage"
-                            : "Sync to Firebase Storage"
+                            ? "Already synced to Google Cloud Storage"
+                            : "Sync to Google Cloud Storage"
                         }
                       >
                         {syncingId === video.id ? (
@@ -383,32 +405,34 @@ export default function VideoGrid({
                         placeholder="Thumbnail URL override (optional)"
                       />
                       <div className="flex flex-wrap items-center gap-2">
-                        <label className="inline-flex cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            hidden
-                            onChange={(event) => uploadThumbnail(video.id, event)}
-                            disabled={uploadingThumbnailId === video.id}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            disabled={uploadingThumbnailId === video.id}
-                          >
-                            {uploadingThumbnailId === video.id ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Uploading
-                              </>
-                            ) : (
-                              <>
-                                <ImageUp className="h-4 w-4" />
-                                Upload Thumbnail
-                              </>
-                            )}
-                          </Button>
-                        </label>
+                        <input
+                          ref={(node) => {
+                            thumbnailInputRefs.current[video.id] = node;
+                          }}
+                          type="file"
+                          accept="image/*"
+                          hidden
+                          onChange={(event) => uploadThumbnail(video.id, event)}
+                          disabled={uploadingThumbnailId === video.id}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={uploadingThumbnailId === video.id}
+                          onClick={() => thumbnailInputRefs.current[video.id]?.click()}
+                        >
+                          {uploadingThumbnailId === video.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Uploading
+                            </>
+                          ) : (
+                            <>
+                              <ImageUp className="h-4 w-4" />
+                              Upload Thumbnail
+                            </>
+                          )}
+                        </Button>
                         {form.thumbnailUrl ? (
                           <span className="text-xs text-slate-500">
                             Cloudinary image ready
@@ -481,8 +505,8 @@ export default function VideoGrid({
                     {video.provider === "drive" ? (
                       <p className="text-xs font-medium text-slate-400">
                         {isStorageSynced
-                          ? "Playback now uses Firebase Storage."
-                          : "Sync this Drive video to Firebase Storage for in-app playback."}
+                          ? "Playback now uses Google Cloud Storage."
+                          : "Sync this Drive video to Google Cloud Storage for in-app playback."}
                       </p>
                     ) : null}
                   </div>

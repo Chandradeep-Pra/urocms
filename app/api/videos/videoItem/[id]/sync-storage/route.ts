@@ -14,7 +14,7 @@ export async function POST(
       ...result,
     });
   } catch (error: any) {
-    const message = error.message || "Failed to sync video to Firebase Storage";
+    const message = error.message || "Failed to sync video to Google Cloud Storage";
     const status =
       message === "Video not found"
         ? 404
@@ -22,7 +22,7 @@ export async function POST(
           ? 400
           : 500;
 
-    console.error("Video sync to storage error:", error);
+    console.error("Video sync to Google Cloud Storage error:", error);
     return NextResponse.json({ error: message }, { status });
   }
 }

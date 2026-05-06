@@ -3,14 +3,18 @@ import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 import {
   adminDb,
-  adminStorage,
-  getResolvedAdminStorageBucket,
 } from "@/lib/firebaseAdmin";
 import {
   fetchDriveFileStream,
   getDriveFileMetadata,
   grantDriveAccessToEmail,
 } from "@/lib/server/googleDrive";
+import {
+  deleteCloudStorageObject,
+  getCloudStorageSignedReadUrl,
+  getResolvedGoogleCloudStorageBucket,
+  sanitizeStoragePathPart,
+} from "@/lib/server/googleCloudStorage";
 import { parseVideo } from "@/utils/urlParser";
 
 export type VideoAccessTier = "free" | "paid";
@@ -37,14 +41,6 @@ export interface PlayVideoFromFirestoreInput {
     tier?: VideoAccessTier | "guest";
   };
   mode: "admin" | "app";
-}
-
-function sanitizeFilenamePart(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9.-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
 }
 
 function getExtensionFromMetadata(name: string, mimeType: string) {
@@ -139,6 +135,17 @@ export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
     videoAccessTier: accessTier,
     sectionAccessTier: section?.accessTier,
   });
+  const existingDoc = input.videoId
+    ? await adminDb.collection("videoItems").doc(input.videoId).get()
+    : null;
+  const existingData = existingDoc?.exists ? existingDoc.data() ?? {} : {};
+  const sourceChanged =
+    Boolean(input.videoId) &&
+    (
+      String(existingData.videoUrl || "").trim() !== videoUrl ||
+      String(existingData.driveFileId || "").trim() !== String(parsed.driveFileId || "").trim() ||
+      String(existingData.provider || "").trim() !== String(parsed.provider || "").trim()
+    );
 
   await ensureVideoNotDuplicated(
     videoUrl,
@@ -159,9 +166,24 @@ export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
     sectionAccessTier: section?.accessTier || "free",
     sectionTitleSnapshot: section?.title || "",
     thumbnailUrl: input.thumbnailUrl?.trim() || "",
-    storagePath: input.storagePath?.trim() || "",
-    storageBucket: input.storageBucket?.trim() || "",
-    mimeType: input.mimeType?.trim() || "",
+    storagePath:
+      typeof input.storagePath === "string"
+        ? input.storagePath.trim()
+        : sourceChanged
+          ? ""
+          : String(existingData.storagePath || ""),
+    storageBucket:
+      typeof input.storageBucket === "string"
+        ? input.storageBucket.trim()
+        : sourceChanged
+          ? ""
+          : String(existingData.storageBucket || ""),
+    mimeType:
+      typeof input.mimeType === "string"
+        ? input.mimeType.trim()
+        : sourceChanged
+          ? ""
+          : String(existingData.mimeType || ""),
     updatedAt: new Date(),
   };
 
@@ -178,25 +200,6 @@ export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
   return { id: docRef.id, effectiveAccessTier };
 }
 
-async function getStorageSignedUrl(
-  storagePath: string,
-  mimeType?: string,
-  storageBucketName?: string
-) {
-  const bucket = storageBucketName
-    ? adminStorage.storage.bucket(storageBucketName)
-    : await getResolvedAdminStorageBucket();
-
-  const [url] = await bucket.file(storagePath).getSignedUrl({
-    action: "read",
-    expires: Date.now() + 1000 * 60 * 15,
-    responseDisposition: "inline",
-    ...(mimeType ? { responseType: mimeType } : {}),
-  });
-
-  return url;
-}
-
 export async function syncDriveVideoToStorage(videoId: string) {
   const videoRef = adminDb.collection("videoItems").doc(videoId);
   const videoDoc = await videoRef.get();
@@ -207,7 +210,7 @@ export async function syncDriveVideoToStorage(videoId: string) {
 
   const data = videoDoc.data() ?? {};
   if (data.provider !== "drive" || !data.driveFileId) {
-    throw new Error("Only Drive videos can be synced to Firebase Storage");
+    throw new Error("Only Drive videos can be synced to Google Cloud Storage");
   }
 
   if (data.storagePath) {
@@ -220,16 +223,19 @@ export async function syncDriveVideoToStorage(videoId: string) {
 
   const metadata = await getDriveFileMetadata(String(data.driveFileId));
   const extension = getExtensionFromMetadata(metadata.name, metadata.mimeType);
-  const titlePart = sanitizeFilenamePart(String(data.title || metadata.name || "video"));
+  const titlePart = sanitizeStoragePathPart(String(data.title || metadata.name || "video"));
   const filename = `${titlePart || "video"}${extension}`;
-  const storagePath = `videos/${videoId}/${Date.now()}-${filename}`;
+  const sectionPart = sanitizeStoragePathPart(
+    String(data.sectionTitleSnapshot || data.sectionId || "unassigned")
+  );
+  const storagePath = `videos/${sectionPart || "unassigned"}/${videoId}/${Date.now()}-${filename}`;
 
   const upstream = await fetchDriveFileStream(String(data.driveFileId));
   if (!upstream.body) {
     throw new Error("Drive response did not include a stream body");
   }
 
-  const bucket = await getResolvedAdminStorageBucket();
+  const bucket = await getResolvedGoogleCloudStorageBucket();
 
   const uploadStream = bucket.file(storagePath).createWriteStream({
     resumable: false,
@@ -252,6 +258,7 @@ export async function syncDriveVideoToStorage(videoId: string) {
   return {
     id: videoId,
     storagePath,
+    storageBucket: bucket.name,
     mimeType: metadata.mimeType || "video/mp4",
     alreadySynced: false,
   };
@@ -289,17 +296,19 @@ export async function playVideoFromFirestore(input: PlayVideoFromFirestoreInput)
   let playback: Record<string, any>;
 
   if (provider === "storage" && data.storagePath) {
-    const signedUrl = await getStorageSignedUrl(
-      String(data.storagePath),
-      typeof data.mimeType === "string" ? data.mimeType : undefined,
-      typeof data.storageBucket === "string" ? data.storageBucket : undefined
-    );
+    const signedUrl = await getCloudStorageSignedReadUrl({
+      storagePath: String(data.storagePath),
+      mimeType: typeof data.mimeType === "string" ? data.mimeType : undefined,
+      storageBucket:
+        typeof data.storageBucket === "string" ? data.storageBucket : undefined,
+    });
 
     playback = {
       provider: "storage",
-      url: signedUrl,
+      url: signedUrl.url,
       mimeType: data.mimeType || "video/mp4",
       storagePath: data.storagePath,
+      storageBucket: signedUrl.bucket,
     };
   } else if (provider === "drive" && data.driveFileId) {
     if (effectiveAccessTier === "paid" && accessEmail) {
@@ -348,6 +357,7 @@ export async function playVideoFromFirestore(input: PlayVideoFromFirestoreInput)
       sectionId: data.sectionId || "",
       thumbnailUrl: data.thumbnailUrl || "",
       storagePath: data.storagePath || "",
+      storageBucket: data.storageBucket || "",
       mimeType: data.mimeType || "",
       requiresGoogleSession: false,
     },
@@ -361,4 +371,11 @@ export async function playVideoFromFirestore(input: PlayVideoFromFirestoreInput)
         }
       : null,
   };
+}
+
+export async function deleteVideoAssetsFromStorage(input: {
+  storagePath?: string | null;
+  storageBucket?: string | null;
+}) {
+  return deleteCloudStorageObject(input);
 }

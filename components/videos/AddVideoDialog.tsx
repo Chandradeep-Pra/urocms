@@ -99,7 +99,7 @@ export default function AddVideoDialog({
                 <div>
                   <p className="font-medium text-emerald-900">Private Google Drive supported</p>
                   <p className="text-xs text-emerald-700">
-                    Best used with paid access and Google email permission grant
+                    Best used as an import source before syncing into Google Cloud Storage
                   </p>
                 </div>
               </div>
@@ -154,7 +154,7 @@ export default function AddVideoDialog({
               className="h-11 rounded-xl"
             />
             <p className="text-xs leading-6 text-slate-500">
-              For premium private Drive videos, make sure the file or folder is shared with your service account so the app can grant paid-user access.
+              For premium private Drive videos, make sure the file or folder is shared with your service account so the app can import and sync it to Google Cloud Storage.
             </p>
           </div>
 

@@ -1,5 +1,8 @@
 import { adminDb } from "@/lib/firebaseAdmin";
-import { saveVideoToFirestore } from "@/lib/server/firestoreVideoService";
+import {
+  deleteVideoAssetsFromStorage,
+  saveVideoToFirestore,
+} from "@/lib/server/firestoreVideoService";
 
 export interface VideoItemInput {
   title: string;
@@ -63,6 +66,22 @@ export async function updateVideoItem(id: string, input: VideoItemInput) {
 }
 
 export async function deleteVideoItem(id: string) {
-  await adminDb.collection("videoItems").doc(id).delete();
+  const docRef = adminDb.collection("videoItems").doc(id);
+  const snapshot = await docRef.get();
+
+  if (!snapshot.exists) {
+    throw new Error("Video not found");
+  }
+
+  const data = snapshot.data() ?? {};
+
+  if (data.storagePath) {
+    await deleteVideoAssetsFromStorage({
+      storagePath: typeof data.storagePath === "string" ? data.storagePath : null,
+      storageBucket: typeof data.storageBucket === "string" ? data.storageBucket : null,
+    });
+  }
+
+  await docRef.delete();
   return { success: true };
 }

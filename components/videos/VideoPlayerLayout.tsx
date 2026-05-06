@@ -146,7 +146,7 @@ export default function VideoPlayerLayout({
         .play()
         .then(() => setPlaying(true))
         .catch(() => {
-          console.log("Autoplay blocked");
+          setPlaying(false);
         });
     }
   }, [video, parsed]);
@@ -301,9 +301,8 @@ export default function VideoPlayerLayout({
                   }`}
                   onTimeUpdate={handleTimeUpdate}
                   controls={false}
-                  preload="metadata"
+                  preload="auto"
                   playsInline
-                  muted
                   autoPlay
                 />
               )}
