@@ -7,7 +7,7 @@ const liveCourses = [
   {
     title: "Section 1 (FRCS / FEBU) - Live Online Course",
     icon: Presentation,
-    points: ["16 live online sessions", "Structured case based interactive sessions", "SBA discussion on all topics for FRCS/FEBU exam","â Detailed discussion on Oxford , EAU guidelines , Scientific Basis of Urology","Mnemonics , Algorithms and Flowcharts","â Evidence based solution to controversial questions","Statistics and Ethical scenarios"],
+    points: ["16 live online sessions", "Structured case based interactive sessions", "SBA discussion on all topics for FRCS/FEBU exam","Detailed discussion on Oxford , EAU guidelines , Scientific Basis of Urology","Mnemonics , Algorithms and Flowcharts","Evidence based solution to controversial questions","Statistics and Ethical scenarios"],
   },
   {
     title: "Section 2 (FRCS / FEBU) - Live Online Course",

@@ -45,7 +45,7 @@ export const features: LandingFeature[] = [
   },
   {
     title: "Viva in Dreams",
-    textPoints: ["One to one Single day grand mock exam","Simulate Real Exam consitions"],
+    textPoints: ["One to One Grand Mock Viva exam for Section 2 FRCS Urology ", "All 8 stations covered as actual exam", "Duration and Sequence of Mock stations individualised as a per Royal college sequence","Ideal for last minute assessment and feedback"],
   },
   {
     title: "Urologics AI",
@@ -53,7 +53,7 @@ export const features: LandingFeature[] = [
   },
   {
     title: "Practice with Mentor",
-    textPoints: ["Live online one to one teaching","Flexible class schedules","Customisation as per the candidate's requirement"],
+    textPoints: ["Personalised mentoring for Section 1/ Section 2 FRCS Urology", "Flexible schedule for busy trainees / consultants", "Customisation as per candidateâ€™s requirement","Discussion of Previous Exam like scenarios","Maximum viva practice on one to one basis with feedback","Limited slots only"],
   },
   {
     title: "Urologics Resident Teaching",
