@@ -27,7 +27,7 @@ const liveCourses = [
   {
     title: "Live One to One Session",
     icon: Presentation,
-    points: ["Personalised mentoring for Section 1/ Section 2 FRCS Urology", "Flexible schedule for busy trainees / consultants", "Customisation as per candidateâ€™s requirement","Discussion of Previous Exam like scenarios","Maximum viva practice on one to one basis with feedback","Limited slots only"],
+    points: ["Personalised mentoring for Section 1/ Section 2 FRCS Urology", "Flexible schedule for busy trainees / consultants", "Customisation as per candidate's requirement","Discussion of Previous Exam like scenarios","Maximum viva practice on one to one basis with feedback","Limited slots only"],
   },
   {
     title: "Urology Masterclass",

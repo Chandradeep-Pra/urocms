@@ -53,7 +53,7 @@ export const features: LandingFeature[] = [
   },
   {
     title: "Practice with Mentor",
-    textPoints: ["Personalised mentoring for Section 1/ Section 2 FRCS Urology", "Flexible schedule for busy trainees / consultants", "Customisation as per candidateâ€™s requirement","Discussion of Previous Exam like scenarios","Maximum viva practice on one to one basis with feedback","Limited slots only"],
+    textPoints: ["Personalised mentoring for Section 1/ Section 2 FRCS Urology", "Flexible schedule for busy trainees / consultants", "Customisation as per candidate's requirement","Discussion of Previous Exam like scenarios","Maximum viva practice on one to one basis with feedback","Limited slots only"],
   },
   {
     title: "Urologics Resident Teaching",
