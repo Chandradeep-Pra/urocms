@@ -6,7 +6,9 @@ import {
 } from "@/lib/firebaseAdmin";
 import {
   fetchDriveFileStream,
+  getDriveFileDebugInfo,
   getDriveFileMetadata,
+  getDriveServiceAccountDebugInfo,
   grantDriveAccessToEmail,
 } from "@/lib/server/googleDrive";
 import {
@@ -222,6 +224,10 @@ export async function syncDriveVideoToStorage(videoId: string) {
   }
 
   const metadata = await getDriveFileMetadata(String(data.driveFileId));
+  const driveServiceAccountDebug = getDriveServiceAccountDebugInfo();
+  const driveFileDebug = await getDriveFileDebugInfo(String(data.driveFileId));
+  console.log("Video sync Drive service account:", driveServiceAccountDebug);
+  console.log("Video sync Drive file debug info:", driveFileDebug);
   const extension = getExtensionFromMetadata(metadata.name, metadata.mimeType);
   const titlePart = sanitizeStoragePathPart(String(data.title || metadata.name || "video"));
   const filename = `${titlePart || "video"}${extension}`;

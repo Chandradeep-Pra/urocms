@@ -24,6 +24,22 @@ function getServiceAccountCredentials() {
   };
 }
 
+export function getDriveServiceAccountDebugInfo() {
+  const googleClientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL || "";
+  const googlePrivateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || "";
+  const usingExplicitGoogleServiceAccount =
+    Boolean(googleClientEmail) && isPemPrivateKey(googlePrivateKey);
+
+  return {
+    usingExplicitGoogleServiceAccount,
+    activeClientEmail: usingExplicitGoogleServiceAccount
+      ? googleClientEmail
+      : process.env.FIREBASE_CLIENT_EMAIL || "",
+    fallbackClientEmail: process.env.FIREBASE_CLIENT_EMAIL || "",
+    configuredGoogleClientEmail: googleClientEmail || "",
+  };
+}
+
 function base64UrlEncode(input: string | Buffer) {
   return Buffer.from(input)
     .toString("base64")
