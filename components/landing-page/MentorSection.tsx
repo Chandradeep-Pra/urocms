@@ -51,29 +51,29 @@ export function MentorSection() {
 
   return (
     <section ref={sectionRef} id="mentor" className="bg-white px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
-      <div className="mx-auto w-full">
-        <div className="mb-16 text-center">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="mb-10 text-center sm:mb-16">
           <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#071014] sm:text-6xl">
             Your <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Mentor</span>
           </h2>
         </div>
 
-        <div className="grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="grid items-center gap-8 sm:gap-12 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="flex justify-center lg:justify-start">
-            <div className="overflow-hidden rounded-[40px] border border-[#0f7896]/10 bg-gradient-to-br from-[#0f7896]/5 to-transparent p-4 shadow-[0_32px_80px_rgba(15,120,150,0.06)] backdrop-blur-sm">
+            <div className="overflow-hidden rounded-[28px] border border-[#0f7896]/10 bg-gradient-to-br from-[#0f7896]/5 to-transparent p-2 shadow-[0_32px_80px_rgba(15,120,150,0.06)] backdrop-blur-sm sm:rounded-[40px] sm:p-4">
               <Image
                 src="/my-mentor-2.jpeg"
                 alt="Dr. Ankit Goel"
                 width={800}
                 height={1000}
-                className="h-auto w-auto max-w-full rounded-[28px] object-contain shadow-sm"
+                className="h-auto w-auto max-w-full rounded-[22px] object-contain shadow-sm sm:rounded-[28px]"
                 priority
               />
             </div>
           </div>
 
           <div>
-            <h3 className="text-3xl font-bold tracking-tight text-[#071014] md:text-5xl leading-tight">
+            <h3 className="text-2xl font-bold tracking-tight text-[#071014] sm:text-3xl md:text-5xl leading-tight">
               <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Urologics</span> launched by the
               Founder of FRCS Urology course{" "}
               <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Dr. Ankit Goel</span>
@@ -83,12 +83,12 @@ export function MentorSection() {
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#d6a735]/30 bg-gradient-to-br from-[#fff8dc] via-white to-[#f4d46a]/30 shadow-[0_12px_28px_rgba(214,167,53,0.16)]">
                 <Award className="h-6 w-6 text-[#b98516]" />
               </div>
-              <p className="text-2xl font-black tracking-[-0.04em] text-[#071014]">
+              <p className="text-xl font-black tracking-[-0.04em] text-[#071014] sm:text-2xl">
                 Gold Medalist
               </p>
             </div>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            <div className="mt-8 grid gap-3 sm:mt-10 sm:grid-cols-2 sm:gap-4">
   {mentorHighlights.map((item, index) => {
     const accents = ["#0f7896", "#7c6ee6", "#e6a63a", "#3bb273"];
     const accent = accents[index % accents.length];
@@ -96,7 +96,7 @@ export function MentorSection() {
     return (
       <div
         key={item.title}
-        className={`group relative overflow-hidden rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-[0_20px_48px_rgba(15,120,150,0.1)] ${
+        className={`group relative overflow-hidden rounded-[24px] border border-slate-100 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-[0_20px_48px_rgba(15,120,150,0.1)] sm:rounded-[32px] sm:p-8 ${
           isInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
         }`}
         style={{
@@ -109,13 +109,13 @@ export function MentorSection() {
         />
 
         <p
-          className="text-3xl font-extrabold tracking-tight"
+          className="text-2xl font-extrabold tracking-tight sm:text-3xl"
           style={{ color: accent }}
         >
           {item.title}
         </p>
 
-        <p className="mt-4 text-lg font-medium leading-relaxed text-slate-600">
+        <p className="mt-3 text-sm font-medium leading-6 text-slate-600 sm:mt-4 sm:text-lg sm:leading-relaxed">
           {item.text}
         </p>
       </div>

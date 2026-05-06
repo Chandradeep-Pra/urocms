@@ -58,9 +58,9 @@ export function HeroSection() {
 </div>
         </div>
 
-        <div className="relative animate-slide-up self-start pt-4 lg:pt-8">
-          <div className="relative mx-auto flex min-h-[300px] w-full justify-center sm:min-h-[440px]">
-            <div className="absolute left-1/2 top-0 z-10 w-full max-w-[273px] -translate-x-1/2 lg:-top-10 xl:max-w-[294px]">
+        <div className="relative animate-slide-up self-start pt-2 lg:pt-8">
+          <div className="relative mx-auto flex w-full justify-center sm:min-h-[440px]">
+            <div className="relative z-10 w-full max-w-[220px] sm:absolute sm:left-1/2 sm:top-0 sm:max-w-[273px] sm:-translate-x-1/2 lg:-top-10 xl:max-w-[294px]">
               <Image
                 src="/ai-screen-phone.png"
                 alt="Urologics AI viva phone screen"
