@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const { case: caseData } = body;
+    const { case: caseData, folderId = "", folderName = "" } = body;
 
     if (!caseData?.title || !caseData?.stem) {
       return NextResponse.json(
@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
 
     const docRef = await adminDb.collection("vivaCases").add({
       ...body,
+      folderId: String(folderId || ""),
+      folderName: String(folderName || ""),
       attemptsCount: 0,
       isActive: true,
       createdAt: FieldValue.serverTimestamp(),

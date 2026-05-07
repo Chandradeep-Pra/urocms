@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Upload, X } from "lucide-react";
+import { FileText, Folder, FolderOpen, FolderPlus, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,14 +42,28 @@ import {
 
 export default function AIVivaPage() {
   const router = useRouter();
+  const [folders, setFolders] = useState<{ id: string; title: string; description?: string }[]>([]);
   const [cases, setCases] = useState<VivaCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [folderDialogOpen, setFolderDialogOpen] = useState(false);
   const [fastModeDialogOpen, setFastModeDialogOpen] = useState(false);
   const [uploadingExhibitIndex, setUploadingExhibitIndex] = useState<number | null>(null);
   const [activeMode, setActiveMode] = useState<VivaMode>("Calm and Composed");
+  const [activeFolderId, setActiveFolderId] = useState<"all" | "unfoldered" | string>("all");
   const [form, setForm] = useState<VivaCaseForm>(createInitialVivaForm());
+  const [folderForm, setFolderForm] = useState({ title: "", description: "" });
+
+  const fetchFolders = async () => {
+    try {
+      const res = await fetch("/api/viva-folders");
+      const data = await res.json();
+      setFolders(data.folders || []);
+    } catch {
+      toast.error("Failed to fetch folders");
+    }
+  };
 
   const fetchCases = async () => {
     try {
@@ -66,6 +80,7 @@ export default function AIVivaPage() {
 
   useEffect(() => {
     fetchCases();
+    fetchFolders();
   }, []);
 
   const resetComposer = () => {
@@ -126,6 +141,64 @@ export default function AIVivaPage() {
       fetchCases();
     } catch {
       toast.error("Delete failed");
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    const title = folderForm.title.trim();
+
+    if (!title) {
+      toast.error("Folder title is required");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/viva-folders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(folderForm),
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to create folder");
+      }
+
+      toast.success("Folder created");
+      setFolderDialogOpen(false);
+      setFolderForm({ title: "", description: "" });
+      fetchFolders();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create folder");
+    }
+  };
+
+  const handleMoveCaseToFolder = async (caseId: string, folderId: string) => {
+    const folder = folders.find((item) => item.id === folderId);
+
+    try {
+      const res = await fetch(`/api/viva-cases/${caseId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          folderId,
+          folderName: folder?.title || "",
+        }),
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to move case");
+      }
+
+      toast.success(folderId ? "Case moved to folder" : "Case moved out of folder");
+      fetchCases();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to move case");
     }
   };
 
@@ -320,6 +393,30 @@ export default function AIVivaPage() {
 
   const calmReady = hasConfiguredCalmMode({ case: form.case, modes: form.modes });
   const fastReady = hasConfiguredFastMode({ modes: form.modes });
+  const folderNodes = [
+    {
+      id: "all",
+      title: "All Cases",
+      count: cases.length,
+    },
+    {
+      id: "unfoldered",
+      title: "Unfoldered",
+      count: cases.filter((item) => !item.folderId).length,
+    },
+    ...folders.map((folder) => ({
+      id: folder.id,
+      title: folder.title,
+      count: cases.filter((item) => item.folderId === folder.id).length,
+    })),
+  ];
+  const visibleCases = cases.filter((item) => {
+    if (activeFolderId === "all") return true;
+    if (activeFolderId === "unfoldered") return !item.folderId;
+    return item.folderId === activeFolderId;
+  });
+  const activeFolderLabel =
+    folderNodes.find((node) => node.id === activeFolderId)?.title || "All Cases";
 
   return (
     <div className="space-y-6">
@@ -330,6 +427,39 @@ export default function AIVivaPage() {
             Shared cases with Calm and Composed and Fast and Furious setups.
           </p>
         </div>
+        <div className="flex items-center gap-3">
+        <Dialog open={folderDialogOpen} onOpenChange={setFolderDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="rounded-xl">
+              <FolderPlus className="mr-2 h-4 w-4" />
+              Add Folder
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>Create Viva Folder</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Folder title"
+                value={folderForm.title}
+                onChange={(e) =>
+                  setFolderForm((prev) => ({ ...prev, title: e.target.value }))
+                }
+              />
+              <Textarea
+                placeholder="Description (optional)"
+                value={folderForm.description}
+                onChange={(e) =>
+                  setFolderForm((prev) => ({ ...prev, description: e.target.value }))
+                }
+              />
+              <div className="flex justify-end">
+                <Button onClick={handleCreateFolder}>Create Folder</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog
           open={dialogOpen}
@@ -373,6 +503,26 @@ export default function AIVivaPage() {
                   }
                   className="h-11 rounded-xl"
                 />
+
+                <select
+                  className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none"
+                  value={form.folderId || ""}
+                  onChange={(e) => {
+                    const selectedFolder = folders.find((folder) => folder.id === e.target.value);
+                    setForm((prev) => ({
+                      ...prev,
+                      folderId: e.target.value,
+                      folderName: selectedFolder?.title || "",
+                    }));
+                  }}
+                >
+                  <option value="">Unfoldered</option>
+                  {folders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {folder.title}
+                    </option>
+                  ))}
+                </select>
 
                 <select
                   className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none"
@@ -806,6 +956,7 @@ export default function AIVivaPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
 
         <FastAndFuriousDialog
           open={fastModeDialogOpen}
@@ -820,8 +971,74 @@ export default function AIVivaPage() {
 
       {loading && <Loader2 className="mx-auto animate-spin" />}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {cases.map((vivaCase) => {
+      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="border-b border-slate-100 px-3 pb-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Viva Explorer
+            </p>
+          </div>
+          <div className="mt-3 space-y-1">
+            {folderNodes.map((node) => {
+              const active = activeFolderId === node.id;
+              const isFolder = node.id !== "all";
+              const FolderIcon =
+                active && isFolder ? FolderOpen : isFolder ? Folder : FileText;
+
+              return (
+                <button
+                  key={node.id}
+                  type="button"
+                  onClick={() =>
+                    setActiveFolderId(node.id as "all" | "unfoldered" | string)
+                  }
+                  className={`flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left transition ${
+                    active
+                      ? "bg-teal-50 text-teal-700"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <FolderIcon className="h-4 w-4 shrink-0" />
+                    <span className="truncate text-sm font-medium">{node.title}</span>
+                  </span>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[11px] text-slate-500 shadow-sm">
+                    {node.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <FolderOpen className="h-5 w-5 text-teal-600" />
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">{activeFolderLabel}</h3>
+                <p className="text-sm text-slate-500">
+                  {visibleCases.length} case{visibleCases.length === 1 ? "" : "s"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {visibleCases.length === 0 ? (
+            <div className="grid min-h-[260px] place-items-center rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
+              <div className="space-y-3">
+                <Folder className="mx-auto h-10 w-10 text-slate-300" />
+                <div>
+                  <h4 className="text-base font-semibold text-slate-900">No viva cases here</h4>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Select another folder or create a new case in this location.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-2">
+        {visibleCases.map((vivaCase) => {
           const calmModeReady = hasConfiguredCalmMode(vivaCase);
           const fastModeReady = hasConfiguredFastMode(vivaCase);
           const configuredFastQuestions = vivaCase.modes.fastAndFurious.questions.filter(
@@ -848,10 +1065,20 @@ export default function AIVivaPage() {
               <CardContent className="space-y-4 p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-2">
-                    <p className="font-semibold text-slate-800">{vivaCase.case.title}</p>
-                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">
-                      {vivaCase.case.level}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-slate-400" />
+                      <p className="font-semibold text-slate-800">{vivaCase.case.title}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">
+                        {vivaCase.case.level}
+                      </span>
+                      {vivaCase.folderName ? (
+                        <span className="inline-flex rounded-full border border-teal-100 bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
+                          {vivaCase.folderName}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">
@@ -932,8 +1159,26 @@ export default function AIVivaPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-1">
-                  <p className="text-sm font-medium text-teal-700">Open case</p>
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm font-medium text-teal-700">Open case</p>
+                    <select
+                      value={vivaCase.folderId || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleMoveCaseToFolder(vivaCase.id, e.target.value);
+                      }}
+                      className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none"
+                    >
+                      <option value="">Unfoldered</option>
+                      {folders.map((folder) => (
+                        <option key={folder.id} value={folder.id}>
+                          {folder.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                   <button
                     onClick={(e) => {
@@ -949,6 +1194,9 @@ export default function AIVivaPage() {
             </Card>
           );
         })}
+            </div>
+          )}
+        </section>
       </div>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

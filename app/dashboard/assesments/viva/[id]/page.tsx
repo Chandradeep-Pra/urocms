@@ -22,6 +22,7 @@ import {
 export default function CaseDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const [folders, setFolders] = useState<{ id: string; title: string }[]>([]);
   const [caseData, setCaseData] = useState<VivaCase | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,8 +52,19 @@ export default function CaseDetailsPage() {
     }
   };
 
+  const fetchFolders = async () => {
+    try {
+      const res = await fetch("/api/viva-folders");
+      const data = await res.json();
+      setFolders(data.folders || []);
+    } catch {
+      toast.error("Failed to load folders");
+    }
+  };
+
   useEffect(() => {
     if (id) fetchCase();
+    fetchFolders();
   }, [id]);
 
   const handleUpdate = async () => {
@@ -362,6 +374,26 @@ export default function CaseDetailsPage() {
             }
             placeholder="Title"
           />
+
+          <select
+            className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none"
+            value={caseData.folderId || ""}
+            onChange={(e) => {
+              const selectedFolder = folders.find((folder) => folder.id === e.target.value);
+              setCaseData({
+                ...caseData,
+                folderId: e.target.value,
+                folderName: selectedFolder?.title || "",
+              });
+            }}
+          >
+            <option value="">Unfoldered</option>
+            {folders.map((folder) => (
+              <option key={folder.id} value={folder.id}>
+                {folder.title}
+              </option>
+            ))}
+          </select>
 
           <Textarea
             value={caseData.case.stem}

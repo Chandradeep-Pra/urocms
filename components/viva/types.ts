@@ -26,6 +26,8 @@ export interface FastQuestionConfig {
 
 export interface VivaCase {
   id: string;
+  folderId?: string;
+  folderName?: string;
   case: {
     title: string;
     level: string;
@@ -73,6 +75,8 @@ export const createFastQuestion = (): FastQuestionConfig => ({
 });
 
 export const createInitialVivaForm = (): VivaCaseForm => ({
+  folderId: "",
+  folderName: "",
   case: {
     title: "",
     level: "Intermediate",
@@ -175,6 +179,8 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
 
   return {
     id: rawCase?.id || createId("case"),
+    folderId: rawCase?.folderId || "",
+    folderName: rawCase?.folderName || "",
     case: {
       title: rawCase?.case?.title || "",
       level: rawCase?.case?.level || "Intermediate",
@@ -214,6 +220,8 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
 };
 
 export const toVivaCasePayload = (form: VivaCaseForm) => ({
+  folderId: form.folderId || "",
+  folderName: form.folderName || "",
   case: {
     ...form.case,
   },

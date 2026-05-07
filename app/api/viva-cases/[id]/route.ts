@@ -45,8 +45,13 @@ export async function PATCH(
     const { id } = await context.params;
     const body = await req.json();
 
+    const nextFolderId = typeof body.folderId === "string" ? body.folderId : undefined;
+    const nextFolderName = typeof body.folderName === "string" ? body.folderName : undefined;
+
     await adminDb.collection("vivaCases").doc(id).update({
       ...body,
+      ...(nextFolderId !== undefined ? { folderId: nextFolderId } : {}),
+      ...(nextFolderName !== undefined ? { folderName: nextFolderName } : {}),
       updatedAt: FieldValue.serverTimestamp(),
     });
 
