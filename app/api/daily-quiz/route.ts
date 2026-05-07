@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const {
@@ -57,15 +59,29 @@ export async function GET() {
       .get();
 
     if (!doc.exists) {
-      return NextResponse.json({ quiz: null });
+      return NextResponse.json(
+        { quiz: null },
+        {
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          },
+        }
+      );
     }
 
-    return NextResponse.json({
-      quiz: {
-        id: doc.id,
-        ...doc.data(),
+    return NextResponse.json(
+      {
+        quiz: {
+          id: doc.id,
+          ...doc.data(),
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      }
+    );
   } catch (err) {
     return NextResponse.json(
       { error: "Failed to fetch quiz" },
