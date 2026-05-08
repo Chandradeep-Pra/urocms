@@ -12,11 +12,16 @@ import { toast } from "sonner";
 import {
   Brain,
   Clock3,
+  CopyPlus,
   Crown,
+  GraduationCap,
   FolderKanban,
+  Gift,
   Layers3,
+  ShieldCheck,
   RefreshCcw,
   Trash2,
+  UsersRound,
   Video,
 } from "lucide-react";
 
@@ -29,6 +34,7 @@ type CatalogItem = {
   attemptsCount?: number;
   durationMinutes?: number;
   accessTier?: "free" | "paid";
+  parentId?: string | null;
 };
 
 type PlanSelection = {
@@ -39,16 +45,30 @@ type PlanSelection = {
   vivaCaseIds: string[];
 };
 
+type PlanAccessScopes = {
+  chapterGroupIds: string[];
+  videoSectionIds: string[];
+  vivaFolderIds: string[];
+};
+
 type PricingPlan = {
   id: string;
   name: string;
   description: string;
   tag?: string;
+  category?: string;
   price: number;
   expiryMonths: number;
+  durationLabel?: string;
+  billingLabel?: string;
+  availabilityNote?: string;
+  featureBullets?: string[];
+  sortOrder?: number;
+  vivaMinutes?: number;
   currency: "GBP";
   isActive: boolean;
   selectedContent: PlanSelection;
+  accessScopes?: PlanAccessScopes;
   contentCounts?: {
     chapters: number;
     videos: number;
@@ -59,12 +79,26 @@ type PricingPlan = {
   };
 };
 
+type PricingCoupon = {
+  id: string;
+  code: string;
+  description?: string;
+  discountType: "percent" | "amount";
+  discountValue: number;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  isActive: boolean;
+};
+
 type CatalogResponse = {
   chapters: CatalogItem[];
+  chapterGroups: CatalogItem[];
+  videoSections: CatalogItem[];
   videos: CatalogItem[];
   quizzes: CatalogItem[];
   mocks: CatalogItem[];
   vivaCases: CatalogItem[];
+  vivaFolders: CatalogItem[];
 };
 
 const emptySelection: PlanSelection = {
@@ -75,32 +109,131 @@ const emptySelection: PlanSelection = {
   vivaCaseIds: [],
 };
 
+const emptyScopes: PlanAccessScopes = {
+  chapterGroupIds: [],
+  videoSectionIds: [],
+  vivaFolderIds: [],
+};
+
 const emptyForm = {
   name: "",
   description: "",
   tag: "",
+  category: "",
   price: "49",
   expiryMonths: 1,
+  durationLabel: "",
+  billingLabel: "",
+  availabilityNote: "",
+  sortOrder: 0,
+  vivaMinutes: 0,
+  featureBulletsText: "",
   isActive: true,
+  accessScopes: emptyScopes,
   selectedContent: emptySelection,
+};
+
+const emptyCouponForm = {
+  code: "",
+  description: "",
+  discountType: "percent" as "percent" | "amount",
+  discountValue: "10",
+  startsAt: "",
+  endsAt: "",
+  isActive: true,
 };
 
 const expiryPresets = [1, 2, 3, 6, 12];
 
+const planPatterns = [
+  {
+    key: "course-viva",
+    title: "Course + Viva",
+    icon: GraduationCap,
+    description: "For CORE and ELITE style lecture-led plans.",
+    values: {
+      category: "FRCS Urology Section 2",
+      durationLabel: "6 Months",
+      availabilityNote: "",
+      featureBulletsText: "Live Lectures + Viva Practice\nFull Recordings Access",
+      vivaMinutes: 0,
+    },
+  },
+  {
+    key: "ai-viva",
+    title: "AI Viva Pack",
+    icon: Brain,
+    description: "For stand-alone AI viva subscriptions.",
+    values: {
+      category: "FRCS Urology Section 2",
+      durationLabel: "3 Months",
+      availabilityNote: "",
+      featureBulletsText: "AI-Based Viva Practice (500 minutes)",
+      vivaMinutes: 500,
+    },
+  },
+  {
+    key: "mock-package",
+    title: "Mock Package",
+    icon: ShieldCheck,
+    description: "For one or multiple mock exam offers.",
+    values: {
+      category: "FRCS Urology Section 2",
+      durationLabel: "1 Mock",
+      availabilityNote: "Limited slots only",
+      featureBulletsText: "Face-to-Face Online Mock Exam",
+      vivaMinutes: 0,
+    },
+  },
+  {
+    key: "mentorship",
+    title: "Mentorship",
+    icon: UsersRound,
+    description: "For one-to-one executive mentoring plans.",
+    values: {
+      category: "FRCS Urology Section 2",
+      durationLabel: "8 Sessions",
+      availabilityNote: "Limited slots only",
+      featureBulletsText: "One to one live online sessions",
+      vivaMinutes: 0,
+    },
+  },
+  {
+    key: "combined-program",
+    title: "Combined Program",
+    icon: Layers3,
+    description: "For Section 1 + Section 2 bundled pathways.",
+    values: {
+      category: "Combined Section 1 + Section 2",
+      durationLabel: "6 Months",
+      availabilityNote: "",
+      featureBulletsText: "Urologics ELITE SBA\nUrologics ELITE Viva",
+      vivaMinutes: 0,
+    },
+  },
+] as const;
+
 export default function PlanCreatorPage() {
   const [catalog, setCatalog] = useState<CatalogResponse>({
     chapters: [],
+    chapterGroups: [],
+    videoSections: [],
     videos: [],
     quizzes: [],
     mocks: [],
     vivaCases: [],
+    vivaFolders: [],
   });
   const [plans, setPlans] = useState<PricingPlan[]>([]);
+  const [coupons, setCoupons] = useState<PricingCoupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingCoupon, setSavingCoupon] = useState(false);
+  const [importingPresets, setImportingPresets] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState(emptyForm);
+  const [couponForm, setCouponForm] = useState(emptyCouponForm);
 
   const fetchData = async () => {
     try {
@@ -114,6 +247,7 @@ export default function PlanCreatorPage() {
 
       setCatalog(data.catalog);
       setPlans(data.plans || []);
+      setCoupons(data.coupons || []);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load pricing plans");
     } finally {
@@ -135,6 +269,23 @@ export default function PlanCreatorPage() {
       selection.vivaCaseIds.length
     );
   }, [form.selectedContent]);
+
+  const totalScopedGroups = useMemo(() => {
+    const scopes = form.accessScopes;
+    return scopes.chapterGroupIds.length + scopes.videoSectionIds.length + scopes.vivaFolderIds.length;
+  }, [form.accessScopes]);
+
+  const monthlyLabelSuggestion = useMemo(() => {
+    const price = Number(form.price);
+    const months = Number(form.expiryMonths);
+
+    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(months) || months <= 0) {
+      return "";
+    }
+
+    const perMonth = Math.round(price / months);
+    return `£${perMonth}/month`;
+  }, [form.price, form.expiryMonths]);
 
   const filteredCatalog = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -173,6 +324,11 @@ export default function PlanCreatorPage() {
     setEditingId(null);
     setForm({
       ...emptyForm,
+      accessScopes: {
+        chapterGroupIds: [],
+        videoSectionIds: [],
+        vivaFolderIds: [],
+      },
       selectedContent: {
         chapterIds: [],
         videoIds: [],
@@ -183,15 +339,60 @@ export default function PlanCreatorPage() {
     });
   };
 
+  const applyPattern = (patternKey: (typeof planPatterns)[number]["key"]) => {
+    const pattern = planPatterns.find((item) => item.key === patternKey);
+    if (!pattern) return;
+
+    setForm((prev) => ({
+      ...prev,
+      category: pattern.values.category,
+      durationLabel: pattern.values.durationLabel,
+      availabilityNote: pattern.values.availabilityNote,
+      featureBulletsText: pattern.values.featureBulletsText,
+      vivaMinutes: pattern.values.vivaMinutes,
+    }));
+  };
+
+  const updateScopeSelection = (key: keyof PlanAccessScopes, id: string) => {
+    setForm((prev) => {
+      const selected = prev.accessScopes[key];
+      const nextValues = selected.includes(id)
+        ? selected.filter((value) => value !== id)
+        : [...selected, id];
+
+      return {
+        ...prev,
+        accessScopes: {
+          ...prev.accessScopes,
+          [key]: nextValues,
+        },
+      };
+    });
+  };
+
   const hydrateForm = (plan: PricingPlan) => {
     setEditingId(plan.id);
     setForm({
       name: plan.name,
       description: plan.description || "",
       tag: plan.tag || "",
+      category: plan.category || "",
       price: String(plan.price ?? ""),
       expiryMonths: Number(plan.expiryMonths || 1),
+      durationLabel: plan.durationLabel || "",
+      billingLabel: plan.billingLabel || "",
+      availabilityNote: plan.availabilityNote || "",
+      sortOrder: Number(plan.sortOrder || 0),
+      vivaMinutes: Number(plan.vivaMinutes || 0),
+      featureBulletsText: Array.isArray(plan.featureBullets)
+        ? plan.featureBullets.join("\n")
+        : "",
       isActive: plan.isActive !== false,
+      accessScopes: {
+        chapterGroupIds: [...(plan.accessScopes?.chapterGroupIds || [])],
+        videoSectionIds: [...(plan.accessScopes?.videoSectionIds || [])],
+        vivaFolderIds: [...(plan.accessScopes?.vivaFolderIds || [])],
+      },
       selectedContent: {
         chapterIds: [...(plan.selectedContent?.chapterIds || [])],
         videoIds: [...(plan.selectedContent?.videoIds || [])],
@@ -207,9 +408,20 @@ export default function PlanCreatorPage() {
       name: form.name.trim(),
       description: form.description.trim(),
       tag: form.tag.trim(),
+      category: form.category.trim(),
       price: Number(form.price),
       expiryMonths: Number(form.expiryMonths),
+      durationLabel: form.durationLabel.trim(),
+      billingLabel: form.billingLabel.trim(),
+      availabilityNote: form.availabilityNote.trim(),
+      sortOrder: Number(form.sortOrder),
+      vivaMinutes: Number(form.vivaMinutes),
+      featureBullets: form.featureBulletsText
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean),
       isActive: form.isActive,
+      accessScopes: form.accessScopes,
       selectedContent: form.selectedContent,
     };
 
@@ -218,13 +430,18 @@ export default function PlanCreatorPage() {
       return;
     }
 
+    if (!payload.category) {
+      toast.error("Category is required");
+      return;
+    }
+
     if (!Number.isFinite(payload.price) || payload.price < 0) {
       toast.error("Enter a valid price");
       return;
     }
 
-    if (!Number.isFinite(payload.expiryMonths) || payload.expiryMonths <= 0) {
-      toast.error("Expiry months should be greater than 0");
+    if ((!Number.isFinite(payload.expiryMonths) || payload.expiryMonths <= 0) && !payload.durationLabel) {
+      toast.error("Add a valid expiry month count or a custom duration label");
       return;
     }
 
@@ -274,6 +491,86 @@ export default function PlanCreatorPage() {
     }
   };
 
+  const importPresets = async () => {
+    try {
+      setImportingPresets(true);
+      const res = await fetch("/api/pricing-plans/presets", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to import presets");
+      }
+      toast.success(`Imported ${data.imported || 0} FRCS pricing presets`);
+      fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to import presets");
+    } finally {
+      setImportingPresets(false);
+    }
+  };
+
+  const handleCreateCoupon = async () => {
+    try {
+      setSavingCoupon(true);
+      const res = await fetch("/api/pricing-coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponForm.code,
+          description: couponForm.description,
+          discountType: couponForm.discountType,
+          discountValue: Number(couponForm.discountValue),
+          startsAt: couponForm.startsAt || null,
+          endsAt: couponForm.endsAt || null,
+          isActive: couponForm.isActive,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create coupon");
+      }
+
+      toast.success("Coupon launched");
+      setCouponForm(emptyCouponForm);
+      fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create coupon");
+    } finally {
+      setSavingCoupon(false);
+    }
+  };
+
+  const toggleCoupon = async (coupon: PricingCoupon, nextValue: boolean) => {
+    try {
+      const res = await fetch(`/api/pricing-coupons/${coupon.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: nextValue }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update coupon");
+      }
+      fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update coupon");
+    }
+  };
+
+  const deleteCoupon = async (id: string) => {
+    try {
+      const res = await fetch(`/api/pricing-coupons/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete coupon");
+      }
+      toast.success("Coupon deleted");
+      fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete coupon");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-8">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -285,8 +582,8 @@ export default function PlanCreatorPage() {
                 Build highly customizable pricing plans
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600">
-                Combine chapters, videos, quizzes, mocks, and AI viva sets into custom packs.
-                Set the price, set the expiry in months, and control exactly what a user unlocks.
+                Use your exact FRCS pricing structure, add display-friendly duration labels, and
+                launch temporary coupons whenever you want a campaign push.
               </p>
             </div>
           </div>
@@ -299,17 +596,73 @@ export default function PlanCreatorPage() {
             <Button variant="outline" onClick={resetForm} className="border-slate-200 bg-white">
               Reset Form
             </Button>
+            <Button onClick={importPresets} disabled={importingPresets} className="bg-slate-900 text-white">
+              <CopyPlus className="mr-2 h-4 w-4" />
+              {importingPresets ? "Importing..." : "Load FRCS Presets"}
+            </Button>
           </div>
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <Card className="border-slate-200 shadow-sm">
             <CardContent className="space-y-6 p-6">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Scope-based access</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Unlock whole chapter groups, video sections, and viva folders instead of tagging single items one by one.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <SelectionGroup
+                  title="Chapter Groups"
+                  icon={Layers3}
+                  items={catalog.chapterGroups}
+                  selectedIds={form.accessScopes.chapterGroupIds}
+                  onToggle={(id) => updateScopeSelection("chapterGroupIds", id)}
+                  renderMeta={(item) => (
+                    <>
+                      <span>Group scope</span>
+                      {item.parentId ? <span>Nested</span> : <span>Top level</span>}
+                    </>
+                  )}
+                />
+
+                <SelectionGroup
+                  title="Video Sections"
+                  icon={Video}
+                  items={catalog.videoSections}
+                  selectedIds={form.accessScopes.videoSectionIds}
+                  onToggle={(id) => updateScopeSelection("videoSectionIds", id)}
+                  renderMeta={(item) => (
+                    <>
+                      <span>Section scope</span>
+                      {item.accessTier ? <span>{item.accessTier}</span> : null}
+                    </>
+                  )}
+                />
+
+                <SelectionGroup
+                  title="Viva Folders"
+                  icon={Brain}
+                  items={catalog.vivaFolders}
+                  selectedIds={form.accessScopes.vivaFolderIds}
+                  onToggle={(id) => updateScopeSelection("vivaFolderIds", id)}
+                  renderMeta={() => (
+                    <>
+                      <span>Folder scope</span>
+                    </>
+                  )}
+                  fullWidth
+                />
+              </div>
+
+              <div className="border-t border-slate-200 pt-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">Available content</h2>
+                  <h2 className="text-xl font-semibold text-slate-900">Manual overrides</h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    Select exactly what goes into this pricing plan.
+                    Use exact items only when a plan needs something more custom than scope-based access.
                   </p>
                 </div>
 
@@ -393,6 +746,7 @@ export default function PlanCreatorPage() {
                   fullWidth
                 />
               </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -405,7 +759,7 @@ export default function PlanCreatorPage() {
                       {editingId ? "Edit plan" : "Create plan"}
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
-                      Configure price, duration, and the exact unlock package.
+                      Configure price, duration, display labels, and the exact unlock package.
                     </p>
                   </div>
                   {editingId ? (
@@ -416,13 +770,42 @@ export default function PlanCreatorPage() {
                 </div>
 
                 <div className="space-y-4">
+                  <div className="space-y-3">
+                    <Label>Plan pattern</Label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {planPatterns.map((pattern) => {
+                        const Icon = pattern.icon;
+                        return (
+                          <button
+                            key={pattern.key}
+                            type="button"
+                            onClick={() => applyPattern(pattern.key)}
+                            className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-slate-300 hover:bg-white"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-slate-700 shadow-sm">
+                                <Icon className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">{pattern.title}</p>
+                                <p className="mt-1 text-xs leading-5 text-slate-500">
+                                  {pattern.description}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="plan-name">Plan name</Label>
                     <Input
                       id="plan-name"
                       value={form.name}
                       onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-                      placeholder="FRCS Core Prep Pack"
+                      placeholder="Urologics ELITE Viva"
                     />
                   </div>
 
@@ -434,19 +817,33 @@ export default function PlanCreatorPage() {
                       onChange={(event) =>
                         setForm((prev) => ({ ...prev, description: event.target.value }))
                       }
-                      placeholder="Designed for candidates who need chapter quizzes, core videos, and one viva track."
+                      placeholder="Designed for candidates who need the full live course plus AI viva time."
                       className="min-h-[110px]"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="plan-tag">Tag (optional)</Label>
-                    <Input
-                      id="plan-tag"
-                      value={form.tag}
-                      onChange={(event) => setForm((prev) => ({ ...prev, tag: event.target.value }))}
-                      placeholder="Best Value"
-                    />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="plan-tag">Tag (optional)</Label>
+                      <Input
+                        id="plan-tag"
+                        value={form.tag}
+                        onChange={(event) => setForm((prev) => ({ ...prev, tag: event.target.value }))}
+                        placeholder="Best Value"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="plan-category">Category</Label>
+                      <Input
+                        id="plan-category"
+                        value={form.category}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, category: event.target.value }))
+                        }
+                        placeholder="FRCS Urology Section 2"
+                      />
+                    </div>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -458,7 +855,7 @@ export default function PlanCreatorPage() {
                         min="0"
                         value={form.price}
                         onChange={(event) => setForm((prev) => ({ ...prev, price: event.target.value }))}
-                        placeholder="49"
+                        placeholder="799"
                       />
                     </div>
 
@@ -467,12 +864,12 @@ export default function PlanCreatorPage() {
                       <Input
                         id="plan-expiry"
                         type="number"
-                        min="1"
+                        min="0"
                         value={form.expiryMonths}
                         onChange={(event) =>
                           setForm((prev) => ({
                             ...prev,
-                            expiryMonths: Number(event.target.value || 1),
+                            expiryMonths: Number(event.target.value || 0),
                           }))
                         }
                       />
@@ -499,6 +896,165 @@ export default function PlanCreatorPage() {
                     </div>
                   </div>
 
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="plan-duration-label">Display duration label</Label>
+                      <Input
+                        id="plan-duration-label"
+                        value={form.durationLabel}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, durationLabel: event.target.value }))
+                        }
+                        placeholder="6 Months / 2 Mocks / 16 Sessions"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="plan-billing-label">Billing label</Label>
+                      <Input
+                        id="plan-billing-label"
+                        value={form.billingLabel}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, billingLabel: event.target.value }))
+                        }
+                        placeholder="£130/month"
+                      />
+                      {monthlyLabelSuggestion ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm((prev) => ({ ...prev, billingLabel: monthlyLabelSuggestion }))
+                          }
+                          className="text-xs font-medium text-emerald-600 transition hover:text-emerald-700"
+                        >
+                          Use suggested label: {monthlyLabelSuggestion}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="plan-availability">Availability note</Label>
+                      <Input
+                        id="plan-availability"
+                        value={form.availabilityNote}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, availabilityNote: event.target.value }))
+                        }
+                        placeholder="Limited slots only"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="plan-sort-order">Sort order</Label>
+                      <Input
+                        id="plan-sort-order"
+                        type="number"
+                        value={form.sortOrder}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            sortOrder: Number(event.target.value || 0),
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="plan-viva-minutes">AI viva minutes</Label>
+                      <Input
+                        id="plan-viva-minutes"
+                        type="number"
+                        min="0"
+                        step="10"
+                        value={form.vivaMinutes}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            vivaMinutes: Number(event.target.value || 0),
+                          }))
+                        }
+                        placeholder="500"
+                      />
+                      <p className="text-xs text-slate-500">
+                        One viva is typically around 10 minutes. 500 minutes is roughly 50 viva sessions.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Quick viva presets</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {[0, 100, 250, 500].map((value) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setForm((prev) => ({ ...prev, vivaMinutes: value }))}
+                            className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                              Number(form.vivaMinutes) === value
+                                ? "border-slate-900 bg-slate-900 text-white"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                            }`}
+                          >
+                            {value} min
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="plan-features">Feature bullets</Label>
+                    <Textarea
+                      id="plan-features"
+                      value={form.featureBulletsText}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, featureBulletsText: event.target.value }))
+                      }
+                      placeholder={"Live Lectures + Viva Practice\nFull Recordings Access\nAI Viva Mock (500 minutes)"}
+                      className="min-h-[120px]"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        "Live Lectures + Viva Practice",
+                        "Full Recordings Access",
+                        "AI Viva Mock (500 minutes)",
+                        "AI-Based Viva Practice (500 minutes)",
+                        "Face-to-Face Online Mock Exam",
+                        "One to one live online sessions",
+                        "Urologics ELITE SBA",
+                        "Urologics ELITE Viva",
+                      ].map((feature) => (
+                        <button
+                          key={feature}
+                          type="button"
+                          onClick={() =>
+                            setForm((prev) => {
+                              const existing = prev.featureBulletsText
+                                .split("\n")
+                                .map((item) => item.trim())
+                                .filter(Boolean);
+
+                              if (existing.includes(feature)) {
+                                return prev;
+                              }
+
+                              return {
+                                ...prev,
+                                featureBulletsText: [...existing, feature].join("\n"),
+                              };
+                            })
+                          }
+                          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 transition hover:border-slate-300 hover:bg-white"
+                        >
+                          + {feature}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <div>
                       <p className="text-sm font-medium text-slate-900">Plan active</p>
@@ -519,9 +1075,16 @@ export default function PlanCreatorPage() {
                     <p className="text-sm font-semibold">Plan summary</p>
                   </div>
                   <div className="mt-3 grid gap-2 text-sm text-amber-900/80">
+                    <p>{totalScopedGroups} access scopes selected</p>
                     <p>{totalSelected} content items selected</p>
                     <p>Price: £{form.price || "0"}</p>
-                    <p>Expiry: {form.expiryMonths} month{form.expiryMonths > 1 ? "s" : ""}</p>
+                    <p>
+                      Duration:{" "}
+                      {form.durationLabel ||
+                        `${form.expiryMonths} month${form.expiryMonths > 1 ? "s" : ""}`}
+                    </p>
+                    <p>AI Viva Minutes: {Number(form.vivaMinutes || 0)}</p>
+                    {form.billingLabel ? <p>Billing: {form.billingLabel}</p> : null}
                   </div>
                 </div>
 
@@ -537,7 +1100,7 @@ export default function PlanCreatorPage() {
                   <div>
                     <h2 className="text-xl font-semibold text-slate-900">Saved plans</h2>
                     <p className="mt-1 text-sm text-slate-500">
-                      Existing custom pricing plans created from your content catalog.
+                      Existing pricing plans created from your catalog and presets.
                     </p>
                   </div>
                   <Badge variant="outline" className="border-slate-200 text-slate-600">
@@ -580,17 +1143,60 @@ export default function PlanCreatorPage() {
                             <p className="mt-2 text-sm leading-6 text-slate-500">
                               {plan.description || "No description added yet."}
                             </p>
+                            {plan.category ? (
+                              <p className="mt-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
+                                {plan.category}
+                              </p>
+                            ) : null}
                           </div>
 
                           <div className="text-right">
                             <p className="text-xl font-semibold text-slate-900">£{plan.price}</p>
                             <p className="text-xs text-slate-500">
-                              {plan.expiryMonths} month{plan.expiryMonths > 1 ? "s" : ""}
+                              {plan.durationLabel ||
+                                `${plan.expiryMonths} month${plan.expiryMonths > 1 ? "s" : ""}`}
                             </p>
+                            {plan.billingLabel ? (
+                              <p className="mt-1 text-xs text-emerald-600">{plan.billingLabel}</p>
+                            ) : null}
                           </div>
                         </div>
 
+                        {plan.featureBullets?.length ? (
+                          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                            {plan.featureBullets.map((feature) => (
+                              <span
+                                key={`${plan.id}-${feature}`}
+                                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600"
+                              >
+                                {feature}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+
                         <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                          {plan.accessScopes?.chapterGroupIds?.length ? (
+                            <PlanCountBadge
+                              label="Chapter Groups"
+                              value={plan.accessScopes.chapterGroupIds.length}
+                            />
+                          ) : null}
+                          {plan.accessScopes?.videoSectionIds?.length ? (
+                            <PlanCountBadge
+                              label="Video Sections"
+                              value={plan.accessScopes.videoSectionIds.length}
+                            />
+                          ) : null}
+                          {plan.accessScopes?.vivaFolderIds?.length ? (
+                            <PlanCountBadge
+                              label="Viva Folders"
+                              value={plan.accessScopes.vivaFolderIds.length}
+                            />
+                          ) : null}
+                          {plan.vivaMinutes ? (
+                            <PlanCountBadge label="Viva Minutes" value={plan.vivaMinutes} />
+                          ) : null}
                           <PlanCountBadge label="Chapters" value={plan.contentCounts?.chapters ?? 0} />
                           <PlanCountBadge label="Videos" value={plan.contentCounts?.videos ?? 0} />
                           <PlanCountBadge label="Quizzes" value={plan.contentCounts?.quizzes ?? 0} />
@@ -616,6 +1222,186 @@ export default function PlanCreatorPage() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="space-y-5 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900">Coupon launcher</h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Launch short-term discounts without changing the main plan pricing.
+                    </p>
+                  </div>
+                  <Gift className="h-5 w-5 text-amber-500" />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Coupon code</Label>
+                    <Input
+                      value={couponForm.code}
+                      onChange={(event) =>
+                        setCouponForm((prev) => ({
+                          ...prev,
+                          code: event.target.value.toUpperCase(),
+                        }))
+                      }
+                      placeholder="MAYVIVA20"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Discount type</Label>
+                    <div className="flex gap-2">
+                      {[
+                        { key: "percent", label: "Percent" },
+                        { key: "amount", label: "Amount" },
+                      ].map((option) => (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() =>
+                            setCouponForm((prev) => ({
+                              ...prev,
+                              discountType: option.key as "percent" | "amount",
+                            }))
+                          }
+                          className={`rounded-full border px-3 py-2 text-sm ${
+                            couponForm.discountType === option.key
+                              ? "border-slate-900 bg-slate-900 text-white"
+                              : "border-slate-200 bg-white text-slate-600"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Discount value</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={couponForm.discountValue}
+                      onChange={(event) =>
+                        setCouponForm((prev) => ({ ...prev, discountValue: event.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Input
+                      value={couponForm.description}
+                      onChange={(event) =>
+                        setCouponForm((prev) => ({ ...prev, description: event.target.value }))
+                      }
+                      placeholder="Launch offer for viva candidates"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Starts at</Label>
+                    <Input
+                      type="date"
+                      value={couponForm.startsAt}
+                      onChange={(event) =>
+                        setCouponForm((prev) => ({ ...prev, startsAt: event.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Ends at</Label>
+                    <Input
+                      type="date"
+                      value={couponForm.endsAt}
+                      onChange={(event) =>
+                        setCouponForm((prev) => ({ ...prev, endsAt: event.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Coupon active</p>
+                    <p className="text-xs text-slate-500">Show this coupon on the public pricing page.</p>
+                  </div>
+                  <Switch
+                    checked={couponForm.isActive}
+                    onCheckedChange={(checked) =>
+                      setCouponForm((prev) => ({ ...prev, isActive: checked }))
+                    }
+                  />
+                </div>
+
+                <Button onClick={handleCreateCoupon} disabled={savingCoupon} className="w-full">
+                  {savingCoupon ? "Launching..." : "Launch Coupon"}
+                </Button>
+
+                <div className="space-y-3">
+                  {coupons.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                      No coupons launched yet.
+                    </div>
+                  ) : (
+                    coupons.map((coupon) => (
+                      <div
+                        key={coupon.id}
+                        className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-base font-semibold text-slate-900">{coupon.code}</p>
+                              <Badge
+                                className={
+                                  coupon.isActive
+                                    ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-100"
+                                }
+                              >
+                                {coupon.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {coupon.description || "No description added."}
+                            </p>
+                            <p className="mt-2 text-xs text-slate-500">
+                              {coupon.discountType === "percent"
+                                ? `${coupon.discountValue}% off`
+                                : `£${coupon.discountValue} off`}
+                            </p>
+                          </div>
+                          <Switch
+                            checked={coupon.isActive}
+                            onCheckedChange={(checked) => toggleCoupon(coupon, checked)}
+                          />
+                        </div>
+
+                        <div className="mt-4 flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                            onClick={() => deleteCoupon(coupon.id)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>

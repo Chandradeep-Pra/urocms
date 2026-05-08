@@ -4,12 +4,10 @@ import {
   BadgeCheck,
   BookOpen,
   Brain,
-  ChevronRight,
-  CirclePlay,
   Clock3,
-  Crown,
   FileQuestion,
   CheckCircle2,
+  Gift,
   Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,9 +25,14 @@ const subtlePanelClass =
 type PricingPlanCard = {
   id: string;
   name: string;
+  category?: string;
   tag?: string;
   price: number;
   subtitle: string;
+  featureBullets: string[];
+  billingLabel?: string;
+  availabilityNote?: string;
+  vivaMinutes?: number;
   items: Array<{
     key: "chapters" | "videos" | "quizzes" | "mocks" | "vivaCases";
     label: string;
@@ -37,7 +40,17 @@ type PricingPlanCard = {
     details: string[];
   }>;
   expiryMonths: number;
+  durationLabel?: string;
   highlight?: boolean;
+  sortOrder?: number;
+};
+
+type PricingCoupon = {
+  id: string;
+  code: string;
+  description?: string;
+  discountType: "percent" | "amount";
+  discountValue: number;
 };
 
 const featureMeta = {
@@ -133,14 +146,25 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
         return {
           id: doc.id,
           name: String(data.name ?? "Untitled Plan"),
+          category: String(data.category ?? "").trim(),
           tag: String(data.tag ?? "").trim(),
           price: Number(data.price ?? 0),
           subtitle: String(data.description ?? "").trim(),
+          featureBullets: Array.isArray(data.featureBullets) ? data.featureBullets : [],
+          billingLabel: String(data.billingLabel ?? "").trim(),
+          availabilityNote: String(data.availabilityNote ?? "").trim(),
+          vivaMinutes: Number(data.vivaMinutes ?? 0),
           items,
           expiryMonths: Number(data.expiryMonths ?? 1),
+          durationLabel: String(data.durationLabel ?? "").trim(),
+          sortOrder: Number(data.sortOrder ?? 0),
         };
       })
-      .sort((a, b) => a.price - b.price)
+      .sort((a, b) => {
+        const orderDelta = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+        if (orderDelta !== 0) return orderDelta;
+        return a.price - b.price;
+      })
       .map((plan, index, array) => ({
         ...plan,
         highlight:
@@ -161,8 +185,21 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
   return [];
 }
 
+async function getActiveCoupons(): Promise<PricingCoupon[]> {
+  try {
+    const snapshot = await adminDb.collection("pricingCoupons").where("isActive", "==", true).get();
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as Omit<PricingCoupon, "id">),
+    }));
+  } catch (error) {
+    console.error("Pricing page coupons fetch error:", error);
+    return [];
+  }
+}
+
 export default async function PricingPage() {
-  const plans = await getPricingPlans();
+  const [plans, coupons] = await Promise.all([getPricingPlans(), getActiveCoupons()]);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-cyan-50 px-6 py-10 text-[#071014]">
@@ -198,6 +235,42 @@ export default async function PricingPage() {
       </Button>
     </div>
 
+    {coupons.length ? (
+      <div className="mb-8 grid gap-4">
+        {coupons.map((coupon) => (
+          <div
+            key={coupon.id}
+            className="rounded-[28px] border border-[#0f7896]/12 bg-white p-5 shadow-[0_14px_36px_rgba(15,120,150,0.08)]"
+          >
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0f7896]/10 text-[#0f7896]">
+                  <Gift className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#0f7896]">
+                    Coupon Live
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-[#071014]">{coupon.code}</p>
+                  <p className="mt-1 text-sm text-[#071014]/62">
+                    {coupon.description ||
+                      (coupon.discountType === "percent"
+                        ? `${coupon.discountValue}% off selected enrolments.`
+                        : `£${coupon.discountValue} off selected enrolments.`)}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-full bg-[#0f7896] px-4 py-2 text-sm font-semibold text-white">
+                {coupon.discountType === "percent"
+                  ? `${coupon.discountValue}% OFF`
+                  : `£${coupon.discountValue} OFF`}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : null}
+
     <div className="mb-12 grid gap-4 md:grid-cols-3">
       <TopStat icon={Video} title="Video + quiz" text="Structured learning, not scattered revision." />
       <TopStat icon={BadgeCheck} title="Mocks + analytics" text="Track what is improving clearly." />
@@ -224,9 +297,16 @@ export default async function PricingPage() {
           >
             <summary className="cursor-pointer list-none px-7 py-8 [&::-webkit-details-marker]:hidden">
               <div className="flex items-start justify-between gap-5">
-                <p className="text-3xl font-semibold tracking-[-0.04em]">
-                  {plan.name}
-                </p>
+                <div>
+                  {plan.category ? (
+                    <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${plan.highlight ? "text-white/60" : "text-[#0f7896]"}`}>
+                      {plan.category}
+                    </p>
+                  ) : null}
+                  <p className="mt-1 text-3xl font-semibold tracking-[-0.04em]">
+                    {plan.name}
+                  </p>
+                </div>
 
                 {plan.tag ? (
                   <span
@@ -258,8 +338,27 @@ export default async function PricingPage() {
 
                 <div className={`mt-4 flex items-center gap-2 text-sm font-semibold ${plan.highlight ? "text-white/85" : "text-[#0f7896]"}`}>
                   <Clock3 className="h-4 w-4" />
-                  <span>Valid for {pluralize(plan.expiryMonths, "month")}</span>
+                  <span>
+                    {plan.durationLabel
+                      ? plan.durationLabel
+                      : `Valid for ${pluralize(plan.expiryMonths, "month")}`}
+                  </span>
                 </div>
+                {plan.billingLabel ? (
+                  <p className={`mt-3 text-sm ${plan.highlight ? "text-white/70" : "text-[#071014]/55"}`}>
+                    {plan.billingLabel}
+                  </p>
+                ) : null}
+                {plan.availabilityNote ? (
+                  <p className={`mt-2 text-xs font-semibold uppercase tracking-[0.16em] ${plan.highlight ? "text-white/62" : "text-amber-700"}`}>
+                    {plan.availabilityNote}
+                  </p>
+                ) : null}
+                {plan.vivaMinutes ? (
+                  <p className={`mt-2 text-xs ${plan.highlight ? "text-white/70" : "text-[#071014]/55"}`}>
+                    Includes {plan.vivaMinutes} AI viva minutes
+                  </p>
+                ) : null}
               </div>
 
               <div className="mt-6 flex items-center justify-between">
@@ -297,7 +396,27 @@ export default async function PricingPage() {
               </p>
 
               <div className="space-y-3">
-                {plan.items.length === 0 ? (
+                {plan.featureBullets.length ? (
+                  plan.featureBullets.map((feature) => (
+                    <div
+                      key={`${plan.id}-${feature}`}
+                      className={`rounded-2xl p-4 ${
+                        plan.highlight
+                          ? "border border-white/18 bg-white/10"
+                          : "border border-[#0f7896]/10 bg-cyan-50"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <CheckCircle2
+                          className={`mt-0.5 h-5 w-5 shrink-0 ${
+                            plan.highlight ? "text-white" : "text-[#0f7896]"
+                          }`}
+                        />
+                        <p className="text-base font-semibold">{feature}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : plan.items.length === 0 ? (
                   <div className={`rounded-2xl p-4 ${plan.highlight ? "bg-white/10" : "bg-cyan-50"}`}>
                     <p className="text-sm font-semibold">Custom access bundle</p>
                   </div>

@@ -10,6 +10,12 @@ type PlanSelection = {
   vivaCaseIds: string[];
 };
 
+type PlanAccessScopes = {
+  chapterGroupIds: string[];
+  videoSectionIds: string[];
+  vivaFolderIds: string[];
+};
+
 function normalizeSelection(selection: Partial<PlanSelection> | undefined): PlanSelection {
   return {
     chapterIds: Array.isArray(selection?.chapterIds) ? selection!.chapterIds : [],
@@ -17,6 +23,14 @@ function normalizeSelection(selection: Partial<PlanSelection> | undefined): Plan
     quizIds: Array.isArray(selection?.quizIds) ? selection!.quizIds : [],
     mockIds: Array.isArray(selection?.mockIds) ? selection!.mockIds : [],
     vivaCaseIds: Array.isArray(selection?.vivaCaseIds) ? selection!.vivaCaseIds : [],
+  };
+}
+
+function normalizeAccessScopes(scopes: Partial<PlanAccessScopes> | undefined): PlanAccessScopes {
+  return {
+    chapterGroupIds: Array.isArray(scopes?.chapterGroupIds) ? scopes.chapterGroupIds : [],
+    videoSectionIds: Array.isArray(scopes?.videoSectionIds) ? scopes.videoSectionIds : [],
+    vivaFolderIds: Array.isArray(scopes?.vivaFolderIds) ? scopes.vivaFolderIds : [],
   };
 }
 
@@ -42,26 +56,53 @@ function countSelection(selection: PlanSelection) {
 
 export async function GET() {
   try {
-    const [plansSnap, chaptersSnap, videosSnap, quizzesSnap, mocksSnap, vivaSnap] = await Promise.all([
+    const [
+      plansSnap,
+      couponsSnap,
+      chaptersSnap,
+      videoSectionsSnap,
+      videosSnap,
+      quizzesSnap,
+      mocksSnap,
+      vivaSnap,
+      vivaFoldersSnap,
+    ] = await Promise.all([
       adminDb.collection("pricingPlans").orderBy("updatedAt", "desc").get(),
+      adminDb.collection("pricingCoupons").orderBy("updatedAt", "desc").get(),
       adminDb.collection("chapters").where("isActive", "==", true).get(),
+      adminDb.collection("videoSections").get(),
       adminDb.collection("videoItems").get(),
       adminDb.collection("quizzes").where("isActive", "==", true).get(),
       adminDb.collection("mocks").get(),
       adminDb.collection("vivaCases").where("isActive", "==", true).get(),
+      adminDb.collection("vivaFolders").get(),
     ]);
 
     const plans = plansSnap.docs.map((doc) => {
       const data = doc.data();
       const selection = normalizeSelection(data.selectedContent);
+      const accessScopes = normalizeAccessScopes(data.accessScopes);
 
       return {
         id: doc.id,
         ...data,
         selectedContent: selection,
+        accessScopes,
         contentCounts: data.contentCounts ?? countSelection(selection),
+        category: data.category ?? "",
+        durationLabel: data.durationLabel ?? "",
+        billingLabel: data.billingLabel ?? "",
+        availabilityNote: data.availabilityNote ?? "",
+        featureBullets: Array.isArray(data.featureBullets) ? data.featureBullets : [],
+        sortOrder: Number(data.sortOrder ?? 0),
+        vivaMinutes: Number(data.vivaMinutes ?? 0),
       };
     });
+
+    const coupons = couponsSnap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
 
     const catalog = {
       chapters: chaptersSnap.docs.map((doc) => {
@@ -71,6 +112,22 @@ export async function GET() {
           title: data.title || doc.id,
           nodeType: data.nodeType || "TEST",
           isPremium: Boolean(data.isPremium),
+        };
+      }),
+      chapterGroups: chaptersSnap.docs
+        .map((doc) => ({
+          id: doc.id,
+          title: String(doc.data().title || doc.id),
+          nodeType: String(doc.data().nodeType || "TEST"),
+          parentId: doc.data().parentId || null,
+        }))
+        .filter((item) => item.nodeType === "GROUP"),
+      videoSections: videoSectionsSnap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title || "Untitled Section",
+          accessTier: data.accessTier || "free",
         };
       }),
       videos: videosSnap.docs.map((doc) => {
@@ -111,9 +168,17 @@ export async function GET() {
           attemptsCount: data.attemptsCount ?? 0,
         };
       }),
+      vivaFolders: vivaFoldersSnap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: String(data.title || "Untitled Folder"),
+          description: String(data.description || ""),
+        };
+      }),
     };
 
-    return NextResponse.json({ plans, catalog });
+    return NextResponse.json({ plans, coupons, catalog });
   } catch (error) {
     console.error("Pricing plans fetch error:", error);
     return NextResponse.json({ error: "Failed to load pricing plans" }, { status: 500 });
@@ -128,7 +193,17 @@ export async function POST(req: NextRequest) {
     const tag = String(body.tag ?? "").trim();
     const price = Number(body.price ?? 0);
     const expiryMonths = Number(body.expiryMonths ?? 0);
+    const durationLabel = String(body.durationLabel ?? "").trim();
+    const billingLabel = String(body.billingLabel ?? "").trim();
+    const availabilityNote = String(body.availabilityNote ?? "").trim();
+    const category = String(body.category ?? "").trim();
+    const sortOrder = Number(body.sortOrder ?? 0);
+    const vivaMinutes = Number(body.vivaMinutes ?? 0);
+    const featureBullets = Array.isArray(body.featureBullets)
+      ? body.featureBullets.map((item: unknown) => String(item).trim()).filter(Boolean)
+      : [];
     const selection = normalizeSelection(body.selectedContent);
+    const accessScopes = normalizeAccessScopes(body.accessScopes);
 
     if (!name) {
       return NextResponse.json({ error: "Plan name is required" }, { status: 400 });
@@ -138,8 +213,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Price must be a valid number" }, { status: 400 });
     }
 
-    if (!Number.isFinite(expiryMonths) || expiryMonths <= 0) {
-      return NextResponse.json({ error: "Expiry months must be greater than 0" }, { status: 400 });
+    if ((!Number.isFinite(expiryMonths) || expiryMonths <= 0) && !durationLabel) {
+      return NextResponse.json(
+        { error: "Add a valid expiry in months or a custom duration label" },
+        { status: 400 }
+      );
     }
 
     const contentCounts = countSelection(selection);
@@ -149,10 +227,18 @@ export async function POST(req: NextRequest) {
       description,
       tag,
       price,
-      expiryMonths,
+      expiryMonths: Number.isFinite(expiryMonths) && expiryMonths > 0 ? expiryMonths : 0,
+      durationLabel,
+      billingLabel,
+      availabilityNote,
+      category,
+      sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+      vivaMinutes: Number.isFinite(vivaMinutes) && vivaMinutes > 0 ? vivaMinutes : 0,
+      featureBullets,
       currency: "GBP",
       isActive: body.isActive !== false,
       selectedContent: selection,
+      accessScopes,
       contentCounts,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
