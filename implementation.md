@@ -1071,3 +1071,240 @@ Run this once after wiring the mobile app:
 
 - `403` with `requiredTier: "paid"`
   - show upgrade/paywall CTA
+
+## RN Course Structure Implementation
+
+Use the new course model as the top-level content shell for the RN app.
+
+Each course represents something like:
+
+- `FRCS Section 1`
+- `FRCS Section 2`
+
+Each course contains multiple internal sections, and each section points to already-created CMS content.
+
+### Current Course Fields
+
+Each course includes:
+
+- `id`
+- `title`
+- `description`
+- `slug`
+- `accessTier`
+- `showOnApp`
+- `sections`
+
+Course access fields:
+
+- `accessTier = "free" | "paid"`
+- `showOnApp = boolean`
+
+RN should only render courses where:
+
+- `showOnApp === true`
+
+Then apply normal access gating:
+
+- if `accessTier === "free"`:
+  - visible to `free` and `paid`
+- if `accessTier === "paid"`:
+  - visible only to `paid`
+
+### Course Section Fields
+
+Each course section includes:
+
+- `id`
+- `iconKey`
+- `title`
+- `contentType`
+- `linkedContentIds`
+
+Current section content types:
+
+- `videos`
+- `chapter-quizzes`
+- `mocks`
+- `grand-mocks`
+- `ai-vivas`
+
+### Meaning Of `linkedContentIds`
+
+`linkedContentIds` stores the IDs of already-created CMS content connected to that section.
+
+The meaning depends on `contentType`:
+
+- `videos`
+  - IDs from `videoSections`
+- `chapter-quizzes`
+  - IDs from `chapters`
+  - may point to either:
+    - a full chapter group node
+    - or an individual quiz/test node
+- `mocks`
+  - IDs from `mocks` where type is `mock`
+- `grand-mocks`
+  - IDs from `mocks` where type is `grand-mock`
+- `ai-vivas`
+  - IDs from `vivaCases`
+
+### RN Rendering Model
+
+Recommended course screen structure:
+
+1. list available courses
+2. when user opens a course, show course sections as accordion blocks
+3. expand a section to load/render its linked content
+
+RN should treat course sections as collapsible groups, similar to how the admin page now expands and collapses sections.
+
+### Suggested RN Types
+
+```ts
+export type CourseAccessTier = "free" | "paid";
+
+export type CourseSectionContentType =
+  | "videos"
+  | "chapter-quizzes"
+  | "mocks"
+  | "grand-mocks"
+  | "ai-vivas";
+
+export type CourseSection = {
+  id: string;
+  iconKey:
+    | "book-open"
+    | "video"
+    | "brain"
+    | "clipboard-list"
+    | "sparkles"
+    | "file-question";
+  title: string;
+  contentType: CourseSectionContentType;
+  linkedContentIds: string[];
+};
+
+export type Course = {
+  id: string;
+  title: string;
+  description?: string;
+  slug?: string;
+  accessTier: CourseAccessTier;
+  showOnApp: boolean;
+  sections: CourseSection[];
+};
+```
+
+### Suggested RN Filtering Logic
+
+```ts
+export function getVisibleCoursesForTier(
+  courses: Course[],
+  tier: "guest" | "free" | "paid"
+) {
+  return courses.filter((course) => {
+    if (!course.showOnApp) return false;
+    if (course.accessTier === "free") return tier === "free" || tier === "paid";
+    return tier === "paid";
+  });
+}
+```
+
+### Suggested RN Accordion State
+
+```ts
+export function toggleExpandedSection(
+  expandedIds: string[],
+  sectionId: string
+) {
+  return expandedIds.includes(sectionId)
+    ? expandedIds.filter((id) => id !== sectionId)
+    : [...expandedIds, sectionId];
+}
+```
+
+### Mapping Linked IDs To Real Content
+
+RN should not display `linkedContentIds` directly.
+It should resolve them using the already-fetched module data.
+
+Example:
+
+- for `videos`
+  - map each `linkedContentId` to a matching video section or grouped video block
+- for `chapter-quizzes`
+  - map each ID to a matching chapter node
+- for `mocks`
+  - map each ID to a matching mock
+- for `grand-mocks`
+  - map each ID to a matching grand mock
+- for `ai-vivas`
+  - map each ID to a matching viva case
+
+### Recommended RN Data Flow
+
+1. load normal app content from existing protected routes:
+   - quizzes
+   - mocks
+   - viva cases
+   - videos
+2. load courses
+3. filter visible courses using:
+   - `showOnApp`
+   - `accessTier`
+   - current user tier
+4. render course sections as accordion items
+5. resolve each section’s `linkedContentIds` into real cards/items from the module data already loaded
+
+### Special Note For Chapter Quizzes
+
+For `chapter-quizzes`, a linked ID may be:
+
+- a full chapter group node
+- or an individual test node
+
+So RN should support both cases.
+
+Recommended behavior:
+
+- if the linked node is a group:
+  - open that full chapter branch
+  - show its child quiz/test items
+- if the linked node is a test:
+  - open that quiz/test directly
+
+### Suggested UI Behavior
+
+- show each course as a top-level card
+- show access badge:
+  - `Free`
+  - `Paid`
+- inside a course, show section rows with:
+  - icon
+  - title
+  - content count
+  - expand/collapse chevron
+
+When expanded:
+
+- render the section’s linked content cards inline
+
+### Important Current Backend Note
+
+Right now the course model exists in the CMS and is stored in the `courses` collection.
+
+If RN will consume this directly, the clean next backend step is to expose a protected app route like:
+
+- `GET /api/app/courses`
+
+That route should:
+
+- return only `showOnApp === true` courses
+- filter by current user tier where needed
+- optionally resolve linked content server-side later
+
+For now, the RN team should treat the course structure as:
+
+- top-level app navigation shell
+- with section-to-content mapping handled on the app side using the existing fetched module datasets

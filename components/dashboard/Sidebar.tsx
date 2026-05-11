@@ -10,6 +10,7 @@ import {
   Folder,
   HelpCircle,
   LayoutDashboard,
+  Layers,
   Megaphone,
   PanelLeftClose,
   PanelLeftOpen,
@@ -34,7 +35,7 @@ export const nav = [
     label: "Curriculum",
     icon: BookOpen,
     children: [
-      // { name: "Courses", href: "/dashboard/courses", icon: Layers },
+      { name: "Courses", href: "/dashboard/curriculum/courses", icon: Layers },
       { name: "Chapters", href: "/dashboard/curriculum/chapters", icon: FileText },
       // { name: "Topics", href: "/dashboard/topics", icon: HelpCircle },
     ],
