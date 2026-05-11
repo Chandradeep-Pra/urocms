@@ -26,17 +26,20 @@ export async function GET(req: NextRequest) {
       accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
       effectiveAccessTier:
         doc.data().effectiveAccessTier === "paid" ? "paid" : "free",
+      access: {
+        allowed:
+          doc.data().effectiveAccessTier === "paid"
+            ? auth.user.tier === "paid"
+            : auth.user.tier !== "guest",
+        requiredTier:
+          doc.data().effectiveAccessTier === "paid" ? "paid" : "free",
+      },
       requiresGoogleSession: false,
       isSyncedToCloudStorage: Boolean(doc.data().storagePath),
       ...doc.data(),
     }));
 
-    const visibleByTier =
-      auth.user.tier === "paid"
-        ? allVideos
-        : allVideos.filter((video) => video.effectiveAccessTier !== "paid");
-
-    const videos = visibleByTier.filter((video) =>
+    const videos = allVideos.filter((video) =>
       video.provider === "drive" ? Boolean(video.storagePath) : true
     );
 
