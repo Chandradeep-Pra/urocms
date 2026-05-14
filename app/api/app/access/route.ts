@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
       email: auth.user.email,
       name: auth.user.name,
       googleAccessEmail: auth.user.googleAccessEmail,
+      activeCourseIds: auth.user.activeCourseIds,
     },
     policy: {
       freeChapterPreviewLimit: FREE_CHAPTER_PREVIEW_LIMIT,

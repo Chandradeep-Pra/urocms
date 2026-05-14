@@ -11,6 +11,7 @@ type PlanSelection = {
 };
 
 type PlanAccessScopes = {
+  courseIds: string[];
   chapterGroupIds: string[];
   videoSectionIds: string[];
   vivaFolderIds: string[];
@@ -28,6 +29,7 @@ function normalizeSelection(selection: Partial<PlanSelection> | undefined): Plan
 
 function normalizeAccessScopes(scopes: Partial<PlanAccessScopes> | undefined): PlanAccessScopes {
   return {
+    courseIds: Array.isArray(scopes?.courseIds) ? scopes.courseIds : [],
     chapterGroupIds: Array.isArray(scopes?.chapterGroupIds) ? scopes.chapterGroupIds : [],
     videoSectionIds: Array.isArray(scopes?.videoSectionIds) ? scopes.videoSectionIds : [],
     vivaFolderIds: Array.isArray(scopes?.vivaFolderIds) ? scopes.vivaFolderIds : [],

@@ -9,6 +9,7 @@ export interface AppUserSession {
   tier: AppTier;
   googleAccessEmail: string | null;
   source: string | null;
+  activeCourseIds: string[];
 }
 
 function getDefaultTier(signInProvider?: string): AppTier {
@@ -56,6 +57,7 @@ export async function requireAppUser(req: NextRequest) {
           tier: defaultTier,
           googleAccessEmail: decoded.email ?? null,
           source: decoded.firebase.sign_in_provider ?? null,
+          activeCourseIds: [],
         } satisfies AppUserSession,
       };
     }
@@ -70,6 +72,7 @@ export async function requireAppUser(req: NextRequest) {
         tier: normalizeTier(user.tier),
         googleAccessEmail: user.googleAccessEmail ?? user.email ?? decoded.email ?? null,
         source: user.source ?? decoded.firebase.sign_in_provider ?? null,
+        activeCourseIds: Array.isArray(user.activeCourseIds) ? user.activeCourseIds : [],
       } satisfies AppUserSession,
     };
   } catch (error) {

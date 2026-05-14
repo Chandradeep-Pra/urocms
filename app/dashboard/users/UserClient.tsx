@@ -69,9 +69,7 @@ export default function UsersClient({ users }: { users: AdminUser[] }) {
 
       <UserTabs
         users={userList}
-        requests={[]}
         search={search}
-        onApprove={() => {}}
         onDelete={handleDelete}
         onSetTier={handleSetTier}
       />

@@ -13,6 +13,7 @@ import {
   Layers,
   Sparkles,
   Trash2,
+  Users,
   Video,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,7 +27,7 @@ import { Switch } from "@/components/ui/switch";
 
 type ContentType = "videos" | "chapter-quizzes" | "mocks" | "grand-mocks" | "ai-vivas";
 type IconKey = "book-open" | "video" | "brain" | "clipboard-list" | "sparkles" | "file-question";
-type AccessTier = "free" | "paid";
+type CourseAccessTier = "free" | "members";
 
 type CourseSection = {
   id: string;
@@ -41,8 +42,10 @@ type Course = {
   title: string;
   description?: string;
   slug?: string;
-  accessTier?: AccessTier;
+  accessTier?: CourseAccessTier;
   showOnApp?: boolean;
+  memberUserIds?: string[];
+  memberUsers?: Array<{ id: string; name?: string; email?: string }>;
   sections?: CourseSection[];
 };
 
@@ -50,6 +53,14 @@ type CatalogItem = {
   id: string;
   title: string;
   subtitle?: string;
+};
+
+type CourseMemberUser = {
+  id: string;
+  name: string;
+  email: string;
+  tier: "guest" | "free" | "paid";
+  activeCourseIds: string[];
 };
 
 type SectionCatalog = Record<ContentType, CatalogItem[]>;
@@ -87,10 +98,10 @@ function AccessTierSwitch({
   value,
   onChange,
 }: {
-  value: AccessTier;
-  onChange: (value: AccessTier) => void;
+  value: CourseAccessTier;
+  onChange: (value: CourseAccessTier) => void;
 }) {
-  const isPaid = value === "paid";
+  const isMembersOnly = value === "members";
 
   return (
     <div className="flex items-center justify-between gap-4">
@@ -99,21 +110,21 @@ function AccessTierSwitch({
           Course Access
         </p>
         <p className="mt-2 text-sm text-slate-600">
-          Switch this course between free and paid access.
+          Switch this course between free and member-only access.
         </p>
       </div>
       <button
         type="button"
         role="switch"
-        aria-checked={isPaid}
-        onClick={() => onChange(isPaid ? "free" : "paid")}
-        className={`inline-flex min-w-[112px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${
-          isPaid
+        aria-checked={isMembersOnly}
+        onClick={() => onChange(isMembersOnly ? "free" : "members")}
+        className={`inline-flex min-w-[132px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${
+          isMembersOnly
             ? "bg-amber-100 text-amber-800 ring-1 ring-amber-200"
             : "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200"
         }`}
       >
-        {isPaid ? "Paid" : "Free"}
+        {isMembersOnly ? "Members Only" : "Free"}
       </button>
     </div>
   );
@@ -134,6 +145,8 @@ export default function CourseDetailPage() {
     "grand-mocks": [],
     "ai-vivas": [],
   });
+  const [memberCatalog, setMemberCatalog] = useState<CourseMemberUser[]>([]);
+  const [memberSearch, setMemberSearch] = useState("");
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
   const sectionCount = useMemo(() => course?.sections?.length ?? 0, [course]);
@@ -147,8 +160,10 @@ export default function CourseDetailPage() {
       const nextCourse = data.course
         ? {
             ...data.course,
-            accessTier: data.course.accessTier === "paid" ? "paid" : "free",
+            accessTier: data.course.accessTier === "members" ? "members" : "free",
             showOnApp: Boolean(data.course.showOnApp),
+            memberUserIds: Array.isArray(data.course.memberUserIds) ? data.course.memberUserIds : [],
+            memberUsers: Array.isArray(data.course.memberUsers) ? data.course.memberUsers : [],
             sections: Array.isArray(data.course.sections)
               ? data.course.sections.map((section: CourseSection) => ({
                   ...section,
@@ -178,10 +193,22 @@ export default function CourseDetailPage() {
     }
   };
 
+  const fetchMemberCatalog = async () => {
+    try {
+      const res = await fetch("/api/courses/members-catalog", { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to fetch members");
+      setMemberCatalog(data.users || []);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to fetch members");
+    }
+  };
+
   useEffect(() => {
     if (courseId) {
       fetchCourse();
       fetchCatalog();
+      fetchMemberCatalog();
     }
   }, [courseId]);
 
@@ -224,7 +251,6 @@ export default function CourseDetailPage() {
     });
 
     setExpandedSections((prev) => [...new Set([...prev, section.id])]);
-
     setNewSection(emptySection);
   };
 
@@ -271,7 +297,7 @@ export default function CourseDetailPage() {
     });
   };
 
-  const updateCourseAccessTier = async (nextTier: AccessTier) => {
+  const updateCourseAccessTier = async (nextTier: CourseAccessTier) => {
     if (!course) return;
     await persistCourse({
       ...course,
@@ -279,13 +305,42 @@ export default function CourseDetailPage() {
     });
   };
 
+  const toggleCourseMember = async (userId: string) => {
+    if (!course) return;
+
+    const nextMemberUserIds = (course.memberUserIds || []).includes(userId)
+      ? (course.memberUserIds || []).filter((id) => id !== userId)
+      : [...(course.memberUserIds || []), userId];
+
+    const nextMemberUsers = memberCatalog
+      .filter((user) => nextMemberUserIds.includes(user.id))
+      .map((user) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      }));
+
+    await persistCourse({
+      ...course,
+      memberUserIds: nextMemberUserIds,
+      memberUsers: nextMemberUsers,
+    });
+  };
+
   const toggleSectionExpanded = (sectionId: string) => {
     setExpandedSections((prev) =>
-      prev.includes(sectionId)
-        ? prev.filter((id) => id !== sectionId)
-        : [...prev, sectionId]
+      prev.includes(sectionId) ? prev.filter((id) => id !== sectionId) : [...prev, sectionId]
     );
   };
+
+  const filteredMembers = memberCatalog.filter((user) => {
+    const query = memberSearch.trim().toLowerCase();
+    if (!query) return true;
+    return (
+      (user.name || "").toLowerCase().includes(query) ||
+      (user.email || "").toLowerCase().includes(query)
+    );
+  });
 
   if (loading) {
     return (
@@ -336,29 +391,27 @@ export default function CourseDetailPage() {
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
                   {course.title}
                 </h1>
-                <div className="mt-3">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge
-                      variant="outline"
-                      className={
-                        course.accessTier === "paid"
-                          ? "border-amber-200 bg-amber-50 text-amber-700"
-                          : "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      }
-                    >
-                      {course.accessTier === "paid" ? "Paid Course" : "Free Course"}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className={
-                        course.showOnApp
-                          ? "border-cyan-200 bg-cyan-50 text-cyan-700"
-                          : "border-slate-200 bg-slate-100 text-slate-600"
-                      }
-                    >
-                      {course.showOnApp ? "Visible On App" : "Hidden From App"}
-                    </Badge>
-                  </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge
+                    variant="outline"
+                    className={
+                      course.accessTier === "members"
+                        ? "border-amber-200 bg-amber-50 text-amber-700"
+                        : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    }
+                  >
+                    {course.accessTier === "members" ? "Members Only" : "Free Course"}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={
+                      course.showOnApp
+                        ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                        : "border-slate-200 bg-slate-100 text-slate-600"
+                    }
+                  >
+                    {course.showOnApp ? "Visible On App" : "Hidden From App"}
+                  </Badge>
                 </div>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
                   {course.description || "No description added for this course yet."}
@@ -373,7 +426,7 @@ export default function CourseDetailPage() {
               </div>
               <div className="rounded-2xl bg-slate-50 px-4 py-4 min-w-[240px]">
                 <AccessTierSwitch
-                  value={course.accessTier === "paid" ? "paid" : "free"}
+                  value={course.accessTier === "members" ? "members" : "free"}
                   onChange={updateCourseAccessTier}
                 />
               </div>
@@ -383,9 +436,6 @@ export default function CourseDetailPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                       Show On App
                     </p>
-                    {/* <p className="mt-2 text-sm text-slate-600">
-                      Control whether learners can see this course.
-                    </p> */}
                   </div>
                   <Switch checked={Boolean(course.showOnApp)} onCheckedChange={updateCourseVisibility} />
                 </div>
@@ -393,6 +443,81 @@ export default function CourseDetailPage() {
             </div>
           </div>
         </div>
+
+        <Card className="border-slate-200 shadow-sm">
+          <CardContent className="space-y-5 p-6">
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Course Members</h2>
+                
+              </div>
+              <div className="w-full md:max-w-sm">
+                <Label className="mb-2 block">Search users</Label>
+                <Input
+                  value={memberSearch}
+                  onChange={(event) => setMemberSearch(event.target.value)}
+                  placeholder="Search by name or email"
+                />
+              </div>
+            </div>
+
+            {(course.memberUsers || []).length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {(course.memberUsers || []).map((member) => (
+                  <Badge
+                    key={member.id}
+                    variant="outline"
+                    className="border-cyan-200 bg-cyan-50 text-cyan-700"
+                  >
+                    {member.name?.trim() || member.email || member.id}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No members assigned yet.</p>
+            )}
+
+            <div className="max-h-[320px] space-y-2 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              {filteredMembers.length === 0 ? (
+                <p className="text-sm text-slate-500">No users found.</p>
+              ) : (
+                filteredMembers.map((user) => {
+                  const checked = (course.memberUserIds || []).includes(user.id);
+
+                  return (
+                    <label
+                      key={user.id}
+                      className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-3 py-3 transition ${
+                        checked
+                          ? "border-cyan-600 bg-cyan-50"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleCourseMember(user.id)}
+                        className="mt-1 h-4 w-4"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">
+                          {user.name?.trim() || "No Name"}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">{user.email || "No email"}</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {user.tier} user
+                          {user.activeCourseIds.length > 0
+                            ? ` • ${user.activeCourseIds.length} course access`
+                            : ""}
+                        </p>
+                      </div>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
           <Card className="border-slate-200 shadow-sm">
@@ -526,7 +651,11 @@ export default function CourseDetailPage() {
                 </div>
               </div>
 
-              <Button onClick={addSection} disabled={saving} className="w-full bg-cyan-600 text-white hover:bg-cyan-700">
+              <Button
+                onClick={addSection}
+                disabled={saving}
+                className="w-full bg-cyan-600 text-white hover:bg-cyan-700"
+              >
                 {saving ? "Saving..." : "Add Section"}
               </Button>
             </CardContent>
@@ -636,7 +765,7 @@ export default function CourseDetailPage() {
                           </div>
                         ) : null}
                       </div>
-                    )
+                    );
                   })}
                 </div>
               )}

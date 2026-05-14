@@ -9,6 +9,8 @@ export interface AdminUser {
   tier: UserTier;
   createdAt: string;
   source?: string;
+  activeCourseIds?: string[];
+  assignedCourses?: string[];
 }
 
 function formatCreatedAt(value: unknown) {
@@ -27,9 +29,13 @@ function formatCreatedAt(value: unknown) {
   return "-";
 }
 
-function normalizeUser(doc: FirebaseFirestore.QueryDocumentSnapshot): AdminUser {
+function normalizeUser(
+  doc: FirebaseFirestore.QueryDocumentSnapshot,
+  courseTitleMap: Record<string, string>
+): AdminUser {
   const data = doc.data();
   const tier = data.tier;
+  const activeCourseIds = Array.isArray(data.activeCourseIds) ? data.activeCourseIds : [];
 
   return {
     id: doc.id,
@@ -38,24 +44,41 @@ function normalizeUser(doc: FirebaseFirestore.QueryDocumentSnapshot): AdminUser 
     tier: tier === "paid" || tier === "free" || tier === "guest" ? tier : "guest",
     source: data.source ?? "mobile-app",
     createdAt: formatCreatedAt(data.createdAt),
+    activeCourseIds,
+    assignedCourses: activeCourseIds
+      .map((courseId) => courseTitleMap[courseId])
+      .filter(Boolean),
   };
 }
 
 export async function getGuestUsers(): Promise<AdminUser[]> {
-  const snapshot = await adminDb
-    .collection("users")
-    .where("tier", "==", "guest")
-    .orderBy("createdAt", "desc")
-    .get();
+  const [snapshot, courseSnapshot] = await Promise.all([
+    adminDb
+      .collection("users")
+      .where("tier", "==", "guest")
+      .orderBy("createdAt", "desc")
+      .get(),
+    adminDb.collection("courses").get(),
+  ]);
 
-  return snapshot.docs.map(normalizeUser);
+  const courseTitleMap = Object.fromEntries(
+    courseSnapshot.docs.map((doc) => [doc.id, String(doc.data().title || doc.id)])
+  );
+
+  return snapshot.docs.map((doc) => normalizeUser(doc, courseTitleMap));
 }
 
 export async function getAllUsers(): Promise<AdminUser[]> {
-  const snapshot = await adminDb
-    .collection("users")
-    .orderBy("createdAt", "desc")
-    .get();
+  const [userSnapshot, courseSnapshot] = await Promise.all([
+    adminDb.collection("users").orderBy("createdAt", "desc").get(),
+    adminDb.collection("courses").get(),
+  ]);
 
-  return snapshot.docs.map(normalizeUser);
+  const courseTitleMap = Object.fromEntries(
+    courseSnapshot.docs.map((doc) => [doc.id, String(doc.data().title || doc.id)])
+  );
+
+  return userSnapshot.docs
+    .map((doc) => normalizeUser(doc, courseTitleMap))
+    .filter((user) => user.tier === "free" || user.tier === "paid");
 }

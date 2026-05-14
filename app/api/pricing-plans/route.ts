@@ -11,6 +11,7 @@ type PlanSelection = {
 };
 
 type PlanAccessScopes = {
+  courseIds: string[];
   chapterGroupIds: string[];
   videoSectionIds: string[];
   vivaFolderIds: string[];
@@ -28,6 +29,7 @@ function normalizeSelection(selection: Partial<PlanSelection> | undefined): Plan
 
 function normalizeAccessScopes(scopes: Partial<PlanAccessScopes> | undefined): PlanAccessScopes {
   return {
+    courseIds: Array.isArray(scopes?.courseIds) ? scopes.courseIds : [],
     chapterGroupIds: Array.isArray(scopes?.chapterGroupIds) ? scopes.chapterGroupIds : [],
     videoSectionIds: Array.isArray(scopes?.videoSectionIds) ? scopes.videoSectionIds : [],
     vivaFolderIds: Array.isArray(scopes?.vivaFolderIds) ? scopes.vivaFolderIds : [],
@@ -59,6 +61,7 @@ export async function GET() {
     const [
       plansSnap,
       couponsSnap,
+      coursesSnap,
       chaptersSnap,
       videoSectionsSnap,
       videosSnap,
@@ -69,6 +72,7 @@ export async function GET() {
     ] = await Promise.all([
       adminDb.collection("pricingPlans").orderBy("updatedAt", "desc").get(),
       adminDb.collection("pricingCoupons").orderBy("updatedAt", "desc").get(),
+      adminDb.collection("courses").orderBy("createdAt", "asc").get(),
       adminDb.collection("chapters").where("isActive", "==", true).get(),
       adminDb.collection("videoSections").get(),
       adminDb.collection("videoItems").get(),
@@ -105,6 +109,16 @@ export async function GET() {
     }));
 
     const catalog = {
+      courses: coursesSnap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: String(data.title || "Untitled Course"),
+          accessTier: data.accessTier || "free",
+          showOnApp: Boolean(data.showOnApp),
+          sectionsCount: Array.isArray(data.sections) ? data.sections.length : 0,
+        };
+      }),
       chapters: chaptersSnap.docs.map((doc) => {
         const data = doc.data();
         return {

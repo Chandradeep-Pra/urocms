@@ -2,6 +2,10 @@ import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 
+function normalizeCourseAccessTier(value: unknown) {
+  return value === "members" ? "members" : value === "paid" ? "members" : "free";
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,6 +22,9 @@ export async function GET(
       course: {
         id: doc.id,
         ...doc.data(),
+        accessTier: normalizeCourseAccessTier(doc.data()?.accessTier),
+        memberUserIds: Array.isArray(doc.data()?.memberUserIds) ? doc.data()?.memberUserIds : [],
+        memberUsers: Array.isArray(doc.data()?.memberUsers) ? doc.data()?.memberUsers : [],
       },
     });
   } catch (error) {
@@ -35,9 +42,32 @@ export async function PATCH(
     const body = await req.json();
     const title = String(body?.title || "").trim();
     const description = String(body?.description || "").trim();
-    const accessTier = body?.accessTier === "paid" ? "paid" : "free";
+    const accessTier = normalizeCourseAccessTier(body?.accessTier);
     const showOnApp = Boolean(body?.showOnApp);
     const sections = Array.isArray(body?.sections) ? body.sections : [];
+    const memberUserIds = Array.isArray(body?.memberUserIds) ? body.memberUserIds : [];
+    const previousDoc = await adminDb.collection("courses").doc(id).get();
+    const previousData = previousDoc.data() ?? {};
+    const previousMemberUserIds = Array.isArray(previousData.memberUserIds)
+      ? previousData.memberUserIds
+      : [];
+
+    const memberUsers = memberUserIds.length
+      ? (
+          await Promise.all(
+            memberUserIds.map(async (userId: string) => {
+              const userDoc = await adminDb.collection("users").doc(userId).get();
+              if (!userDoc.exists) return null;
+              const user = userDoc.data() ?? {};
+              return {
+                id: userDoc.id,
+                name: String(user.name || "").trim(),
+                email: String(user.email || "").trim(),
+              };
+            })
+          )
+        ).filter(Boolean)
+      : [];
 
     if (!title) {
       return NextResponse.json({ error: "Course title is required" }, { status: 400 });
@@ -54,9 +84,35 @@ export async function PATCH(
       slug,
       accessTier,
       showOnApp,
+      memberUserIds,
+      memberUsers,
       sections,
       updatedAt: FieldValue.serverTimestamp(),
     });
+
+    const addedUserIds = memberUserIds.filter((userId: string) => !previousMemberUserIds.includes(userId));
+    const removedUserIds = previousMemberUserIds.filter((userId: string) => !memberUserIds.includes(userId));
+
+    await Promise.all([
+      ...addedUserIds.map((userId: string) =>
+        adminDb.collection("users").doc(userId).set(
+          {
+            activeCourseIds: FieldValue.arrayUnion(id),
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        )
+      ),
+      ...removedUserIds.map((userId: string) =>
+        adminDb.collection("users").doc(userId).set(
+          {
+            activeCourseIds: FieldValue.arrayRemove(id),
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        )
+      ),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

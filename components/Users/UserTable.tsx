@@ -9,29 +9,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Crown, MoreHorizontal, Trash2, UserCheck, UserRoundPlus } from "lucide-react";
+import type { AdminUser } from "@/lib/server/guestService";
 import { DataTable } from "./DataTable";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  tier: "paid" | "guest" | "free";
-  createdAt: string;
-}
-
 interface Props {
-  data: User[];
-  onSetTier: (id: string, tier: User["tier"]) => void;
+  data: AdminUser[];
+  onSetTier: (id: string, tier: AdminUser["tier"]) => void;
   onDelete: (id: string) => void;
+  showAssignedCourses?: boolean;
 }
 
-function getBadgeClass(tier: User["tier"]) {
+function getBadgeClass(tier: AdminUser["tier"]) {
   if (tier === "paid") return "bg-teal-600 text-white";
   if (tier === "free") return "bg-amber-100 text-amber-800";
   return "bg-slate-200 text-slate-700";
 }
 
-function getTierAction(user: User) {
+function getTierAction(user: AdminUser) {
   if (user.tier === "guest") {
     return {
       label: "Move to Free",
@@ -55,7 +49,12 @@ function getTierAction(user: User) {
   };
 }
 
-export function UserTable({ data, onSetTier, onDelete }: Props) {
+export function UserTable({
+  data,
+  onSetTier,
+  onDelete,
+  showAssignedCourses = false,
+}: Props) {
   return (
     <DataTable
       data={data}
@@ -78,6 +77,29 @@ export function UserTable({ data, onSetTier, onDelete }: Props) {
           header: "Date",
           accessor: (user) => <span className="text-slate-500">{user.createdAt}</span>,
         },
+        ...(showAssignedCourses
+          ? [
+              {
+                header: "Course Assigned",
+                accessor: (user: AdminUser) =>
+                  user.assignedCourses?.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {user.assignedCourses.map((course) => (
+                        <Badge
+                          key={`${user.id}-${course}`}
+                          variant="outline"
+                          className="border-cyan-200 bg-cyan-50 text-cyan-700"
+                        >
+                          {course}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-slate-400">No courses assigned</span>
+                  ),
+              },
+            ]
+          : []),
         {
           header: "",
           accessor: (user) => {

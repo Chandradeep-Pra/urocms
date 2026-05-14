@@ -46,6 +46,7 @@ type PlanSelection = {
 };
 
 type PlanAccessScopes = {
+  courseIds: string[];
   chapterGroupIds: string[];
   videoSectionIds: string[];
   vivaFolderIds: string[];
@@ -91,6 +92,7 @@ type PricingCoupon = {
 };
 
 type CatalogResponse = {
+  courses: CatalogItem[];
   chapters: CatalogItem[];
   chapterGroups: CatalogItem[];
   videoSections: CatalogItem[];
@@ -110,6 +112,7 @@ const emptySelection: PlanSelection = {
 };
 
 const emptyScopes: PlanAccessScopes = {
+  courseIds: [],
   chapterGroupIds: [],
   videoSectionIds: [],
   vivaFolderIds: [],
@@ -217,6 +220,7 @@ export default function PlanCreatorPage() {
   const [catalog, setCatalog] = useState<CatalogResponse>({
     chapters: [],
     chapterGroups: [],
+    courses: [],
     videoSections: [],
     videos: [],
     quizzes: [],
@@ -274,6 +278,15 @@ export default function PlanCreatorPage() {
     const scopes = form.accessScopes;
     return scopes.chapterGroupIds.length + scopes.videoSectionIds.length + scopes.vivaFolderIds.length;
   }, [form.accessScopes]);
+  const totalScopedGroupsWithCourses = useMemo(() => {
+    const scopes = form.accessScopes;
+    return (
+      scopes.courseIds.length +
+      scopes.chapterGroupIds.length +
+      scopes.videoSectionIds.length +
+      scopes.vivaFolderIds.length
+    );
+  }, [form.accessScopes]);
 
   const monthlyLabelSuggestion = useMemo(() => {
     const price = Number(form.price);
@@ -325,6 +338,7 @@ export default function PlanCreatorPage() {
     setForm({
       ...emptyForm,
       accessScopes: {
+        courseIds: [],
         chapterGroupIds: [],
         videoSectionIds: [],
         vivaFolderIds: [],
@@ -389,6 +403,7 @@ export default function PlanCreatorPage() {
         : "",
       isActive: plan.isActive !== false,
       accessScopes: {
+        courseIds: [...(plan.accessScopes?.courseIds || [])],
         chapterGroupIds: [...(plan.accessScopes?.chapterGroupIds || [])],
         videoSectionIds: [...(plan.accessScopes?.videoSectionIds || [])],
         vivaFolderIds: [...(plan.accessScopes?.vivaFolderIds || [])],
@@ -609,11 +624,27 @@ export default function PlanCreatorPage() {
               <div>
                 <h2 className="text-xl font-semibold text-slate-900">Scope-based access</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Unlock whole chapter groups, video sections, and viva folders instead of tagging single items one by one.
+                  Build plans around courses first, then add chapter groups, video sections, and viva folders when you need deeper scope control.
                 </p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
+                <SelectionGroup
+                  title="Courses"
+                  icon={FolderKanban}
+                  items={catalog.courses}
+                  selectedIds={form.accessScopes.courseIds}
+                  onToggle={(id) => updateScopeSelection("courseIds", id)}
+                  renderMeta={(item) => (
+                    <>
+                      <span>{item.accessTier === "paid" ? "Paid" : "Free"}</span>
+                      <span>{item.showOnApp ? "Visible on app" : "Hidden on app"}</span>
+                      <span>{item.sectionsCount ?? 0} sections</span>
+                    </>
+                  )}
+                  fullWidth
+                />
+
                 <SelectionGroup
                   title="Chapter Groups"
                   icon={Layers3}
@@ -1075,7 +1106,7 @@ export default function PlanCreatorPage() {
                     <p className="text-sm font-semibold">Plan summary</p>
                   </div>
                   <div className="mt-3 grid gap-2 text-sm text-amber-900/80">
-                    <p>{totalScopedGroups} access scopes selected</p>
+                    <p>{totalScopedGroupsWithCourses} access scopes selected</p>
                     <p>{totalSelected} content items selected</p>
                     <p>Price: £{form.price || "0"}</p>
                     <p>
@@ -1176,6 +1207,12 @@ export default function PlanCreatorPage() {
                         ) : null}
 
                         <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                          {plan.accessScopes?.courseIds?.length ? (
+                            <PlanCountBadge
+                              label="Courses"
+                              value={plan.accessScopes.courseIds.length}
+                            />
+                          ) : null}
                           {plan.accessScopes?.chapterGroupIds?.length ? (
                             <PlanCountBadge
                               label="Chapter Groups"

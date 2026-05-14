@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BookOpen, ChevronRight, Layers, Plus, Trash2 } from "lucide-react";
+import { BookOpen, ChevronRight, Layers, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,22 +13,23 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
-type AccessTier = "free" | "paid";
+type CourseAccessTier = "free" | "members";
 
 type Course = {
   id: string;
   title: string;
   description?: string;
   slug?: string;
-  accessTier?: AccessTier;
+  accessTier?: CourseAccessTier;
   showOnApp?: boolean;
+  memberUserIds?: string[];
   sections?: Array<unknown>;
 };
 
 const emptyForm = {
   title: "",
   description: "",
-  accessTier: "free" as AccessTier,
+  accessTier: "free" as CourseAccessTier,
   showOnApp: false,
 };
 
@@ -36,31 +37,31 @@ function AccessTierSwitch({
   value,
   onChange,
 }: {
-  value: AccessTier;
-  onChange: (value: AccessTier) => void;
+  value: CourseAccessTier;
+  onChange: (value: CourseAccessTier) => void;
 }) {
-  const isPaid = value === "paid";
+  const isMembersOnly = value === "members";
 
   return (
     <div className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3">
       <div>
         <p className="text-sm font-medium text-slate-900">Course Access</p>
         <p className="text-xs text-slate-500">
-          Toggle this course between free access and paid access.
+          Toggle this course between free access and member-only access.
         </p>
       </div>
       <button
         type="button"
         role="switch"
-        aria-checked={isPaid}
-        onClick={() => onChange(isPaid ? "free" : "paid")}
-        className={`inline-flex min-w-[112px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${
-          isPaid
+        aria-checked={isMembersOnly}
+        onClick={() => onChange(isMembersOnly ? "free" : "members")}
+        className={`inline-flex min-w-[132px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${
+          isMembersOnly
             ? "bg-amber-100 text-amber-800 ring-1 ring-amber-200"
             : "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200"
         }`}
       >
-        {isPaid ? "Paid" : "Free"}
+        {isMembersOnly ? "Members Only" : "Free"}
       </button>
     </div>
   );
@@ -118,7 +119,9 @@ export default function CoursesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = window.confirm("Delete this course? This will remove the course shell and all its sections.");
+    const confirmed = window.confirm(
+      "Delete this course? This will remove the course shell and all its sections."
+    );
     if (!confirmed) return;
 
     try {
@@ -144,7 +147,7 @@ export default function CoursesPage() {
               Courses
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              Create top-level courses like FRCS Section 1 or FRCS Section 2, then build their internal sections.
+              Create top-level courses like FRCS Section 1 or FRCS Section 2, then build their internal sections and assign manual members where needed.
             </p>
           </div>
 
@@ -238,12 +241,12 @@ export default function CoursesPage() {
                             <Badge
                               variant="outline"
                               className={
-                                course.accessTier === "paid"
+                                course.accessTier === "members"
                                   ? "border-amber-200 bg-amber-50 text-amber-700"
                                   : "border-emerald-200 bg-emerald-50 text-emerald-700"
                               }
                             >
-                              {course.accessTier === "paid" ? "Paid Course" : "Free Course"}
+                              {course.accessTier === "members" ? "Members Only" : "Free Course"}
                             </Badge>
                             <Badge
                               variant="outline"
@@ -262,6 +265,10 @@ export default function CoursesPage() {
                         </p>
                         <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
                           {Array.isArray(course.sections) ? course.sections.length : 0} sections
+                        </p>
+                        <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                          <Users className="h-3.5 w-3.5" />
+                          {(course.memberUserIds || []).length} member(s)
                         </p>
                       </div>
                     </div>
