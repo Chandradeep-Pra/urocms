@@ -1,9 +1,8 @@
 // app/api/viva-cases/route.ts
 
-import { adminDb } from "@/lib/firebaseAdmin";
-import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
+import { createVivaCase, listVivaCases } from "@/lib/server/vivaService";
 
 /* ───────── GET ALL CASES ───────── */
 export async function GET(req: NextRequest) {
@@ -11,19 +10,7 @@ export async function GET(req: NextRequest) {
   if (response) return response;
 
   try {
-    const snapshot = await adminDb
-      .collection("vivaCases")
-      .where("isActive", "==", true)
-      .orderBy("createdAt", "desc")
-      .get();
-
-    const cases = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    return NextResponse.json({ cases });
-
+    return NextResponse.json({ cases: await listVivaCases() });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
@@ -39,37 +26,18 @@ export async function POST(req: NextRequest) {
   if (response) return response;
 
   try {
-    const body = await req.json();
-
-    const { case: caseData, folderId = "", folderName = "" } = body;
-
-    if (!caseData?.title || !caseData?.stem) {
-      return NextResponse.json(
-        { error: "Title & stem required" },
-        { status: 400 }
-      );
-    }
-
-    const docRef = await adminDb.collection("vivaCases").add({
-      ...body,
-      folderId: String(folderId || ""),
-      folderName: String(folderName || ""),
-      attemptsCount: 0,
-      isActive: true,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
+    const result = await createVivaCase(await req.json());
     return NextResponse.json({
       success: true,
-      id: docRef.id,
+      id: result.id,
     });
 
   } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to create case";
     console.error(err);
     return NextResponse.json(
-      { error: "Failed to create case" },
-      { status: 500 }
+      { error: message },
+      { status: message === "Title & stem required" ? 400 : 500 }
     );
   }
 } 

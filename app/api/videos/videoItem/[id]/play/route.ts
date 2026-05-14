@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { playVideoFromFirestore } from "@/lib/server/firestoreVideoService";
 import { requireAdminSession } from "@/lib/server/adminAccess";
+import { prepareAdminVideoPlayback } from "@/lib/server/videoAdminService";
 
 export async function GET(
   req: NextRequest,
@@ -11,12 +11,7 @@ export async function GET(
 
   try {
     const params = await context.params;
-    const result = await playVideoFromFirestore({
-      videoId: params.id,
-      mode: "admin",
-    });
-
-    return NextResponse.json(result);
+    return NextResponse.json(await prepareAdminVideoPlayback(params.id));
   } catch (error: any) {
     const message = error.message || "Failed to prepare video playback";
     const status = message === "Video not found" ? 404 : 500;

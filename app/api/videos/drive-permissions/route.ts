@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createDrivePermission,
-  deleteDrivePermission,
-  listDriveItemPermissions,
-  updateDrivePermissionRole,
-} from "@/lib/server/googleDrive";
 import { requireAdminSession } from "@/lib/server/adminAccess";
+import {
+  createDriveItemPermission,
+  loadDriveItemPermissions,
+  removeDriveItemPermission,
+  updateDriveItemPermission,
+} from "@/lib/server/videoAdminService";
 
 export async function GET(req: NextRequest) {
   const { response } = await requireAdminSession(req);
@@ -13,28 +13,15 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const itemId = searchParams.get("itemId")?.trim();
-
-    if (!itemId) {
-      return NextResponse.json(
-        { error: "Drive item id is required" },
-        { status: 400 }
-      );
-    }
-
-    const permissions = await listDriveItemPermissions(itemId);
-
-    return NextResponse.json({
-      itemId,
-      count: permissions.length,
-      permissions,
-    });
-  } catch (error) {
-    console.error("Drive permissions fetch error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch Drive permissions" },
-      { status: 500 }
+      await loadDriveItemPermissions(searchParams.get("itemId") || "")
     );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to fetch Drive permissions";
+    const status = message === "Drive item id is required" ? 400 : 500;
+    console.error("Drive permissions fetch error:", error);
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -43,28 +30,14 @@ export async function POST(req: NextRequest) {
   if (response) return response;
 
   try {
-    const { itemId, emailAddress, role } = await req.json();
-
-    if (!itemId || !emailAddress || !role) {
-      return NextResponse.json(
-        { error: "itemId, emailAddress and role are required" },
-        { status: 400 }
-      );
-    }
-
-    await createDrivePermission({ itemId, emailAddress, role });
-    const permissions = await listDriveItemPermissions(itemId);
-
-    return NextResponse.json({
-      success: true,
-      permissions,
-    });
+    return NextResponse.json(await createDriveItemPermission(await req.json()));
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to create Drive permission";
+    const status =
+      message === "itemId, emailAddress and role are required" ? 400 : 500;
     console.error("Drive permission create error:", error);
-    return NextResponse.json(
-      { error: "Failed to create Drive permission" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -73,28 +46,14 @@ export async function PATCH(req: NextRequest) {
   if (response) return response;
 
   try {
-    const { itemId, permissionId, role } = await req.json();
-
-    if (!itemId || !permissionId || !role) {
-      return NextResponse.json(
-        { error: "itemId, permissionId and role are required" },
-        { status: 400 }
-      );
-    }
-
-    await updateDrivePermissionRole({ itemId, permissionId, role });
-    const permissions = await listDriveItemPermissions(itemId);
-
-    return NextResponse.json({
-      success: true,
-      permissions,
-    });
+    return NextResponse.json(await updateDriveItemPermission(await req.json()));
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to update Drive permission";
+    const status =
+      message === "itemId, permissionId and role are required" ? 400 : 500;
     console.error("Drive permission update error:", error);
-    return NextResponse.json(
-      { error: "Failed to update Drive permission" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -104,28 +63,17 @@ export async function DELETE(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const itemId = searchParams.get("itemId")?.trim();
-    const permissionId = searchParams.get("permissionId")?.trim();
-
-    if (!itemId || !permissionId) {
-      return NextResponse.json(
-        { error: "itemId and permissionId are required" },
-        { status: 400 }
-      );
-    }
-
-    await deleteDrivePermission({ itemId, permissionId });
-    const permissions = await listDriveItemPermissions(itemId);
-
-    return NextResponse.json({
-      success: true,
-      permissions,
-    });
-  } catch (error) {
-    console.error("Drive permission delete error:", error);
     return NextResponse.json(
-      { error: "Failed to delete Drive permission" },
-      { status: 500 }
+      await removeDriveItemPermission({
+        itemId: searchParams.get("itemId") || "",
+        permissionId: searchParams.get("permissionId") || "",
+      })
     );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to delete Drive permission";
+    const status = message === "itemId and permissionId are required" ? 400 : 500;
+    console.error("Drive permission delete error:", error);
+    return NextResponse.json({ error: message }, { status });
   }
 }

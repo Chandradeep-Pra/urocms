@@ -1,25 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
 import { requireAdminSession } from "@/lib/server/adminAccess";
+import { loadCourseMembersCatalog } from "@/lib/server/courseService";
 
 export async function GET(req: NextRequest) {
   const { response } = await requireAdminSession(req);
   if (response) return response;
 
   try {
-    const snapshot = await adminDb.collection("users").orderBy("createdAt", "desc").get();
-
-    const users = snapshot.docs.map((doc) => {
-      const data = doc.data() ?? {};
-      return {
-        id: doc.id,
-        name: String(data.name || "").trim(),
-        email: String(data.email || "").trim(),
-        tier: data.tier === "paid" ? "paid" : data.tier === "free" ? "free" : "guest",
-        activeCourseIds: Array.isArray(data.activeCourseIds) ? data.activeCourseIds : [],
-      };
-    });
-
+    const users = await loadCourseMembersCatalog();
     return NextResponse.json({ users });
   } catch (error) {
     console.error("Course members catalog fetch error:", error);

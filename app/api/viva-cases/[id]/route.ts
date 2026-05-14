@@ -1,9 +1,12 @@
 // app/api/viva-cases/[id]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
-import { FieldValue } from "firebase-admin/firestore";
 import { requireAdminSession } from "@/lib/server/adminAccess";
+import {
+  getVivaCaseById,
+  softDeleteVivaCase,
+  updateVivaCase,
+} from "@/lib/server/vivaService";
 
 /* ───────── GET SINGLE ───────── */
 export async function GET(
@@ -15,27 +18,15 @@ export async function GET(
 
   try {
     const { id } = await context.params;
-
-    const doc = await adminDb.collection("vivaCases").doc(id).get();
-
-    if (!doc.exists) {
-      return NextResponse.json(
-        { error: "Case not found" },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json({
-      case: {
-        id: doc.id,
-        ...doc.data(),
-      },
+      case: await getVivaCaseById(id),
     });
 
   } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to fetch case";
     return NextResponse.json(
-      { error: "Failed to fetch case" },
-      { status: 500 }
+      { error: message },
+      { status: message === "Case not found" ? 404 : 500 }
     );
   }
 }
@@ -50,19 +41,7 @@ export async function PATCH(
 
   try {
     const { id } = await context.params;
-    const body = await req.json();
-
-    const nextFolderId = typeof body.folderId === "string" ? body.folderId : undefined;
-    const nextFolderName = typeof body.folderName === "string" ? body.folderName : undefined;
-
-    await adminDb.collection("vivaCases").doc(id).update({
-      ...body,
-      ...(nextFolderId !== undefined ? { folderId: nextFolderId } : {}),
-      ...(nextFolderName !== undefined ? { folderName: nextFolderName } : {}),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json(await updateVivaCase(id, await req.json()));
 
   } catch (err) {
     return NextResponse.json(
@@ -82,13 +61,7 @@ export async function DELETE(
 
   try {
     const { id } = await context.params;
-
-    await adminDb.collection("vivaCases").doc(id).update({
-      isActive: false,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json(await softDeleteVivaCase(id));
 
   } catch (err) {
     return NextResponse.json(

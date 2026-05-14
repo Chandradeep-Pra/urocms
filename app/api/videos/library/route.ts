@@ -1,39 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { requireAdminSession } from "@/lib/server/adminAccess";
+import { loadAdminVideoLibrary } from "@/lib/server/videoAdminService";
 
 export async function GET(req: NextRequest) {
-  const { response } = await requireAdminSession(req);
+  const { response, session } = await requireAdminSession(req);
   if (response) return response;
 
   try {
-    const authHeader = req.headers.get("authorization")!;
-    const token = authHeader.split("Bearer ")[1];
-    const decoded = await adminAuth.verifyIdToken(token);
-    const userDoc = await adminDb.collection("users").doc(decoded.uid).get();
-
-    const tier = userDoc.exists ? userDoc.data()?.tier ?? "guest" : "guest";
     const { searchParams } = new URL(req.url);
-    const sectionId = searchParams.get("sectionId");
-
-    let query = adminDb.collection("videoItems");
-
-    if (sectionId) {
-      query = query.where("sectionId", "==", sectionId);
-    }
-
-    const snapshot = await query.get();
-    const allVideos = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      accessTier: "free",
-      ...doc.data(),
-    }));
-    const videos =
-      tier === "paid"
-        ? allVideos
-        : allVideos.filter((video) => video.accessTier !== "paid");
-
-    return NextResponse.json({ tier, videos });
+    return NextResponse.json(
+      await loadAdminVideoLibrary({
+        sectionId: searchParams.get("sectionId"),
+        userId: session!.uid,
+      })
+    );
   } catch (error) {
     console.error("Video library error:", error);
     return NextResponse.json({ error: "Failed to load library" }, { status: 500 });

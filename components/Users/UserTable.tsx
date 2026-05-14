@@ -9,7 +9,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Crown, MoreHorizontal, Trash2, UserCheck, UserRoundPlus } from "lucide-react";
+import { ConfirmDialog } from "@/components/dashboard/shared/ConfirmDialog";
 import type { AdminUser } from "@/lib/server/guestService";
+import { AssignedCoursesCell } from "./AssignedCoursesCell";
 import { DataTable } from "./DataTable";
 
 interface Props {
@@ -81,22 +83,9 @@ export function UserTable({
           ? [
               {
                 header: "Course Assigned",
-                accessor: (user: AdminUser) =>
-                  user.assignedCourses?.length ? (
-                    <div className="flex flex-wrap gap-2">
-                      {user.assignedCourses.map((course) => (
-                        <Badge
-                          key={`${user.id}-${course}`}
-                          variant="outline"
-                          className="border-cyan-200 bg-cyan-50 text-cyan-700"
-                        >
-                          {course}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-slate-400">No courses assigned</span>
-                  ),
+                accessor: (user: AdminUser) => (
+                  <AssignedCoursesCell courses={user.assignedCourses} />
+                ),
               },
             ]
           : []),
@@ -118,13 +107,22 @@ export function UserTable({
                     <ActionIcon className="mr-2 h-4 w-4" />
                     {action.label}
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => onDelete(user.id)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
+                  <ConfirmDialog
+                    title="Delete user?"
+                    description="This will remove the user record and linked auth user."
+                    confirmLabel="Delete User"
+                    destructive
+                    onConfirm={() => onDelete(user.id)}
+                    trigger={
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onSelect={(event) => event.preventDefault()}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    }
+                  />
                 </DropdownMenuContent>
               </DropdownMenu>
             );

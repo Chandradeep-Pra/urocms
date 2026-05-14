@@ -1,43 +1,21 @@
-import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdminSession } from "@/lib/server/adminAccess";
+import {
+  getDailyQuizNoStoreHeaders,
+  listDailyQuizHistory,
+} from "@/lib/server/dailyQuizService";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
-    const snapshot = await adminDb.collection("dailyQuizzes").get();
-
-    const quizzes = snapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      .sort((a: any, b: any) => {
-        const aId = String(a.id || "");
-        const bId = String(b.id || "");
-
-        if (/^\d{4}-\d{2}-\d{2}$/.test(aId) && /^\d{4}-\d{2}-\d{2}$/.test(bId)) {
-          return bId.localeCompare(aId);
-        }
-
-        const aCreatedAt =
-          typeof a.createdAt === "object" && a.createdAt?._seconds
-            ? a.createdAt._seconds * 1000
-            : new Date(a.createdAt || 0).getTime();
-        const bCreatedAt =
-          typeof b.createdAt === "object" && b.createdAt?._seconds
-            ? b.createdAt._seconds * 1000
-            : new Date(b.createdAt || 0).getTime();
-
-        return bCreatedAt - aCreatedAt;
-      });
-
     return NextResponse.json(
-      { quizzes },
+      { quizzes: await listDailyQuizHistory() },
       {
-        headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        },
+        headers: getDailyQuizNoStoreHeaders(),
       }
     );
   } catch (error) {

@@ -65,6 +65,74 @@ A cleanup task is considered complete when:
 
 ---
 
+## Progress Against `reiterate.md`
+
+This section maps the current execution state to the suggested work order in
+[C:\Users\HP\Downloads\urocms\reiterate.md](C:\Users\HP\Downloads\urocms\reiterate.md).
+
+### Reiterate Phase 1
+
+- [x] secure admin routes
+- [x] standardize auth/authorization helpers
+- [x] add `todo.md`
+- [x] identify oversized files
+
+Status note:
+
+- the major admin/CMS route groups are now server-protected
+- shared admin guard and authenticated admin client fetch helper are in place
+- oversized backend/frontend areas have been identified and many of the largest ones have already begun extraction
+
+### Reiterate Phase 2
+
+- [-] split biggest frontend files into feature containers + micro components
+- [-] standardize reusable UI blocks
+- [ ] normalize badges, search bars, dialogs, confirmation flows across all admin areas
+
+Status note:
+
+- done or in progress:
+  - course builder extraction
+  - users table/search extraction
+  - plan creator extraction
+  - shared `SearchBar`, `SectionHeader`, `EmptyState`, `ConfirmDialog`
+- still pending:
+  - pricing page modularization
+  - video library modularization
+  - quizzes manager and viva explorer cleanup
+  - broader badge and confirmation consistency
+
+### Reiterate Phase 3
+
+- [ ] add pagination to high-volume GET routes
+- [ ] add response metadata where needed
+
+Status note:
+
+- pagination candidates are mapped, but implementation has not started yet
+
+### Reiterate Phase 4
+
+- [-] strengthen entitlement model
+- [-] unify course access and plan access
+- [-] ensure RN app receives only the right content through stable app routes
+
+Status note:
+
+- course membership and `activeCourseIds` are now part of the product model
+- `/api/app/courses` exists and learner access routes are moving toward course-aware delivery
+- plan-to-course linking has started through course-based plan scopes
+- full content enforcement and purchase-to-course activation are still pending
+
+### Reiterate Phase 5
+
+- [ ] performance review
+- [ ] remove dead paths
+- [ ] remove obsolete scripts/utilities
+- [ ] simplify data flow further
+
+---
+
 ## Phase 1: Security and Route Hygiene
 
 ### 1.1 Admin route audit
@@ -145,8 +213,8 @@ Order:
 
 1. users `[x]`
 2. courses `[x]`
-3. pricing plans `[-]`
-4. videos `[-]`
+3. pricing plans `[x]`
+4. videos `[x]`
 5. viva `[x]`
 6. quizzes/questions `[x]`
 
@@ -203,6 +271,12 @@ Status note:
   - `app/api/mocks/[id]/attempts` `POST`
   - `app/api/announcements` `POST`
 - grand mocks and announcement dashboard pages now use authenticated admin fetches
+- completed for daily quiz admin surfaces:
+  - `app/api/daily-quiz` `POST`
+  - `app/api/daily-quiz/history` `GET`
+  - `app/api/daily-quiz/[id]` `GET`
+  - `app/api/daily-quiz/generate` `POST`
+- daily quiz dashboard now uses authenticated admin fetches for publish, history, detail, and AI generation
 - remaining explicit edge decisions:
   - `GET /api/pricing-plans` is still mixed-purpose and should be split into public/admin read models later
   - `app/api/videos/videoItem/[id]/stream` still needs a dedicated media-auth decision
@@ -239,7 +313,7 @@ Goal:
 
 - reduce large route handlers into smaller orchestration layers
 
-Tasks:
+- [x] Tasks:
 
 - identify routes above practical complexity threshold
 - move domain logic to services under `lib/server`
@@ -260,13 +334,67 @@ Deliverable:
   - service call
   - response
 
+Status note:
+
+- started with pricing backend
+- extracted shared pricing service logic into:
+  - `lib/server/pricingService.ts`
+- extracted shared course service logic into:
+  - `lib/server/courseService.ts`
+- thinned route handlers:
+  - `app/api/pricing-plans/route.ts`
+  - `app/api/pricing-plans/[id]/route.ts`
+  - `app/api/pricing-plans/presets/route.ts`
+  - `app/api/pricing-coupons/route.ts`
+  - `app/api/pricing-coupons/[id]/route.ts`
+- thinned route handlers:
+  - `app/api/courses/route.ts`
+  - `app/api/courses/[id]/route.ts`
+  - `app/api/courses/content-catalog/route.ts`
+  - `app/api/courses/members-catalog/route.ts`
+  - `app/api/app/courses/route.ts`
+- extracted shared mock scheduling and attempt logic into:
+  - `lib/server/mockService.ts`
+- thinned route handlers:
+  - `app/api/mocks/route.ts`
+  - `app/api/mocks/[id]/route.ts`
+  - `app/api/mocks/[id]/attempts/route.ts`
+- extracted remaining admin video orchestration into:
+  - `lib/server/videoAdminService.ts`
+  - `lib/server/videoStreamService.ts`
+- thinned route handlers:
+  - `app/api/videos/library/route.ts`
+  - `app/api/videos/drive-folders/route.ts`
+  - `app/api/videos/drive-library/route.ts`
+  - `app/api/videos/drive-permissions/route.ts`
+  - `app/api/videos/videoItem/[id]/play/route.ts`
+  - `app/api/videos/videoItem/[id]/sync-storage/route.ts`
+  - `app/api/videos/videoItem/[id]/stream/route.ts`
+  - `app/api/app/videos/[id]/stream/route.ts`
+- extracted daily quiz orchestration into:
+  - `lib/server/dailyQuizService.ts`
+- thinned route handlers:
+  - `app/api/daily-quiz/route.ts`
+  - `app/api/daily-quiz/[id]/route.ts`
+  - `app/api/daily-quiz/history/route.ts`
+  - `app/api/daily-quiz/generate/route.ts`
+  - `app/api/daily-quiz/submit-quiz/route.ts`
+- extracted viva case and folder orchestration into:
+  - `lib/server/vivaService.ts`
+- thinned route handlers:
+  - `app/api/viva-cases/route.ts`
+  - `app/api/viva-cases/[id]/route.ts`
+  - `app/api/viva-folders/route.ts`
+- major Phase 2 route-thinning candidates are now covered
+- remaining backend cleanup is more about shared validation/logging polish than oversized route handlers
+
 ### 2.2 Shared normalization helpers
 
 Goal:
 
 - stop scattering normalization logic across route files
 
-Tasks:
+- [-] Tasks:
 
 - centralize helpers for:
   - user tier normalization
@@ -282,13 +410,26 @@ Candidates:
 - `pricing` routes
 - `videos` services
 
+Status note:
+
+- pricing selection/scope normalization and validation are now centralized in `lib/server/pricingService.ts`
+- mock scheduling, attempt normalization, and quiz linkage rules are now centralized in `lib/server/mockService.ts`
+- drive admin orchestration and shared drive stream response building are now centralized in:
+  - `lib/server/videoAdminService.ts`
+  - `lib/server/videoStreamService.ts`
+- daily quiz payload shaping, history/detail loading, AI generation, and learner submission are now centralized in:
+  - `lib/server/dailyQuizService.ts`
+- viva case and folder normalization are now centralized in:
+  - `lib/server/vivaService.ts`
+- broader cross-domain normalization is still pending
+
 ### 2.3 Validation cleanup
 
 Goal:
 
 - reject malformed payloads consistently
 
-Tasks:
+- [ ] Tasks:
 
 - add reusable request validation helpers
 - validate:
@@ -308,7 +449,7 @@ Goal:
 
 - remove noisy or sensitive logs
 
-Tasks:
+- [ ] Tasks:
 
 - audit all `console.log` and `console.error` usage
 - remove sensitive auth/header/token logging
@@ -325,7 +466,7 @@ Goal:
 
 - reduce duplication between course list and course detail screens
 
-Tasks:
+- [-] Tasks:
 
 - extract:
   - `AccessTierSwitch`
@@ -340,13 +481,27 @@ Current targets:
 - `app/dashboard/curriculum/courses/page.tsx`
 - `app/dashboard/curriculum/courses/[id]/page.tsx`
 
+Status note:
+
+- extracted shared course UI into:
+  - `components/dashboard/courses/CourseAccessTierSwitch.tsx`
+  - `components/dashboard/courses/CourseStatusBadges.tsx`
+  - `components/dashboard/courses/CourseCard.tsx`
+  - `components/dashboard/courses/CourseMemberPicker.tsx`
+  - `components/dashboard/courses/CourseSectionBuilder.tsx`
+  - `components/dashboard/courses/CourseSectionList.tsx`
+  - `components/dashboard/courses/types.ts`
+  - `components/dashboard/courses/courseConfig.tsx`
+- both course screens now consume extracted components instead of keeping the full UI inline
+- course module is cleaner, but deeper extraction around content selection behavior can still improve later
+
 ### 3.2 Extract shared user management components
 
 Goal:
 
 - keep users UI small and reusable
 
-Tasks:
+- [-] Tasks:
 
 - extract:
   - `UserSearchBar`
@@ -359,6 +514,15 @@ Current targets:
 - `app/dashboard/users/UserClient.tsx`
 - `components/Users/UserTabs.tsx`
 - `components/Users/UserTable.tsx`
+
+Status note:
+
+- extracted:
+  - `components/Users/UserSearchBar.tsx`
+  - `components/Users/AssignedCoursesCell.tsx`
+- user client now uses shared search UI
+- user table now uses a reusable assigned-courses cell and shared confirmation dialog for deletion
+- tabs and action menu can still be split further in a later pass
 
 ### 3.3 Pricing page modularization
 
@@ -386,7 +550,7 @@ Goal:
 
 - break one of the largest dashboard pages into manageable pieces
 
-Tasks:
+- [-] Tasks:
 
 - split:
   - catalog fetching/orchestration
@@ -400,6 +564,22 @@ Tasks:
 Current target:
 
 - `app/dashboard/system/plan-creator/page.tsx`
+
+Status note:
+
+- extracted plan creator feature components into:
+  - `components/dashboard/plan-creator/PlanCreatorHeader.tsx`
+  - `components/dashboard/plan-creator/PlanAccessScopePanel.tsx`
+  - `components/dashboard/plan-creator/PlanManualOverridePanel.tsx`
+  - `components/dashboard/plan-creator/PlanFormCard.tsx`
+  - `components/dashboard/plan-creator/SavedPlansPanel.tsx`
+  - `components/dashboard/plan-creator/CouponLauncherCard.tsx`
+  - `components/dashboard/plan-creator/SelectionGroup.tsx`
+  - `components/dashboard/plan-creator/constants.ts`
+  - `components/dashboard/plan-creator/types.ts`
+- `app/dashboard/system/plan-creator/page.tsx` now acts as orchestration and mutation coordination instead of holding the full screen JSX inline
+- behavior preserved and webpack build verified
+- further polish still possible around shared badge primitives and destructive action confirmation
 
 ### 3.5 Video library modularization
 
@@ -436,11 +616,24 @@ Create or standardize:
 - `SelectionPanel`
 - `ListToolbar`
 
+Status note:
+
+- added reusable admin/dashboard primitives:
+  - `components/dashboard/shared/SearchBar.tsx`
+  - `components/dashboard/shared/SectionHeader.tsx`
+  - `components/dashboard/shared/EmptyState.tsx`
+  - `components/dashboard/shared/ConfirmDialog.tsx`
+- these are now used in course and user management flows
+- these are now also used in the plan creator flow
+- broader adoption across pricing admin, videos, quizzes, and viva is still pending
+
 ### 4.2 Badge language cleanup
 
 Goal:
 
 - stop having slightly different badge semantics everywhere
+
+- [ ] Tasks:
 
 Standardize badges for:
 
@@ -458,10 +651,15 @@ Goal:
 
 - destructive actions should feel consistent
 
-Tasks:
+- [-] Tasks:
 
 - replace scattered `window.confirm` where appropriate with shared confirmation UI
 - keep simple confirmation only where speed matters and UX cost is low
+
+Status note:
+
+- shared `ConfirmDialog` exists and is already used in parts of course and user management
+- broader rollout across plans, videos, and remaining destructive flows is still pending
 
 ---
 
@@ -539,11 +737,18 @@ Goal:
 
 - use course membership as the real content gate for RN
 
-Tasks:
+- [-] Tasks:
 
 - audit course membership behavior end to end
 - verify `activeCourseIds` is the single source of truth for member-only courses
 - ensure `/api/app/courses` returns only allowed courses
+
+Status note:
+
+- course membership assignment is implemented in the admin course flow
+- `activeCourseIds` is already part of the user shape
+- `/api/app/courses` exists
+- end-to-end enforcement audit is still pending
 
 ### 6.2 Attach content enforcement to course membership
 
@@ -551,7 +756,7 @@ Goal:
 
 - not just show course shells, but actually gate content under those courses
 
-Tasks:
+- [-] Tasks:
 
 - map course sections to content ids cleanly
 - enforce access for:
@@ -566,17 +771,29 @@ Important:
 - do this through existing app routes
 - do not break route exposure
 
+Status note:
+
+- course sections already carry linked content ids and content types
+- learner-facing course shell delivery exists
+- route-level enforcement of those linked items is still incomplete
+
 ### 6.3 Plan-to-course entitlement bridge
 
 Goal:
 
 - future plan purchase should activate course access automatically
 
-Tasks:
+- [-] Tasks:
 
 - define how purchased plans assign one or more courses
 - prefer course-based entitlement over raw item-based unlocks
 - keep old fields temporarily until migration is complete
+
+Status note:
+
+- pricing plans already support course-based scopes
+- the future purchase bridge has not been wired yet
+- old item-based selection still remains for backward compatibility
 
 ---
 
@@ -657,11 +874,11 @@ Candidates:
 
 These are the safest next steps after this document:
 
-1. Extract shared course UI/types into reusable course modules.
-2. Add admin guards to course and pricing mutation routes.
-3. Refactor plan creator into smaller components.
-4. Add pagination design for quiz questions.
-5. Audit app routes for course-membership enforcement.
+1. Continue Phase 3 frontend extraction with the video library module.
+2. Refactor the pricing page into smaller reusable subcomponents.
+3. Design and implement quiz/question pagination.
+4. Audit app routes for course-membership enforcement.
+5. Do a focused logging cleanup pass for noisy/sensitive server logs.
 
 ---
 

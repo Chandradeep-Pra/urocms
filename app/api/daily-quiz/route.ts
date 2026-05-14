@@ -1,88 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
-import { FieldValue } from "firebase-admin/firestore";
+import { requireAdminSession } from "@/lib/server/adminAccess";
+import {
+  getDailyQuizNoStoreHeaders,
+  getLiveDailyQuiz,
+  saveTodayDailyQuiz,
+} from "@/lib/server/dailyQuizService";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
-    const {
-      question,
-      image,
-      options,
-      correctIndex,
-      explanation,
-    } = await req.json();
-
-    // Basic validation
-    if (
-      !question ||
-      !Array.isArray(options) ||
-      options.length !== 5 ||
-      correctIndex === undefined
-    ) {
-      return NextResponse.json(
-        { error: "Invalid quiz payload" },
-        { status: 400 }
-      );
-    }
-
-    const today = new Date().toISOString().split("T")[0];
-
-    await adminDb.collection("dailyQuizzes").doc(today).set({
-      question,
-      image: image ?? "",
-      options,
-      correctIndex,
-      explanation: explanation ?? "",
-      submissions: 0,
-      createdAt: FieldValue.serverTimestamp(),
-      source: "manual",
-    });
-
+    await saveTodayDailyQuiz(await req.json());
     return NextResponse.json({ success: true });
   } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to save quiz";
     return NextResponse.json(
-      { error: "Failed to save quiz" },
-      { status: 500 }
+      { error: message },
+      { status: message === "Invalid quiz payload" ? 400 : 500 }
     );
   }
 }
 
 export async function GET() {
   try {
-    const today = new Date().toISOString().split("T")[0];
-
-    const doc = await adminDb
-      .collection("dailyQuizzes")
-      .doc(today)
-      .get();
-
-    if (!doc.exists) {
-      return NextResponse.json(
-        { quiz: null },
-        {
-          headers: {
-            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-          },
-        }
-      );
-    }
-
     return NextResponse.json(
+      { quiz: await getLiveDailyQuiz() },
       {
-        quiz: {
-          id: doc.id,
-          ...doc.data(),
-        },
-      },
-      {
-        headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        },
+        headers: getDailyQuizNoStoreHeaders(),
       }
     );
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch quiz" },
       { status: 500 }

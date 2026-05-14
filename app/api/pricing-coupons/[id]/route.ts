@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
 import { requireAdminSession } from "@/lib/server/adminAccess";
+import { deletePricingCoupon, updatePricingCouponStatus } from "@/lib/server/pricingService";
 
 export async function PATCH(
   req: NextRequest,
@@ -14,11 +13,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
 
-    await adminDb.collection("pricingCoupons").doc(id).update({
-      isActive: body.isActive !== false,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
+    await updatePricingCouponStatus(id, body.isActive !== false);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Pricing coupon update error:", error);
@@ -35,7 +30,7 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    await adminDb.collection("pricingCoupons").doc(id).delete();
+    await deletePricingCoupon(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Pricing coupon delete error:", error);

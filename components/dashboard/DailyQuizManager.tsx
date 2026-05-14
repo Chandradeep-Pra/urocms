@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 
 interface QuizState {
   question: string;
@@ -135,7 +136,7 @@ export default function DailyQuizManager() {
 
   const fetchHistory = async () => {
     try {
-      const res = await fetch("/api/daily-quiz/history", {
+      const res = await adminFetch("/api/daily-quiz/history", {
         cache: "no-store",
       });
       const data = await res.json();
@@ -159,7 +160,7 @@ export default function DailyQuizManager() {
     async function fetchDetail() {
       try {
         setLoadingDetail(true);
-        const res = await fetch(`/api/daily-quiz/${selectedQuizId}`);
+        const res = await adminFetch(`/api/daily-quiz/${selectedQuizId}`);
         const data = await res.json();
 
         if (!res.ok) throw new Error(data?.error || "Failed to fetch quiz detail");
@@ -234,7 +235,7 @@ export default function DailyQuizManager() {
 
       const loadingToast = toast.loading("Generating AI question...");
 
-      const res = await fetch("/api/daily-quiz/generate", {
+      const res = await adminFetch("/api/daily-quiz/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: aiTopic }),
@@ -267,7 +268,7 @@ export default function DailyQuizManager() {
 
       const loadingToast = toast.loading("Publishing quiz...");
 
-      const res = await fetch("/api/daily-quiz", {
+      const res = await adminFetch("/api/daily-quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(quiz),
