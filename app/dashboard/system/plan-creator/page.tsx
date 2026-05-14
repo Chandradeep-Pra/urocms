@@ -95,6 +95,42 @@ export default function PlanCreatorPage() {
     return `\u00A3${perMonth}/month`;
   }, [form.price, form.expiryMonths]);
 
+  const selectedCoupon = useMemo(
+    () => coupons.find((coupon) => coupon.id === form.couponId) || null,
+    [coupons, form.couponId]
+  );
+
+  const pricingPreview = useMemo(() => {
+    const originalPrice = Number(form.price);
+
+    if (!Number.isFinite(originalPrice) || originalPrice < 0) {
+      return {
+        originalPrice: 0,
+        discountedPrice: 0,
+        hasDiscount: false,
+      };
+    }
+
+    if (!selectedCoupon) {
+      return {
+        originalPrice,
+        discountedPrice: originalPrice,
+        hasDiscount: false,
+      };
+    }
+
+    const discountedPrice =
+      selectedCoupon.discountType === "percent"
+        ? Math.max(0, Math.round((originalPrice - (originalPrice * selectedCoupon.discountValue) / 100) * 100) / 100)
+        : Math.max(0, Math.round((originalPrice - selectedCoupon.discountValue) * 100) / 100);
+
+    return {
+      originalPrice,
+      discountedPrice,
+      hasDiscount: discountedPrice < originalPrice,
+    };
+  }, [form.price, selectedCoupon]);
+
   const filteredCatalog = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) {
@@ -180,14 +216,16 @@ export default function PlanCreatorPage() {
 
   const hydrateForm = (plan: PricingPlan) => {
     setEditingId(plan.id);
-    setForm({
-      name: plan.name,
-      description: plan.description || "",
-      tag: plan.tag || "",
-      category: plan.category || "",
-      price: String(plan.price ?? ""),
-      expiryMonths: Number(plan.expiryMonths || 1),
-      durationLabel: plan.durationLabel || "",
+      setForm({
+        name: plan.name,
+        description: plan.description || "",
+        tag: plan.tag || "",
+        category: plan.category || "",
+        price: String(plan.price ?? ""),
+        embeddedLink: plan.embeddedLink || "",
+        couponId: plan.couponId || "",
+        expiryMonths: Number(plan.expiryMonths || 1),
+        durationLabel: plan.durationLabel || "",
       billingLabel: plan.billingLabel || "",
       availabilityNote: plan.availabilityNote || "",
       sortOrder: Number(plan.sortOrder || 0),
@@ -217,6 +255,8 @@ export default function PlanCreatorPage() {
       tag: form.tag.trim(),
       category: form.category.trim(),
       price: Number(form.price),
+      embeddedLink: form.embeddedLink.trim(),
+      couponId: form.couponId,
       expiryMonths: Number(form.expiryMonths),
       durationLabel: form.durationLabel.trim(),
       billingLabel: form.billingLabel.trim(),
@@ -415,7 +455,9 @@ export default function PlanCreatorPage() {
               editingId={editingId}
               form={form}
               setForm={setForm}
+              coupons={coupons}
               monthlyLabelSuggestion={monthlyLabelSuggestion}
+              pricingPreview={pricingPreview}
               totalScopedGroups={totalScopedGroups}
               totalSelected={totalSelected}
               saving={saving}

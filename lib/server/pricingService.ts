@@ -22,6 +22,8 @@ export type PricingPlanInput = {
   description: string;
   tag: string;
   price: number;
+  embeddedLink: string;
+  couponId: string;
   expiryMonths: number;
   durationLabel: string;
   billingLabel: string;
@@ -98,6 +100,8 @@ export function parsePricingPlanInput(body: any): PricingPlanInput {
     description: String(body?.description ?? "").trim(),
     tag: String(body?.tag ?? "").trim(),
     price: Number(body?.price ?? 0),
+    embeddedLink: String(body?.embeddedLink ?? "").trim(),
+    couponId: String(body?.couponId ?? "").trim(),
     expiryMonths: Number(body?.expiryMonths ?? 0),
     durationLabel: String(body?.durationLabel ?? "").trim(),
     billingLabel: String(body?.billingLabel ?? "").trim(),
@@ -109,6 +113,52 @@ export function parsePricingPlanInput(body: any): PricingPlanInput {
     isActive: body?.isActive !== false,
     selectedContent: normalizePlanSelection(body?.selectedContent),
     accessScopes: normalizePlanAccessScopes(body?.accessScopes),
+  };
+}
+
+async function resolvePlanPricing(input: PricingPlanInput) {
+  const originalPrice = input.price;
+
+  if (!input.couponId) {
+    return {
+      originalPrice,
+      discountedPrice: originalPrice,
+      couponId: "",
+      couponCode: "",
+      couponDiscountType: null,
+      couponDiscountValue: null,
+    };
+  }
+
+  const couponDoc = await adminDb.collection("pricingCoupons").doc(input.couponId).get();
+  if (!couponDoc.exists) {
+    throw new Error("Selected coupon no longer exists");
+  }
+
+  const coupon = couponDoc.data() ?? {};
+  if (coupon.isActive === false) {
+    throw new Error("Selected coupon is inactive");
+  }
+
+  const discountType = coupon.discountType === "amount" ? "amount" : "percent";
+  const discountValue = Number(coupon.discountValue ?? 0);
+
+  if (!Number.isFinite(discountValue) || discountValue <= 0) {
+    throw new Error("Selected coupon has an invalid discount value");
+  }
+
+  const discountedPrice =
+    discountType === "percent"
+      ? Math.max(0, Math.round((originalPrice - (originalPrice * discountValue) / 100) * 100) / 100)
+      : Math.max(0, Math.round((originalPrice - discountValue) * 100) / 100);
+
+  return {
+    originalPrice,
+    discountedPrice,
+    couponId: couponDoc.id,
+    couponCode: String(coupon.code || ""),
+    couponDiscountType: discountType,
+    couponDiscountValue: discountValue,
   };
 }
 
@@ -182,9 +232,9 @@ export async function loadPricingAdminData() {
     const selectedContent = normalizePlanSelection(data.selectedContent);
     const accessScopes = normalizePlanAccessScopes(data.accessScopes);
 
-    return {
-      id: doc.id,
-      ...data,
+        return {
+          id: doc.id,
+          ...data,
       selectedContent,
       accessScopes,
       contentCounts: data.contentCounts ?? countPlanSelection(selectedContent),
@@ -193,10 +243,15 @@ export async function loadPricingAdminData() {
       billingLabel: data.billingLabel ?? "",
       availabilityNote: data.availabilityNote ?? "",
       featureBullets: sanitizeFeatureBullets(data.featureBullets),
-      sortOrder: Number(data.sortOrder ?? 0),
-      vivaMinutes: Number(data.vivaMinutes ?? 0),
-    };
-  });
+          sortOrder: Number(data.sortOrder ?? 0),
+          vivaMinutes: Number(data.vivaMinutes ?? 0),
+          embeddedLink: String(data.embeddedLink ?? ""),
+          couponId: String(data.couponId ?? ""),
+          couponCode: String(data.couponCode ?? ""),
+          originalPrice: Number(data.originalPrice ?? data.price ?? 0),
+          discountedPrice: Number(data.discountedPrice ?? data.price ?? 0),
+        };
+      });
 
   const coupons = couponsSnap.docs.map((doc) => ({
     id: doc.id,
@@ -291,11 +346,20 @@ export async function loadPricingAdminData() {
 }
 
 export async function createPricingPlan(input: PricingPlanInput) {
+  const pricing = await resolvePlanPricing(input);
+
   const docRef = await adminDb.collection("pricingPlans").add({
     name: input.name,
     description: input.description,
     tag: input.tag,
     price: input.price,
+    originalPrice: pricing.originalPrice,
+    discountedPrice: pricing.discountedPrice,
+    embeddedLink: input.embeddedLink,
+    couponId: pricing.couponId,
+    couponCode: pricing.couponCode,
+    couponDiscountType: pricing.couponDiscountType,
+    couponDiscountValue: pricing.couponDiscountValue,
     expiryMonths: Number.isFinite(input.expiryMonths) && input.expiryMonths > 0 ? input.expiryMonths : 0,
     durationLabel: input.durationLabel,
     billingLabel: input.billingLabel,
@@ -317,11 +381,20 @@ export async function createPricingPlan(input: PricingPlanInput) {
 }
 
 export async function updatePricingPlan(id: string, input: PricingPlanInput) {
+  const pricing = await resolvePlanPricing(input);
+
   await adminDb.collection("pricingPlans").doc(id).update({
     name: input.name,
     description: input.description,
     tag: input.tag,
     price: input.price,
+    originalPrice: pricing.originalPrice,
+    discountedPrice: pricing.discountedPrice,
+    embeddedLink: input.embeddedLink,
+    couponId: pricing.couponId,
+    couponCode: pricing.couponCode,
+    couponDiscountType: pricing.couponDiscountType,
+    couponDiscountValue: pricing.couponDiscountValue,
     expiryMonths: Number.isFinite(input.expiryMonths) && input.expiryMonths > 0 ? input.expiryMonths : 0,
     durationLabel: input.durationLabel,
     billingLabel: input.billingLabel,

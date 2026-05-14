@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { Crown } from "lucide-react";
+import { ArrowDownToLine, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,19 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  expiryPresets,
-  featureSuggestions,
-  planPatterns,
-  vivaMinutePresets,
-} from "@/components/dashboard/plan-creator/constants";
-import type { PlanFormValues } from "@/components/dashboard/plan-creator/types";
+import { expiryPresets, featureSuggestions, planPatterns, vivaMinutePresets } from "@/components/dashboard/plan-creator/constants";
+import type { PlanFormValues, PricingCoupon } from "@/components/dashboard/plan-creator/types";
 
 export function PlanFormCard({
   editingId,
   form,
   setForm,
+  coupons,
   monthlyLabelSuggestion,
+  pricingPreview,
   totalScopedGroups,
   totalSelected,
   saving,
@@ -31,7 +28,13 @@ export function PlanFormCard({
   editingId: string | null;
   form: PlanFormValues;
   setForm: Dispatch<SetStateAction<PlanFormValues>>;
+  coupons: PricingCoupon[];
   monthlyLabelSuggestion: string;
+  pricingPreview: {
+    originalPrice: number;
+    discountedPrice: number;
+    hasDiscount: boolean;
+  };
   totalScopedGroups: number;
   totalSelected: number;
   saving: boolean;
@@ -57,8 +60,8 @@ export function PlanFormCard({
           ) : null}
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-3">
+        <div className="space-y-5">
+          {/* <div className="space-y-3">
             <Label>Plan pattern</Label>
             <div className="grid gap-3 sm:grid-cols-2">
               {planPatterns.map((pattern) => {
@@ -85,7 +88,7 @@ export function PlanFormCard({
                 );
               })}
             </div>
-          </div>
+          </div> */}
 
           <div className="space-y-2">
             <Label htmlFor="plan-name">Plan name</Label>
@@ -148,6 +151,30 @@ export function PlanFormCard({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="plan-coupon">Coupon (optional)</Label>
+              <select
+                id="plan-coupon"
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-900"
+                value={form.couponId}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, couponId: event.target.value }))
+                }
+              >
+                <option value="">No coupon</option>
+                {coupons.map((coupon) => (
+                  <option key={coupon.id} value={coupon.id}>
+                    {coupon.code} ·{" "}
+                    {coupon.discountType === "percent"
+                      ? `${coupon.discountValue}% off`
+                      : `£${coupon.discountValue} off`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
               <Label htmlFor="plan-expiry">Expiry (months)</Label>
               <Input
                 id="plan-expiry"
@@ -160,6 +187,18 @@ export function PlanFormCard({
                     expiryMonths: Number(event.target.value || 0),
                   }))
                 }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plan-embedded-link">Embedded link (optional)</Label>
+              <Input
+                id="plan-embedded-link"
+                value={form.embeddedLink}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, embeddedLink: event.target.value }))
+                }
+                placeholder="https://buy.stripe.com/... or embedded checkout URL"
               />
             </div>
           </div>
@@ -306,7 +345,7 @@ export function PlanFormCard({
               }
               className="min-h-[120px]"
             />
-            <div className="flex flex-wrap gap-2">
+            {/* <div className="flex flex-wrap gap-2">
               {featureSuggestions.map((feature) => (
                 <button
                   key={feature}
@@ -333,7 +372,7 @@ export function PlanFormCard({
                   + {feature}
                 </button>
               ))}
-            </div>
+            </div> */}
           </div>
 
           <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -350,22 +389,41 @@ export function PlanFormCard({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <div className="flex items-center gap-2 text-amber-900">
-            <Crown className="h-4 w-4" />
-            <p className="text-sm font-semibold">Plan summary</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center gap-2 text-slate-900">
+              <Crown className="h-4 w-4" />
+              <p className="text-sm font-semibold">Plan summary</p>
+            </div>
+            <div className="mt-3 grid gap-2 text-sm text-slate-700">
+              <p>{totalScopedGroups} access scopes selected</p>
+              <p>{totalSelected} content items selected</p>
+              <p>
+                Duration:{" "}
+                {form.durationLabel ||
+                  `${form.expiryMonths} month${form.expiryMonths > 1 ? "s" : ""}`}
+              </p>
+              <p>AI Viva Minutes: {Number(form.vivaMinutes || 0)}</p>
+              {form.billingLabel ? <p>Billing: {form.billingLabel}</p> : null}
+              {form.embeddedLink ? (
+                <p className="break-all text-xs text-slate-500">{form.embeddedLink}</p>
+              ) : null}
+            </div>
           </div>
-          <div className="mt-3 grid gap-2 text-sm text-amber-900/80">
-            <p>{totalScopedGroups} access scopes selected</p>
-            <p>{totalSelected} content items selected</p>
-            <p>Price: \u00A3{form.price || "0"}</p>
-            <p>
-              Duration:{" "}
-              {form.durationLabel ||
-                `${form.expiryMonths} month${form.expiryMonths > 1 ? "s" : ""}`}
-            </p>
-            <p>AI Viva Minutes: {Number(form.vivaMinutes || 0)}</p>
-            {form.billingLabel ? <p>Billing: {form.billingLabel}</p> : null}
+
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <div className="flex items-center gap-2 text-emerald-900">
+              <ArrowDownToLine className="h-4 w-4" />
+              <p className="text-sm font-semibold">Pricing preview</p>
+            </div>
+            <div className="mt-3 grid gap-2 text-sm text-emerald-900/80">
+              <p>Original price: £{pricingPreview.originalPrice || 0}</p>
+              <p>
+                Discounted price: £{pricingPreview.discountedPrice || 0}
+                {pricingPreview.hasDiscount ? " applied" : ""}
+              </p>
+              <p>{form.couponId ? "Coupon attached to this plan" : "No coupon attached"}</p>
+            </div>
           </div>
         </div>
 

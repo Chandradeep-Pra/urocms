@@ -75,14 +75,28 @@ export function SavedPlansPanel({
                     ) : null}
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-xl font-semibold text-slate-900">\u00A3{plan.price}</p>
+                    <div className="text-right">
+                    <p className="text-xl font-semibold text-slate-900">
+                      £{plan.discountedPrice ?? plan.price}
+                    </p>
+                    {typeof plan.originalPrice === "number" &&
+                    typeof plan.discountedPrice === "number" &&
+                    plan.discountedPrice < plan.originalPrice ? (
+                      <p className="mt-1 text-xs text-slate-400 line-through">
+                        £{plan.originalPrice}
+                      </p>
+                    ) : null}
                     <p className="text-xs text-slate-500">
                       {plan.durationLabel ||
                         `${plan.expiryMonths} month${plan.expiryMonths > 1 ? "s" : ""}`}
                     </p>
                     {plan.billingLabel ? (
                       <p className="mt-1 text-xs text-emerald-600">{plan.billingLabel}</p>
+                    ) : null}
+                    {plan.couponCode ? (
+                      <p className="mt-1 text-xs font-medium text-emerald-700">
+                        Coupon: {plan.couponCode}
+                      </p>
                     ) : null}
                   </div>
                 </div>
@@ -121,6 +135,9 @@ export function SavedPlansPanel({
                   ) : null}
                   {plan.vivaMinutes ? (
                     <PlanCountBadge label="Viva Minutes" value={plan.vivaMinutes} />
+                  ) : null}
+                  {plan.embeddedLink ? (
+                    <PlanCountBadge label="Embedded Link" value={1} />
                   ) : null}
                   <PlanCountBadge label="Chapters" value={plan.contentCounts?.chapters ?? 0} />
                   <PlanCountBadge label="Videos" value={plan.contentCounts?.videos ?? 0} />

@@ -36,6 +36,11 @@ export type PricingPlan = {
   tag?: string;
   category?: string;
   price: number;
+  originalPrice?: number;
+  discountedPrice?: number;
+  embeddedLink?: string;
+  couponId?: string;
+  couponCode?: string;
   expiryMonths: number;
   durationLabel?: string;
   billingLabel?: string;
@@ -86,6 +91,8 @@ export type PlanFormValues = {
   tag: string;
   category: string;
   price: string;
+  embeddedLink: string;
+  couponId: string;
   expiryMonths: number;
   durationLabel: string;
   billingLabel: string;

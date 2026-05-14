@@ -48,6 +48,8 @@ export const emptyForm: PlanFormValues = {
   tag: "",
   category: "",
   price: "49",
+  embeddedLink: "",
+  couponId: "",
   expiryMonths: 1,
   durationLabel: "",
   billingLabel: "",

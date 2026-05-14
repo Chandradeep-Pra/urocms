@@ -21,6 +21,10 @@ type PricingPlanCard = {
   category?: string;
   tag?: string;
   price: number;
+  originalPrice?: number;
+  discountedPrice?: number;
+  embeddedLink?: string;
+  couponCode?: string;
   subtitle: string;
   featureBullets: string[];
   billingLabel?: string;
@@ -185,6 +189,10 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
           category: String(data.category ?? "").trim(),
           tag: String(data.tag ?? "").trim(),
           price: Number(data.price ?? 0),
+          originalPrice: Number(data.originalPrice ?? data.price ?? 0),
+          discountedPrice: Number(data.discountedPrice ?? data.price ?? 0),
+          embeddedLink: String(data.embeddedLink ?? "").trim(),
+          couponCode: String(data.couponCode ?? "").trim(),
           subtitle: String(data.description ?? "").trim(),
           featureBullets: Array.isArray(data.featureBullets) ? data.featureBullets : [],
           billingLabel: String(data.billingLabel ?? "").trim(),
@@ -251,9 +259,9 @@ export default async function PricingPage() {
               Simple plans for serious FRCS preparation.
             </h1>
 
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-[#071014]/65">
+            {/* <p className="mt-5 max-w-3xl text-lg leading-8 text-[#071014]/65">
               Choose structured access to Urologics courses, tests, analytics, and AI viva preparation.
-            </p>
+            </p> */}
           </div>
 
           <Button
@@ -264,7 +272,8 @@ export default async function PricingPage() {
           </Button>
         </div>
 
-        {coupons.length ? (
+        {/* Coupons  */}
+        {/* {coupons.length ? (
           <div className="mb-8 grid gap-4">
             {coupons.map((coupon) => (
               <div
@@ -298,13 +307,13 @@ export default async function PricingPage() {
               </div>
             ))}
           </div>
-        ) : null}
+        ) : null} */}
 
-        <div className="mb-12 grid gap-4 md:grid-cols-3">
+        {/* <div className="mb-12 grid gap-4 md:grid-cols-3">
           <TopStat icon={Video} title="Video + quiz" text="Structured learning, not scattered revision." />
           <TopStat icon={BadgeCheck} title="Mocks + analytics" text="Track what is improving clearly." />
           <TopStat icon={Brain} title="AI viva system" text="Practice closer to the real exam room." />
-        </div>
+        </div> */}
 
         {plans.length === 0 ? (
           <div className="rounded-[32px] border border-[#0f7896]/12 bg-white p-10 shadow-[0_18px_50px_rgba(15,120,150,0.08)]">
@@ -417,11 +426,38 @@ export default async function PricingPage() {
                       </div>
 
                       <div className="mt-8 border-t border-[#0f7896]/10 pt-5">
-                        <p className="text-3xl font-semibold tracking-[-0.04em] text-[#071014]">
-                          {formatGbp(plan.price)}
-                        </p>
-                        <Button className="mt-4 w-full rounded-full bg-[#0f7896] text-white hover:bg-[#0b647d]">
-                          Register Now
+                        {typeof plan.originalPrice === "number" &&
+                        typeof plan.discountedPrice === "number" &&
+                        plan.discountedPrice < plan.originalPrice ? (
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-[#071014]/45 line-through">
+                              {formatGbp(plan.originalPrice)}
+                            </p>
+                            <p className="text-3xl font-semibold tracking-[-0.04em] text-[#071014]">
+                              {formatGbp(plan.discountedPrice)}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-3xl font-semibold tracking-[-0.04em] text-[#071014]">
+                            {formatGbp(plan.discountedPrice ?? plan.price)}
+                          </p>
+                        )}
+                        {plan.couponCode ? (
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                            Coupon applied: {plan.couponCode}
+                          </p>
+                        ) : null}
+                        <Button
+                          asChild={Boolean(plan.embeddedLink)}
+                          className="mt-4 w-full rounded-full bg-[#0f7896] text-white hover:bg-[#0b647d]"
+                        >
+                          {plan.embeddedLink ? (
+                            <a href={plan.embeddedLink} target="_blank" rel="noreferrer">
+                              Register Now
+                            </a>
+                          ) : (
+                            <span>Register Now</span>
+                          )}
                         </Button>
                       </div>
                     </article>
