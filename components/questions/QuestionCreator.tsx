@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 import { QuestionBank } from "./QuestionBankManager";
 
 interface ContentBlock {
@@ -144,7 +145,7 @@ const saveQuestion = async () => {
   try {
     setLoading(true);
 
-    const res = await fetch("/api/questions", {
+    const res = await adminFetch("/api/questions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

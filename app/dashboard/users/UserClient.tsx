@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import UserTabs from "@/components/Users/UserTabs";
+import { adminFetch } from "@/lib/client/adminApi";
 import type { AdminUser, UserTier } from "@/lib/server/guestService";
 
 export default function UsersClient({ users }: { users: AdminUser[] }) {
@@ -13,7 +14,7 @@ export default function UsersClient({ users }: { users: AdminUser[] }) {
 
   const handleSetTier = async (id: string, tier: UserTier) => {
     try {
-      const res = await fetch(`/api/users/${id}`, {
+      const res = await adminFetch(`/api/users/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -38,7 +39,7 @@ export default function UsersClient({ users }: { users: AdminUser[] }) {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/users/${id}`, {
+      const res = await adminFetch(`/api/users/${id}`, {
         method: "DELETE",
       });
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FileText, Folder, FolderOpen, FolderPlus, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,7 +58,7 @@ export default function AIVivaPage() {
 
   const fetchFolders = async () => {
     try {
-      const res = await fetch("/api/viva-folders");
+      const res = await adminFetch("/api/viva-folders");
       const data = await res.json();
       setFolders(data.folders || []);
     } catch {
@@ -68,7 +69,7 @@ export default function AIVivaPage() {
   const fetchCases = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/viva-cases");
+      const res = await adminFetch("/api/viva-cases");
       const data = await res.json();
       setCases((data.cases || []).map(normalizeVivaCase));
     } catch {
@@ -109,7 +110,7 @@ export default function AIVivaPage() {
     }
 
     try {
-      const res = await fetch("/api/viva-cases", {
+      const res = await adminFetch("/api/viva-cases", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,7 +133,7 @@ export default function AIVivaPage() {
     if (!deleteId) return;
 
     try {
-      await fetch(`/api/viva-cases/${deleteId}`, {
+      await adminFetch(`/api/viva-cases/${deleteId}`, {
         method: "DELETE",
       });
 
@@ -153,7 +154,7 @@ export default function AIVivaPage() {
     }
 
     try {
-      const res = await fetch("/api/viva-folders", {
+      const res = await adminFetch("/api/viva-folders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -179,7 +180,7 @@ export default function AIVivaPage() {
     const folder = folders.find((item) => item.id === folderId);
 
     try {
-      const res = await fetch(`/api/viva-cases/${caseId}`, {
+      const res = await adminFetch(`/api/viva-cases/${caseId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

@@ -1,15 +1,19 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 function normalizeCourseAccessTier(value: unknown) {
   return value === "members" ? "members" : value === "paid" ? "members" : "free";
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await params;
     const doc = await adminDb.collection("courses").doc(id).get();
@@ -37,6 +41,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await params;
     const body = await req.json();
@@ -122,9 +129,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await params;
     await adminDb.collection("courses").doc(id).delete();

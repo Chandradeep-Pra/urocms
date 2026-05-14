@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await context.params;
 
@@ -87,6 +91,9 @@ export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await context.params;
     const body = await req.json();
@@ -177,6 +184,9 @@ export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await context.params;
 

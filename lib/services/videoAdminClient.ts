@@ -1,3 +1,5 @@
+import { adminFetch } from "@/lib/client/adminApi";
+
 export interface DriveFolderOption {
   id: string;
   name: string;
@@ -29,7 +31,7 @@ export async function updateVideoSection(
   sectionId: string,
   payload: { title?: string; accessTier?: "free" | "paid" }
 ) {
-  const res = await fetch(`/api/videos/videoSection/${sectionId}`, {
+  const res = await adminFetch(`/api/videos/videoSection/${sectionId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -41,7 +43,7 @@ export async function updateVideoSection(
 }
 
 export async function fetchDriveFolders() {
-  const res = await fetch("/api/videos/drive-folders");
+  const res = await adminFetch("/api/videos/drive-folders");
   return parseJson<{
     folders: DriveFolderOption[];
     configuredFolderId?: string;
@@ -49,7 +51,7 @@ export async function fetchDriveFolders() {
 }
 
 export async function fetchDriveFolderVideos(folderId: string) {
-  const res = await fetch(
+  const res = await adminFetch(
     `/api/videos/drive-library?folderId=${encodeURIComponent(folderId)}`
   );
   return parseJson<{
@@ -66,7 +68,7 @@ export async function createVideoItem(payload: {
   accessTier?: "free" | "paid";
   thumbnailUrl?: string;
 }) {
-  const res = await fetch("/api/videos/videoItem", {
+  const res = await adminFetch("/api/videos/videoItem", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -78,7 +80,7 @@ export async function createVideoItem(payload: {
 }
 
 export async function syncVideoToStorage(videoId: string) {
-  const res = await fetch(`/api/videos/videoItem/${videoId}/sync-storage`, {
+  const res = await adminFetch(`/api/videos/videoItem/${videoId}/sync-storage`, {
     method: "POST",
   });
 

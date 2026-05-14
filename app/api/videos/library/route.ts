@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 export async function GET(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
-    const authHeader = req.headers.get("authorization");
-
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+    const authHeader = req.headers.get("authorization")!;
     const token = authHeader.split("Bearer ")[1];
     const decoded = await adminAuth.verifyIdToken(token);
     const userDoc = await adminDb.collection("users").doc(decoded.uid).get();

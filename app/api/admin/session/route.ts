@@ -1,27 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebaseAdmin";
-import { isAllowedAdminEmail } from "@/lib/server/adminAccess";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 export async function GET(req: NextRequest) {
+  const { session, response } = await requireAdminSession(req);
+
+  if (response || !session) {
+    return response || NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const authHeader = req.headers.get("authorization");
-
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const token = authHeader.split("Bearer ")[1];
-    const decoded = await adminAuth.verifyIdToken(token);
-    const email = typeof decoded.email === "string" ? decoded.email : null;
-
-    if (!isAllowedAdminEmail(email)) {
-      return NextResponse.json({ error: "Admin access denied" }, { status: 403 });
-    }
-
     return NextResponse.json({
       success: true,
-      email,
-      uid: decoded.uid,
+      email: session.email,
+      uid: session.uid,
     });
   } catch (error) {
     console.error("Admin session check error:", error);

@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { adminFetch } from "@/lib/client/adminApi";
 
 export interface QuestionBank {
   id: string;
@@ -63,14 +64,14 @@ export default function QuestionBankManager({banks, setBanks, fetchBanks}: Quest
 
     try {
       if (editId) {
-        await fetch(`/api/question-banks/${editId}`, {
+        await adminFetch(`/api/question-banks/${editId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
         });
         toast.success("Bank updated");
       } else {
-        await fetch("/api/question-banks", {
+        await adminFetch("/api/question-banks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
@@ -91,7 +92,7 @@ export default function QuestionBankManager({banks, setBanks, fetchBanks}: Quest
   /* ───────── DELETE ───────── */
   async function handleDelete(id: string) {
     try {
-      await fetch(`/api/question-banks/${id}`, {
+      await adminFetch(`/api/question-banks/${id}`, {
         method: "DELETE",
       });
       toast.success("Bank deleted");

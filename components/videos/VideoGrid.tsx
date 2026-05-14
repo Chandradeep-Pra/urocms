@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import SectionActionPanel from "@/components/videos/SectionActionPanel";
 import { VideoItem } from "@/app/dashboard/content/videos/page";
+import { adminFetch } from "@/lib/client/adminApi";
 import { syncVideoToStorage } from "@/lib/services/videoAdminClient";
 
 interface Props {
@@ -93,7 +94,7 @@ export default function VideoGrid({
 
     try {
       setSavingId(id);
-      const res = await fetch(`/api/videos/videoItem/${id}`, {
+      const res = await adminFetch(`/api/videos/videoItem/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -148,7 +149,7 @@ export default function VideoGrid({
         throw new Error(data?.error || "Thumbnail upload failed");
       }
 
-      const saveRes = await fetch(`/api/videos/videoItem/${id}`, {
+      const saveRes = await adminFetch(`/api/videos/videoItem/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

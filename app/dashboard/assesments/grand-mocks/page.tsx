@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,7 +96,7 @@ export default function GrandMockPage() {
 
   const loadQuizzes = async () => {
     try {
-      const res = await fetch("/api/quizzes");
+      const res = await adminFetch("/api/quizzes");
       const data = await res.json();
 
       const filtered = (data.quizzes || []).filter(
@@ -110,7 +111,7 @@ export default function GrandMockPage() {
 
   const loadMocks = async () => {
     try {
-      const res = await fetch("/api/mocks");
+      const res = await adminFetch("/api/mocks");
       const data = await res.json();
       setMocks(data.mocks || []);
     } catch {
@@ -140,7 +141,7 @@ export default function GrandMockPage() {
     }
 
     try {
-      const res = await fetch("/api/mocks", {
+      const res = await adminFetch("/api/mocks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

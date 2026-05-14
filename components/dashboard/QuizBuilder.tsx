@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 import { QuestionBank } from "../questions/QuestionBankManager";
 import SearchBar from "../SearchBar";
 
@@ -49,7 +50,7 @@ export default function QuizBuilderPage() {
 
   const loadBanks = async () => {
     try {
-      const res = await fetch("/api/question-banks");
+      const res = await adminFetch("/api/question-banks");
       const data = await res.json();
       setBanks(data.banks || []);
     } catch (err) {
@@ -81,7 +82,7 @@ export default function QuizBuilderPage() {
     try {
       setSaving(true);
 
-      const res = await fetch("/api/quizzes", {
+      const res = await adminFetch("/api/quizzes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -140,7 +141,7 @@ export default function QuizBuilderPage() {
   try {
     setLoadingQuestions(bankId);
 
-    const res = await fetch(`/api/questions?bankId=${bankId}`);
+    const res = await adminFetch(`/api/questions?bankId=${bankId}`);
     const data = await res.json();
 
     setBankQuestions(prev => ({

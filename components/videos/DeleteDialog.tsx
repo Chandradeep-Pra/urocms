@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 
 interface Props {
   deleteId: string | null;
@@ -19,7 +20,7 @@ export default function DeleteVideoDialog({
   const handleDelete = async () => {
     if (!deleteId) return;
 
-    await fetch(`/api/videos/videoItem/${deleteId}`, {
+    await adminFetch(`/api/videos/videoItem/${deleteId}`, {
       method: "DELETE",
     });
 

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncDriveVideoToStorage } from "@/lib/server/firestoreVideoService";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const params = await context.params;
     const result = await syncDriveVideoToStorage(params.id);

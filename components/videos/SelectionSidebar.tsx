@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { adminFetch } from "@/lib/client/adminApi";
 
 interface Props {
   sections: any[];
@@ -46,7 +47,7 @@ export default function SectionSidebar({
 
     try {
       setLoadingId(id);
-      const res = await fetch(`/api/videos/videoSection/${id}`, {
+      const res = await adminFetch(`/api/videos/videoSection/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +80,7 @@ export default function SectionSidebar({
 
     try {
       setLoadingId(id);
-      const res = await fetch(`/api/videos/videoSection/${id}`, {
+      const res = await adminFetch(`/api/videos/videoSection/${id}`, {
         method: "DELETE",
       });
       const data = await res.json().catch(() => null);

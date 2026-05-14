@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await params;
     const body = await req.json();
@@ -23,9 +27,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await params;
     await adminDb.collection("pricingCoupons").doc(id).delete();

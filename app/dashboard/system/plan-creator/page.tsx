@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 import {
   Brain,
   Clock3,
@@ -462,7 +463,7 @@ export default function PlanCreatorPage() {
 
     try {
       setSaving(true);
-      const res = await fetch(
+      const res = await adminFetch(
         editingId ? `/api/pricing-plans/${editingId}` : "/api/pricing-plans",
         {
           method: editingId ? "PATCH" : "POST",
@@ -488,7 +489,7 @@ export default function PlanCreatorPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/pricing-plans/${id}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/pricing-plans/${id}`, { method: "DELETE" });
       const data = await res.json();
 
       if (!res.ok) {
@@ -509,7 +510,7 @@ export default function PlanCreatorPage() {
   const importPresets = async () => {
     try {
       setImportingPresets(true);
-      const res = await fetch("/api/pricing-plans/presets", { method: "POST" });
+      const res = await adminFetch("/api/pricing-plans/presets", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "Failed to import presets");
@@ -526,7 +527,7 @@ export default function PlanCreatorPage() {
   const handleCreateCoupon = async () => {
     try {
       setSavingCoupon(true);
-      const res = await fetch("/api/pricing-coupons", {
+      const res = await adminFetch("/api/pricing-coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -557,7 +558,7 @@ export default function PlanCreatorPage() {
 
   const toggleCoupon = async (coupon: PricingCoupon, nextValue: boolean) => {
     try {
-      const res = await fetch(`/api/pricing-coupons/${coupon.id}`, {
+      const res = await adminFetch(`/api/pricing-coupons/${coupon.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: nextValue }),
@@ -574,7 +575,7 @@ export default function PlanCreatorPage() {
 
   const deleteCoupon = async (id: string) => {
     try {
-      const res = await fetch(`/api/pricing-coupons/${id}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/pricing-coupons/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "Failed to delete coupon");

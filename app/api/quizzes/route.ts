@@ -1,6 +1,7 @@
 import { adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 function generateSlug(title: string) {
   return title
@@ -12,6 +13,9 @@ function generateSlug(title: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const body = await req.json();
 
@@ -65,6 +69,9 @@ export async function POST(req: NextRequest) {
 
 
 export async function GET(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");

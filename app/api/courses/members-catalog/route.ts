@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const snapshot = await adminDb.collection("users").orderBy("createdAt", "desc").get();
 

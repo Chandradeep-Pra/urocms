@@ -1,9 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { frcsPricingPresets } from "@/lib/pricingPresets";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const batch = adminDb.batch();
 

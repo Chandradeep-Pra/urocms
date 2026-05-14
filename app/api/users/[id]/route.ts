@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 import {
   getConfiguredDriveResourceIds,
   grantDriveAccessToEmail,
@@ -12,6 +13,9 @@ export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await context.params;
     const body = await req.json();
@@ -76,6 +80,9 @@ export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await context.params;
 

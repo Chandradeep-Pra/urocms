@@ -5,8 +5,12 @@ import {
   listDriveItemPermissions,
   updateDrivePermissionRole,
 } from "@/lib/server/googleDrive";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 export async function GET(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { searchParams } = new URL(req.url);
     const itemId = searchParams.get("itemId")?.trim();
@@ -35,6 +39,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { itemId, emailAddress, role } = await req.json();
 
@@ -62,6 +69,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { itemId, permissionId, role } = await req.json();
 
@@ -89,6 +99,9 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { searchParams } = new URL(req.url);
     const itemId = searchParams.get("itemId")?.trim();

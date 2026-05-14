@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { adminFetch } from "@/lib/client/adminApi";
 
 type CourseAccessTier = "free" | "members";
 
@@ -77,7 +78,7 @@ export default function CoursesPage() {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/courses", { cache: "no-store" });
+      const res = await adminFetch("/api/courses");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch courses");
       setCourses(data.courses || []);
@@ -100,7 +101,7 @@ export default function CoursesPage() {
 
     try {
       setSaving(true);
-      const res = await fetch("/api/courses", {
+      const res = await adminFetch("/api/courses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -125,7 +126,7 @@ export default function CoursesPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/courses/${id}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/courses/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete course");
       toast.success("Course deleted");

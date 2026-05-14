@@ -1,6 +1,7 @@
 import { adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 type PlanSelection = {
   chapterIds: string[];
@@ -56,6 +57,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await params;
     const body = await req.json();
@@ -120,9 +124,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const { id } = await params;
     await adminDb.collection("pricingPlans").doc(id).delete();

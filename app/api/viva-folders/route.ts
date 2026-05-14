@@ -1,8 +1,12 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const snapshot = await adminDb
       .collection("vivaFolders")
@@ -22,6 +26,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const body = await req.json();
     const title = String(body?.title || "").trim();

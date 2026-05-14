@@ -46,7 +46,7 @@ export async function POST(
     const nextAttempt = {
       candidate: {
         uid: auth.user.uid,
-        name: body?.name || auth.user.name || "Paid User",
+        name: auth.user.name || "Paid User",
         email: auth.user.email || "",
       },
       marks: normalizedMarks,

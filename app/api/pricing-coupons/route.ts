@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const body = await req.json();
     const code = String(body.code ?? "").trim().toUpperCase();

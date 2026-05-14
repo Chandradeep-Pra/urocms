@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const [videoSectionsSnap, chaptersSnap, mocksSnap, vivaCasesSnap] = await Promise.all([
       adminDb.collection("videoSections").get(),

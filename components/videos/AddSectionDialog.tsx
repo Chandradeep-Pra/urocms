@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 
 interface Props {
   open: boolean;
@@ -35,7 +36,7 @@ export default function AddSectionDialog({
 
     setLoading(true);
 
-    await fetch("/api/videos/videoSection", {
+    await adminFetch("/api/videos/videoSection", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, accessTier }),

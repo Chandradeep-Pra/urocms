@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 
 type MediaType = "image" | "youtube" | null;
 
@@ -73,7 +74,7 @@ export default function AnnouncementManager() {
     try {
       setLoading(true);
 
-      const res = await fetch("/api/announcements", {
+      const res = await adminFetch("/api/announcements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

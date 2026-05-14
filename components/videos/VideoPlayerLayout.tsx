@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { Play, Pause, X, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { adminFetch } from "@/lib/client/adminApi";
 
 interface Props {
   video: any | null;
@@ -102,7 +103,7 @@ export default function VideoPlayerLayout({
       try {
         setLoadingPlayback(true);
         setPlaybackError(null);
-        const res = await fetch(`/api/videos/videoItem/${video.id}/play`);
+        const res = await adminFetch(`/api/videos/videoItem/${video.id}/play`);
         const data = await res.json().catch(() => null);
 
         if (!res.ok) {

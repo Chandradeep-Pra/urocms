@@ -1,11 +1,15 @@
 import { adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   const { id } = await params;
 
   try {
@@ -34,6 +38,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   const { id } = await params;
 
   try {

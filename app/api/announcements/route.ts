@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
+import { requireAdminSession } from "@/lib/server/adminAccess";
 
 function extractYoutubeId(input: string): string | null {
   if (!input) return null;
@@ -34,6 +35,9 @@ function extractYoutubeId(input: string): string | null {
 /* ───────────── CREATE ANNOUNCEMENT ───────────── */
 
 export async function POST(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
   try {
     const body = await req.json();
 

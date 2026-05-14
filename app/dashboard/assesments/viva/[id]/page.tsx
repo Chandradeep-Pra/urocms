@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ExternalLink, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +34,7 @@ export default function CaseDetailsPage() {
 
   const fetchCase = async () => {
     try {
-      const res = await fetch(`/api/viva-cases/${id}`);
+      const res = await adminFetch(`/api/viva-cases/${id}`);
       const data = await res.json();
       const normalizedCase = normalizeVivaCase(data.case);
       setCaseData(normalizedCase);
@@ -54,7 +55,7 @@ export default function CaseDetailsPage() {
 
   const fetchFolders = async () => {
     try {
-      const res = await fetch("/api/viva-folders");
+      const res = await adminFetch("/api/viva-folders");
       const data = await res.json();
       setFolders(data.folders || []);
     } catch {
@@ -73,7 +74,7 @@ export default function CaseDetailsPage() {
     setSaving(true);
 
     try {
-      const res = await fetch(`/api/viva-cases/${id}`, {
+      const res = await adminFetch(`/api/viva-cases/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

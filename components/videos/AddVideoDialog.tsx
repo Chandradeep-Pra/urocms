@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { BadgeCheck, Lock, PlayCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 
 interface Props {
   open: boolean;
@@ -45,7 +46,7 @@ export default function AddVideoDialog({
 
     setLoading(true);
 
-    await fetch("/api/videos/videoItem", {
+    await adminFetch("/api/videos/videoItem", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Edit, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { adminFetch } from "@/lib/client/adminApi";
 
 interface Question {
   id: string;
@@ -40,14 +41,14 @@ export default function BankQuestionsPage() {
         setLoading(true);
 
         // 1️⃣ fetch bank
-        const bankRes = await fetch(`/api/question-banks/${bankId}`);
+        const bankRes = await adminFetch(`/api/question-banks/${bankId}`);
         const bankData = await bankRes.json();
 
         setBankTitle(bankData.bank?.title || "");
         setSection(bankData.bank?.section || "");
 
         // 2️⃣ fetch questions
-        const qRes = await fetch(
+        const qRes = await adminFetch(
           `/api/questions?bankId=${bankId}`
         );
         const qData = await qRes.json();
@@ -68,7 +69,7 @@ export default function BankQuestionsPage() {
 
   async function deleteQuestion(id: string) {
     try {
-      const res = await fetch(`/api/questions/${id}`, {
+      const res = await adminFetch(`/api/questions/${id}`, {
         method: "DELETE",
       });
 

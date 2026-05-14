@@ -4,6 +4,7 @@ import QuestionBankManager, { QuestionBank } from "@/components/questions/Questi
 import QuestionCreator from "@/components/questions/QuestionCreator";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 
 
 
@@ -17,7 +18,7 @@ export default function QuestionsPage() {
 
   async function fetchBanks() {
     try {
-      const res = await fetch("/api/question-banks");
+      const res = await adminFetch("/api/question-banks");
       const data = await res.json();
       setBanks(data.banks ?? []);
     } catch {

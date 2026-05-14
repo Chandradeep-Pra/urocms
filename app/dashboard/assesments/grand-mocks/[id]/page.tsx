@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 import {
   ArrowLeft,
   CalendarDays,
@@ -106,7 +107,7 @@ export default function GrandMockDetailsPage() {
 
   const fetchMock = async () => {
     try {
-      const res = await fetch(`/api/mocks/${id}`);
+      const res = await adminFetch(`/api/mocks/${id}`);
       const data = await res.json();
       const nextMock = data.mock;
       setMock(nextMock);
@@ -125,7 +126,7 @@ export default function GrandMockDetailsPage() {
 
   const fetchQuizzes = async () => {
     try {
-      const res = await fetch("/api/quizzes");
+      const res = await adminFetch("/api/quizzes");
       const data = await res.json();
       const filtered = (data.quizzes || []).filter(
         (quiz: QuizOption) => quiz.type === "mock" || quiz.type === "grand-mock"
@@ -174,7 +175,7 @@ export default function GrandMockDetailsPage() {
         durationMinutes: Number(form.durationMinutes),
       };
 
-      const res = await fetch(`/api/mocks/${id}`, {
+      const res = await adminFetch(`/api/mocks/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

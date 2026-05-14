@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { adminFetch } from "@/lib/client/adminApi";
 
 type ContentType = "videos" | "chapter-quizzes" | "mocks" | "grand-mocks" | "ai-vivas";
 type IconKey = "book-open" | "video" | "brain" | "clipboard-list" | "sparkles" | "file-question";
@@ -154,7 +155,7 @@ export default function CourseDetailPage() {
   const fetchCourse = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/courses/${courseId}`, { cache: "no-store" });
+      const res = await adminFetch(`/api/courses/${courseId}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch course");
       const nextCourse = data.course
@@ -184,7 +185,7 @@ export default function CourseDetailPage() {
 
   const fetchCatalog = async () => {
     try {
-      const res = await fetch("/api/courses/content-catalog", { cache: "no-store" });
+      const res = await adminFetch("/api/courses/content-catalog");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch content catalog");
       setCatalog(data.catalog);
@@ -195,7 +196,7 @@ export default function CourseDetailPage() {
 
   const fetchMemberCatalog = async () => {
     try {
-      const res = await fetch("/api/courses/members-catalog", { cache: "no-store" });
+      const res = await adminFetch("/api/courses/members-catalog");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch members");
       setMemberCatalog(data.users || []);
@@ -215,7 +216,7 @@ export default function CourseDetailPage() {
   const persistCourse = async (nextCourse: Course) => {
     try {
       setSaving(true);
-      const res = await fetch(`/api/courses/${courseId}`, {
+      const res = await adminFetch(`/api/courses/${courseId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(nextCourse),

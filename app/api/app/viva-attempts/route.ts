@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     const candidate = {
       uid: auth.user.uid,
-      name: body?.candidate?.name || auth.user.name || "Paid User",
+      name: auth.user.name || "Paid User",
       email: auth.user.email || "",
     };
 

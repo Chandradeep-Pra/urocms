@@ -6,6 +6,7 @@ import SectionSidebar from "@/components/videos/SelectionSidebar";
 import VideoGrid from "@/components/videos/VideoGrid";
 import VideoHeader from "@/components/videos/VideoHeader";
 import VideoPlayerLayout from "@/components/videos/VideoPlayerLayout";
+import { adminFetch } from "@/lib/client/adminApi";
 import { syncVideoToStorage } from "@/lib/services/videoAdminClient";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
@@ -51,12 +52,12 @@ export default function AdminVideoPage() {
   const [bulkSyncProgress, setBulkSyncProgress] = useState<BulkSyncProgress | null>(null);
 
   const fetchSections = async () => {
-    const res = await fetch("/api/videos/videoSection");
+    const res = await adminFetch("/api/videos/videoSection");
     setSections(await res.json());
   };
 
   const fetchVideos = async () => {
-    const res = await fetch("/api/videos/videoItem");
+    const res = await adminFetch("/api/videos/videoItem");
     const data = await res.json();
     setVideos(data);
   };

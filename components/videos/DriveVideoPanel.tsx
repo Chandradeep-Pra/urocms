@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { adminFetch } from "@/lib/client/adminApi";
 
 interface DriveFolderItem {
   id: string;
@@ -100,7 +101,7 @@ export default function DriveVideoPanel() {
   const loadAccessibleFolders = async () => {
     try {
       setLoadingFolders(true);
-      const res = await fetch("/api/videos/drive-folders");
+      const res = await adminFetch("/api/videos/drive-folders");
       const data = await res.json();
 
       if (!res.ok) {
@@ -129,7 +130,7 @@ export default function DriveVideoPanel() {
 
       const queryFolderId = (folderIdOverride ?? folderIdInput).trim();
       const search = queryFolderId ? `?folderId=${encodeURIComponent(queryFolderId)}` : "";
-      const res = await fetch(`/api/videos/drive-library${search}`);
+      const res = await adminFetch(`/api/videos/drive-library${search}`);
       const data: DriveFolderResponse & { error?: string } = await res.json();
 
       if (!res.ok) {
@@ -156,7 +157,7 @@ export default function DriveVideoPanel() {
       setLoadingPermissions(true);
       setPermissionsError(null);
 
-      const res = await fetch(
+      const res = await adminFetch(
         `/api/videos/drive-permissions?itemId=${encodeURIComponent(itemId)}`
       );
       const data = await res.json();
@@ -264,7 +265,7 @@ export default function DriveVideoPanel() {
 
     try {
       setSubmittingInvite(true);
-      const res = await fetch("/api/videos/drive-permissions", {
+      const res = await adminFetch("/api/videos/drive-permissions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -300,7 +301,7 @@ export default function DriveVideoPanel() {
 
     try {
       setMutatingPermissionId(permission.id);
-      const res = await fetch("/api/videos/drive-permissions", {
+      const res = await adminFetch("/api/videos/drive-permissions", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -337,7 +338,7 @@ export default function DriveVideoPanel() {
 
     try {
       setMutatingPermissionId(permission.id);
-      const res = await fetch(
+      const res = await adminFetch(
         `/api/videos/drive-permissions?itemId=${encodeURIComponent(
           activeFolderId
         )}&permissionId=${encodeURIComponent(permission.id)}`,
