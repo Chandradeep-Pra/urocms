@@ -4,11 +4,13 @@ import {
   FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
   getTierModules,
 } from "@/lib/appAccess";
+import { resolveAppPlanAccess } from "@/lib/server/appPlanAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
+  const planAccess = await resolveAppPlanAccess(auth.user);
 
   return NextResponse.json({
     valid: true,
@@ -19,11 +21,17 @@ export async function GET(req: NextRequest) {
       name: auth.user.name,
       googleAccessEmail: auth.user.googleAccessEmail,
       activeCourseIds: auth.user.activeCourseIds,
+      activePlanId: planAccess.activePlanId,
+      activePlanStatus: planAccess.activePlanStatus,
+      planActivatedAt: planAccess.planActivatedAt,
+      planExpiresAt: planAccess.planExpiresAt,
     },
     policy: {
       freeChapterPreviewLimit: FREE_CHAPTER_PREVIEW_LIMIT,
       freeWeeklyMockPreviewLimit: FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
       modules: getTierModules(auth.user.tier),
     },
+    plan: planAccess.plan,
+    entitlements: planAccess.entitlements,
   });
 }

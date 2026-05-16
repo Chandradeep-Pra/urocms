@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { type AppTier } from "@/lib/appAccess";
+import { type AppPlanStatus } from "@/lib/server/appPlanAccess";
 
 export interface AppUserSession {
   uid: string;
@@ -10,6 +11,10 @@ export interface AppUserSession {
   googleAccessEmail: string | null;
   source: string | null;
   activeCourseIds: string[];
+  activePlanId: string | null;
+  activePlanStatus: AppPlanStatus;
+  planActivatedAt: unknown;
+  planExpiresAt: unknown;
 }
 
 function getDefaultTier(signInProvider?: string): AppTier {
@@ -18,6 +23,10 @@ function getDefaultTier(signInProvider?: string): AppTier {
 
 function normalizeTier(value: unknown): AppTier {
   return value === "paid" || value === "free" || value === "guest" ? value : "guest";
+}
+
+function normalizePlanStatus(value: unknown): AppPlanStatus {
+  return value === "active" || value === "expired" || value === "none" ? value : "none";
 }
 
 export async function requireAppUser(req: NextRequest) {
@@ -58,6 +67,10 @@ export async function requireAppUser(req: NextRequest) {
           googleAccessEmail: decoded.email ?? null,
           source: decoded.firebase.sign_in_provider ?? null,
           activeCourseIds: [],
+          activePlanId: null,
+          activePlanStatus: "none",
+          planActivatedAt: null,
+          planExpiresAt: null,
         } satisfies AppUserSession,
       };
     }
@@ -73,6 +86,10 @@ export async function requireAppUser(req: NextRequest) {
         googleAccessEmail: user.googleAccessEmail ?? user.email ?? decoded.email ?? null,
         source: user.source ?? decoded.firebase.sign_in_provider ?? null,
         activeCourseIds: Array.isArray(user.activeCourseIds) ? user.activeCourseIds : [],
+        activePlanId: user.activePlanId ? String(user.activePlanId) : null,
+        activePlanStatus: normalizePlanStatus(user.activePlanStatus),
+        planActivatedAt: user.planActivatedAt ?? null,
+        planExpiresAt: user.planExpiresAt ?? null,
       } satisfies AppUserSession,
     };
   } catch (error) {
