@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { canAccessViva } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
+import {
+  getVivaAttemptsCollection,
+  toPositiveNumber,
+  updateUserStats,
+} from "@/lib/server/candidateProgress";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
 
 export async function POST(req: NextRequest) {
@@ -19,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { caseId, report } = body;
+    const { caseId, report, mode, score, durationSeconds } = body;
 
     if (!caseId) {
       return NextResponse.json({ error: "caseId is required" }, { status: 400 });
@@ -35,16 +40,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Authenticated email required" }, { status: 400 });
     }
 
-    await adminDb.collection("vivaAttempts").add({
-      caseId,
-      candidate,
-      report: report ?? null,
-      createdAt: FieldValue.serverTimestamp(),
-    });
+    const submittedAt = new Date().toISOString();
+    const numericScore =
+      score === undefined || score === null ? null : toPositiveNumber(score, 0);
+    const numericDuration =
+      durationSeconds === undefined || durationSeconds === null
+        ? null
+        : toPositiveNumber(durationSeconds, 0);
 
-    await adminDb.collection("vivaCases").doc(caseId).update({
-      attemptsCount: FieldValue.increment(1),
-    });
+    await Promise.all([
+      adminDb.collection("vivaAttempts").add({
+        caseId,
+        candidate,
+        report: report ?? null,
+        createdAt: FieldValue.serverTimestamp(),
+      }),
+      getVivaAttemptsCollection(auth.user.uid).doc().set({
+        caseId,
+        mode:
+          mode === "Fast and Furious" ? "Fast and Furious" : "Calm and Composed",
+        report: report ?? null,
+        score: numericScore,
+        durationSeconds: numericDuration,
+        submittedAt,
+      }),
+      adminDb.collection("vivaCases").doc(caseId).update({
+        attemptsCount: FieldValue.increment(1),
+      }),
+      updateUserStats(auth.user.uid, (current) => ({
+        vivaAttempts: current.vivaAttempts + 1,
+        lastActivityAt: submittedAt,
+      })),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {
