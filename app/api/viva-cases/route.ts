@@ -2,15 +2,35 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
-import { createVivaCase, listVivaCases } from "@/lib/server/vivaService";
+import { requireAppUser } from "@/lib/server/appSession";
+import {
+  createVivaCase,
+  listVivaCases,
+  listVivaCasesForCourseIds,
+} from "@/lib/server/vivaService";
 
 /* ───────── GET ALL CASES ───────── */
 export async function GET(req: NextRequest) {
-  const { response } = await requireAdminSession(req);
-  if (response) return response;
+  const admin = await requireAdminSession(req);
+  if (!admin.response) {
+    try {
+      return NextResponse.json({ cases: await listVivaCases() });
+    } catch (err) {
+      console.error(err);
+      return NextResponse.json(
+        { error: "Failed to fetch cases" },
+        { status: 500 }
+      );
+    }
+  }
+
+  const appAuth = await requireAppUser(req);
+  if ("response" in appAuth) return appAuth.response;
 
   try {
-    return NextResponse.json({ cases: await listVivaCases() });
+    return NextResponse.json({
+      cases: await listVivaCasesForCourseIds(appAuth.user.activeCourseIds),
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json(

@@ -1,13 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
-import { createVivaFolder, listVivaFolders } from "@/lib/server/vivaService";
+import { requireAppUser } from "@/lib/server/appSession";
+import {
+  createVivaFolder,
+  listVivaFolders,
+  listVivaFoldersForCourseIds,
+} from "@/lib/server/vivaService";
 
 export async function GET(req: NextRequest) {
-  const { response } = await requireAdminSession(req);
-  if (response) return response;
+  const admin = await requireAdminSession(req);
+  if (!admin.response) {
+    try {
+      return NextResponse.json({ folders: await listVivaFolders() });
+    } catch (error) {
+      console.error("Failed to fetch viva folders:", error);
+      return NextResponse.json({ error: "Failed to fetch folders" }, { status: 500 });
+    }
+  }
+
+  const appAuth = await requireAppUser(req);
+  if ("response" in appAuth) return appAuth.response;
 
   try {
-    return NextResponse.json({ folders: await listVivaFolders() });
+    return NextResponse.json({
+      folders: await listVivaFoldersForCourseIds(appAuth.user.activeCourseIds),
+    });
   } catch (error) {
     console.error("Failed to fetch viva folders:", error);
     return NextResponse.json({ error: "Failed to fetch folders" }, { status: 500 });

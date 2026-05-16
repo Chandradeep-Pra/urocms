@@ -28,6 +28,92 @@ export async function listVivaCases() {
   }));
 }
 
+async function getAiVivaIdsForCourseIds(courseIds: string[]) {
+  const uniqueCourseIds = Array.from(
+    new Set(courseIds.map((courseId) => String(courseId).trim()).filter(Boolean))
+  );
+
+  if (!uniqueCourseIds.length) return [];
+
+  const docs = await Promise.all(
+    uniqueCourseIds.map((courseId) => adminDb.collection("courses").doc(courseId).get())
+  );
+
+  return Array.from(
+    new Set(
+      docs.flatMap((doc) => {
+        const data = doc.data() ?? {};
+        const sections = Array.isArray(data.sections) ? data.sections : [];
+
+        return sections
+          .filter((section) => section?.contentType === "ai-vivas")
+          .flatMap((section) =>
+            Array.isArray(section?.linkedContentIds) ? section.linkedContentIds : []
+          )
+          .map((id) => String(id).trim())
+          .filter(Boolean);
+      })
+    )
+  );
+}
+
+export async function listVivaCasesForCourseIds(courseIds: string[]) {
+  const allowedIds = await getAiVivaIdsForCourseIds(courseIds);
+  if (!allowedIds.length) return [];
+
+  const cases = await Promise.all(
+    allowedIds.map(async (caseId) => {
+      const doc = await adminDb.collection("vivaCases").doc(caseId).get();
+      if (!doc.exists) return null;
+
+      const data = doc.data() ?? {};
+      if (data.isActive === false) return null;
+
+      return {
+        id: doc.id,
+        ...data,
+      };
+    })
+  );
+
+  return cases.filter(Boolean);
+}
+
+export async function listVivaFoldersForCourseIds(courseIds: string[]) {
+  const cases = await listVivaCasesForCourseIds(courseIds);
+  const folderIds = Array.from(
+    new Set(
+      cases
+        .map((item) => {
+          const vivaCase = item as { folderId?: unknown } | null;
+          return String(vivaCase?.folderId || "").trim();
+        })
+        .filter(Boolean)
+    )
+  );
+
+  if (!folderIds.length) return [];
+
+  const folders = await Promise.all(
+    folderIds.map(async (folderId) => {
+      const doc = await adminDb.collection("vivaFolders").doc(folderId).get();
+      if (!doc.exists) return null;
+
+      return {
+        id: doc.id,
+        ...doc.data(),
+      };
+    })
+  );
+
+  return folders.filter(Boolean);
+}
+
+export async function canAccessVivaCaseFromCourseIds(id: string, courseIds: string[]) {
+  const allowedIds = await getAiVivaIdsForCourseIds(courseIds);
+  return allowedIds.includes(id);
+}
+
 export async function createVivaCase(input: Record<string, unknown>) {
   const caseData = input.case as { title?: unknown; stem?: unknown } | undefined;
   if (!caseData?.title || !caseData?.stem) {
