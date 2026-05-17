@@ -46,6 +46,10 @@ export function getVivaAttemptsCollection(uid: string) {
   return adminDb.collection("vivaAttempts").doc(uid).collection("items");
 }
 
+export function getBookmarksCollection(uid: string) {
+  return adminDb.collection("bookmarks").doc(uid).collection("items");
+}
+
 export function getUserStatsRef(uid: string) {
   return adminDb.collection("userStats").doc(uid);
 }

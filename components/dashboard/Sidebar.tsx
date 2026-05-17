@@ -19,6 +19,7 @@ import {
   Smartphone,
   Users,
   Video,
+  Bell,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -47,6 +48,7 @@ export const nav = [
       { name: "Questions", href: "/dashboard/content/questions", icon: HelpCircle },
       { name: "Videos", href: "/dashboard/content/videos", icon: Video },
       { name: "Announcements", href: "/dashboard/content/announcement", icon: Megaphone },
+      { name: "Notifications", href: "/dashboard/content/notifications", icon: Bell },
       // { name: "Resources", href: "/dashboard/content/resources", icon: FileText },
     ],
   },

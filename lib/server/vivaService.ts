@@ -130,7 +130,10 @@ export async function createVivaCase(input: Record<string, unknown>) {
     updatedAt: FieldValue.serverTimestamp(),
   });
 
-  return { id: docRef.id };
+  return {
+    id: docRef.id,
+    title: String(caseData.title).trim(),
+  };
 }
 
 export async function getVivaCaseById(id: string) {
