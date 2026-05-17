@@ -8,6 +8,7 @@ import {
   listVivaCases,
   listVivaCasesForCourseIds,
 } from "@/lib/server/vivaService";
+import { publishNotification } from "@/lib/server/notificationService";
 
 /* ───────── GET ALL CASES ───────── */
 export async function GET(req: NextRequest) {
@@ -47,6 +48,15 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await createVivaCase(await req.json());
+    await publishNotification({
+      kind: "ai-viva",
+      title: "New AI Viva Case Posted",
+      body: result.title || "A new AI viva case is now available.",
+      sourceId: result.id,
+      sourceType: "vivaCase",
+      deepLink: `/ai-viva/${result.id}`,
+      audience: "all",
+    });
     return NextResponse.json({
       success: true,
       id: result.id,

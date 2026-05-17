@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireAdminSession } from "@/lib/server/adminAccess";
+import { publishNotification } from "@/lib/server/notificationService";
 
 function extractYoutubeId(input: string): string | null {
   if (!input) return null;
@@ -92,6 +93,16 @@ export async function POST(req: NextRequest) {
         isActive: true,
         createdAt: new Date(),
       });
+
+    await publishNotification({
+      kind: "announcement",
+      title: String(title).trim(),
+      body: String(description || subtitle || "A new announcement has been published.").trim(),
+      sourceId: "live",
+      sourceType: "announcement",
+      deepLink: "/announcements",
+      audience: "all",
+    });
 
     return NextResponse.json({ success: true });
 

@@ -186,7 +186,11 @@ export async function createMockSchedule(input: MockScheduleInput) {
     createdAt: FieldValue.serverTimestamp(),
   });
 
-  return { id: docRef.id };
+  return {
+    id: docRef.id,
+    title: String(quiz.data.title || "Untitled Mock"),
+    type: String(quiz.data.type || "mock"),
+  };
 }
 
 export async function getMockDetails(id: string) {

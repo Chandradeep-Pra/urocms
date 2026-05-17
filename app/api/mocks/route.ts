@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import { createMockSchedule, listMocks } from "@/lib/server/mockService";
+import { publishNotification } from "@/lib/server/notificationService";
 
 export async function GET(req: NextRequest) {
   const { response } = await requireAdminSession(req);
@@ -25,6 +26,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await createMockSchedule(await req.json());
+    if (result.type === "grand-mock") {
+      await publishNotification({
+        kind: "grand-mock",
+        title: "New Grand Mock Posted",
+        body: result.title || "A new grand mock is now available.",
+        sourceId: result.id,
+        sourceType: "mock",
+        deepLink: `/grand-mocks/${result.id}`,
+        audience: "all",
+      });
+    }
     return NextResponse.json({
       success: true,
       id: result.id,
