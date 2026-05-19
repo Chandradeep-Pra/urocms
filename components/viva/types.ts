@@ -1,4 +1,5 @@
 export type VivaMode = "Calm and Composed" | "Fast and Furious";
+export type VivaAccessType = "restricted" | "trial";
 
 export interface Attempt {
   candidate: {
@@ -28,6 +29,7 @@ export interface VivaCase {
   id: string;
   folderId?: string;
   folderName?: string;
+  accessType: VivaAccessType;
   case: {
     title: string;
     level: string;
@@ -40,6 +42,7 @@ export interface VivaCase {
     critical_fail: string[];
   };
   allowedUser: string[];
+  courseAllowedUserMap?: Record<string, string[]>;
   modes: {
     calmAndComposed: {
       enabled: boolean;
@@ -77,6 +80,7 @@ export const createFastQuestion = (): FastQuestionConfig => ({
 export const createInitialVivaForm = (): VivaCaseForm => ({
   folderId: "",
   folderName: "",
+  accessType: "restricted",
   case: {
     title: "",
     level: "Intermediate",
@@ -159,8 +163,26 @@ const normalizeFastQuestions = (
   });
 };
 
+const normalizeCourseAllowedUserMap = (value: unknown) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .map(([courseId, emails]) => [
+        courseId,
+        Array.isArray(emails)
+          ? emails
+              .map((email) => String(email || "").trim().toLowerCase())
+              .filter(Boolean)
+          : [],
+      ])
+      .filter(([courseId]) => Boolean(courseId))
+  );
+};
+
 export const normalizeVivaCase = (rawCase: any): VivaCase => {
   const exhibits = normalizeExhibits(rawCase?.exhibits);
+  const courseAllowedUserMap = normalizeCourseAllowedUserMap(rawCase?.courseAllowedUserMap);
   const legacyFastQuestions = rawCase?.case?.fastAndFuriousQuestions;
   const normalizedFastQuestions = normalizeFastQuestions(
     rawCase?.modes?.fastAndFurious?.questions ?? legacyFastQuestions,
@@ -181,6 +203,7 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
     id: rawCase?.id || createId("case"),
     folderId: rawCase?.folderId || "",
     folderName: rawCase?.folderName || "",
+    accessType: rawCase?.accessType === "trial" ? "trial" : "restricted",
     case: {
       title: rawCase?.case?.title || "",
       level: rawCase?.case?.level || "Intermediate",
@@ -199,6 +222,7 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
         : [],
     },
     allowedUser: Array.isArray(rawCase?.allowedUser) ? rawCase.allowedUser : [],
+    courseAllowedUserMap,
     modes: {
       calmAndComposed: {
         enabled: calmEnabled,
@@ -222,6 +246,7 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
 export const toVivaCasePayload = (form: VivaCaseForm) => ({
   folderId: form.folderId || "",
   folderName: form.folderName || "",
+  accessType: form.accessType === "trial" ? "trial" : "restricted",
   case: {
     ...form.case,
   },

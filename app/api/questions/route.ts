@@ -22,9 +22,70 @@ export async function POST(req: NextRequest) {
       explanation,
       difficulty,
       tags,
+      questions,
     } = body;
 
-    if (!bankId || !questionText || !Array.isArray(options) || options.length !== 5) {
+    if (!bankId) {
+      return NextResponse.json(
+        { error: "bankId is required" },
+        { status: 400 }
+      );
+    }
+
+    if (Array.isArray(questions)) {
+      if (questions.length === 0) {
+        return NextResponse.json(
+          { error: "At least one question is required" },
+          { status: 400 }
+        );
+      }
+
+      const invalid = questions.some(
+        (item) =>
+          !item?.questionText ||
+          !Array.isArray(item?.options) ||
+          item.options.length !== 5
+      );
+
+      if (invalid) {
+        return NextResponse.json(
+          { error: "Each queued question must include text and 5 options" },
+          { status: 400 }
+        );
+      }
+
+      const batch = adminDb.batch();
+
+      questions.forEach((item) => {
+        const ref = adminDb.collection("questions").doc();
+        batch.set(ref, {
+          bankId,
+          questionText: item.questionText,
+          questionImage: item.questionImage ?? "",
+          options: item.options,
+          correctAnswer: item.correctAnswer ?? 0,
+          explanation: item.explanation ?? {},
+          difficulty: item.difficulty ?? difficulty ?? "medium",
+          tags: item.tags ?? tags ?? [],
+          isActive: true,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      });
+
+      batch.update(adminDb.collection("questionBanks").doc(bankId), {
+        questionCount: FieldValue.increment(questions.length),
+      });
+
+      await batch.commit();
+
+      return NextResponse.json({
+        success: true,
+        count: questions.length,
+      });
+    }
+
+    if (!questionText || !Array.isArray(options) || options.length !== 5) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }

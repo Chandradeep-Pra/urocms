@@ -40,8 +40,6 @@ interface QuestionBankManagerProps {
 }
 
 export default function QuestionBankManager({banks, setBanks, fetchBanks}: QuestionBankManagerProps) {
-  const [loading, setLoading] = useState(true);
-
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -63,42 +61,58 @@ export default function QuestionBankManager({banks, setBanks, fetchBanks}: Quest
     }
 
     try {
+      const endpoint = editId ? `/api/question-banks/${editId}` : "/api/question-banks";
+      const method = editId ? "PATCH" : "POST";
+
+      const res = await adminFetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to save question bank");
+      }
+
       if (editId) {
-        await adminFetch(`/api/question-banks/${editId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        });
         toast.success("Bank updated");
       } else {
-        await adminFetch("/api/question-banks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        });
         toast.success("Bank created");
       }
 
       setDialogOpen(false);
       setEditId(null);
       setForm({ title: "", section: "section1" });
-      fetchBanks();
+      await fetchBanks();
 
-    } catch {
-      toast.error("Operation failed");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Operation failed"
+      );
     }
   }
 
   /* ───────── DELETE ───────── */
   async function handleDelete(id: string) {
     try {
-      await adminFetch(`/api/question-banks/${id}`, {
+      const res = await adminFetch(`/api/question-banks/${id}`, {
         method: "DELETE",
       });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to delete question bank");
+      }
+
       toast.success("Bank deleted");
-      fetchBanks();
-    } catch {
-      toast.error("Delete failed");
+      await fetchBanks();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Delete failed"
+      );
     }
   }
 

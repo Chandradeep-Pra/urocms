@@ -19,10 +19,16 @@ export default function QuestionsPage() {
   async function fetchBanks() {
     try {
       const res = await adminFetch("/api/question-banks");
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to load banks");
+      }
       setBanks(data.banks ?? []);
-    } catch {
-      toast.error("Failed to load banks");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load banks"
+      );
     } finally {
       setLoading(false);
     }
