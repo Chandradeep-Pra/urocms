@@ -313,6 +313,14 @@ export async function loadCourseMembersCatalog() {
 }
 
 export async function listAppCoursesForUser(user: AppUserSession) {
+  const contentCatalog = await loadCourseContentCatalog();
+  const contentLookup = Object.fromEntries(
+    Object.entries(contentCatalog).map(([contentType, items]) => [
+      contentType,
+      new Map(items.map((item) => [item.id, item])),
+    ])
+  ) as Record<string, Map<string, { id: string; title: string; subtitle?: string }>>;
+
   const snapshot = await adminDb
     .collection("courses")
     .where("showOnApp", "==", true)
@@ -335,7 +343,19 @@ export async function listAppCoursesForUser(user: AppUserSession) {
         accessTier: course.accessTier,
         showOnApp: true,
         sectionCount: course.sections.length,
-        sections: course.sections,
+        sections: course.sections.map((section: any) => {
+          const items = contentLookup[section.contentType] || new Map();
+          const linkedContent = Array.isArray(section.linkedContentIds)
+            ? section.linkedContentIds
+                .map((contentId: string) => items.get(contentId))
+                .filter(Boolean)
+            : [];
+
+          return {
+            ...section,
+            linkedContent,
+          };
+        }),
         access: {
           allowed: isAllowed,
           required: course.accessTier === "free" ? "free-account" : "course-membership",

@@ -15,10 +15,6 @@ function normalizeVivaCaseFolder(input: Record<string, unknown>) {
   };
 }
 
-function normalizeVivaAccessType(value: unknown) {
-  return value === "trial" ? "trial" : "restricted";
-}
-
 function normalizeEmailList(value: unknown) {
   if (!Array.isArray(value)) return [];
 
@@ -74,29 +70,10 @@ function extractAiVivaIdsFromSections(sections: unknown) {
   );
 }
 
-export function isTrialVivaCase(value: unknown) {
-  if (!value || typeof value !== "object") return false;
-  return normalizeVivaAccessType((value as Record<string, unknown>).accessType) === "trial";
-}
-
 export async function listVivaCases() {
   const snapshot = await adminDb
     .collection("vivaCases")
     .where("isActive", "==", true)
-    .orderBy("createdAt", "desc")
-    .get();
-
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
-}
-
-export async function listTrialVivaCases() {
-  const snapshot = await adminDb
-    .collection("vivaCases")
-    .where("isActive", "==", true)
-    .where("accessType", "==", "trial")
     .orderBy("createdAt", "desc")
     .get();
 
@@ -125,10 +102,8 @@ async function getAiVivaIdsForCourseIds(courseIds: string[]) {
 }
 
 export async function listVivaCasesForCourseIds(courseIds: string[]) {
-  const [allowedIds, trialCases] = await Promise.all([
-    getAiVivaIdsForCourseIds(courseIds),
-    listTrialVivaCases(),
-  ]);
+  const allowedIds = await getAiVivaIdsForCourseIds(courseIds);
+  if (!allowedIds.length) return [];
 
   const cases = await Promise.all(
     allowedIds.map(async (caseId) => {
@@ -145,14 +120,7 @@ export async function listVivaCasesForCourseIds(courseIds: string[]) {
     })
   );
 
-  return Array.from(
-    new Map(
-      [...trialCases, ...cases.filter(Boolean)].map((item) => {
-        const vivaCase = item as { id: string };
-        return [vivaCase.id, item];
-      })
-    ).values()
-  );
+  return cases.filter(Boolean);
 }
 
 export async function listVivaFoldersForCourseIds(courseIds: string[]) {
@@ -186,13 +154,6 @@ export async function listVivaFoldersForCourseIds(courseIds: string[]) {
 }
 
 export async function canAccessVivaCaseFromCourseIds(id: string, courseIds: string[]) {
-  const doc = await adminDb.collection("vivaCases").doc(id).get();
-  if (!doc.exists) return false;
-
-  const data = doc.data() ?? {};
-  if (data.isActive === false) return false;
-  if (normalizeVivaAccessType(data.accessType) === "trial") return true;
-
   const allowedIds = await getAiVivaIdsForCourseIds(courseIds);
   return allowedIds.includes(id);
 }
@@ -207,7 +168,6 @@ export async function createVivaCase(input: Record<string, unknown>) {
   const docRef = await adminDb.collection("vivaCases").add({
     ...input,
     ...folder,
-    accessType: normalizeVivaAccessType(input.accessType),
     attemptsCount: 0,
     isActive: true,
     createdAt: FieldValue.serverTimestamp(),
@@ -239,7 +199,6 @@ export async function updateVivaCase(id: string, input: Record<string, unknown>)
     ...input,
     folderId: folder.folderId,
     folderName: folder.folderName,
-    accessType: normalizeVivaAccessType(input.accessType),
     updatedAt: FieldValue.serverTimestamp(),
   });
 

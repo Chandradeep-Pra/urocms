@@ -8,11 +8,7 @@ import {
   updateUserStats,
 } from "@/lib/server/candidateProgress";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
-import {
-  canAccessVivaCaseFromCourseIds,
-  getVivaCaseById,
-  isTrialVivaCase,
-} from "@/lib/server/vivaService";
+import { canAccessVivaCaseFromCourseIds } from "@/lib/server/vivaService";
 
 export async function POST(req: NextRequest) {
   const auth = await requireAppUser(req);
@@ -20,42 +16,34 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { caseId, report, mode, score, durationSeconds, name, email } = body;
+    const { caseId, report, mode, score, durationSeconds } = body;
 
     if (!caseId) {
       return NextResponse.json({ error: "caseId is required" }, { status: 400 });
     }
 
-    const vivaCase = await getVivaCaseById(caseId);
-    const trialCase = isTrialVivaCase(vivaCase);
     const courseGrantedAccess = await canAccessVivaCaseFromCourseIds(
       caseId,
       auth.user.activeCourseIds
     );
 
-    if (!canAccessViva(auth.user.tier) && !trialCase && !courseGrantedAccess) {
+    if (!canAccessViva(auth.user.tier) && !courseGrantedAccess) {
       return tierLockedResponse({
         feature: "ai-viva",
         tier: auth.user.tier,
         requiredTier: "paid",
-        reason: "AI viva is available only for paid users unless a trial case is published or a course grants access.",
+        reason: "AI viva is available only for paid users unless a course grants access.",
       });
     }
 
     const candidate = {
       uid: auth.user.uid,
-      name:
-        String(name || "").trim() ||
-        auth.user.name ||
-        (trialCase ? "Trial Candidate" : "Paid User"),
-      email: String(email || "").trim().toLowerCase() || auth.user.email || "",
+      name: auth.user.name || "Paid User",
+      email: auth.user.email || "",
     };
 
     if (!candidate.email) {
-      return NextResponse.json(
-        { error: trialCase ? "Email is required for trial attempts" : "Authenticated email required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Authenticated email required" }, { status: 400 });
     }
 
     const submittedAt = new Date().toISOString();

@@ -1,5 +1,4 @@
 export type VivaMode = "Calm and Composed" | "Fast and Furious";
-export type VivaAccessType = "restricted" | "trial";
 
 export interface Attempt {
   candidate: {
@@ -29,7 +28,6 @@ export interface VivaCase {
   id: string;
   folderId?: string;
   folderName?: string;
-  accessType: VivaAccessType;
   case: {
     title: string;
     level: string;
@@ -80,7 +78,6 @@ export const createFastQuestion = (): FastQuestionConfig => ({
 export const createInitialVivaForm = (): VivaCaseForm => ({
   folderId: "",
   folderName: "",
-  accessType: "restricted",
   case: {
     title: "",
     level: "Intermediate",
@@ -203,7 +200,6 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
     id: rawCase?.id || createId("case"),
     folderId: rawCase?.folderId || "",
     folderName: rawCase?.folderName || "",
-    accessType: rawCase?.accessType === "trial" ? "trial" : "restricted",
     case: {
       title: rawCase?.case?.title || "",
       level: rawCase?.case?.level || "Intermediate",
@@ -246,7 +242,6 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
 export const toVivaCasePayload = (form: VivaCaseForm) => ({
   folderId: form.folderId || "",
   folderName: form.folderName || "",
-  accessType: form.accessType === "trial" ? "trial" : "restricted",
   case: {
     ...form.case,
   },

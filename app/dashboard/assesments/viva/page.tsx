@@ -540,20 +540,6 @@ export default function AIVivaPage() {
                   <option>Advanced</option>
                 </select>
 
-                <select
-                  className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none"
-                  value={form.accessType}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      accessType: e.target.value === "trial" ? "trial" : "restricted",
-                    }))
-                  }
-                >
-                  <option value="restricted">Restricted Case</option>
-                  <option value="trial">Trial Case (Public Preview)</option>
-                </select>
-
                 <Textarea
                   placeholder="Clinical Stem"
                   value={form.case.stem}
@@ -1091,11 +1077,6 @@ export default function AIVivaPage() {
                       {vivaCase.folderName ? (
                         <span className="inline-flex rounded-full border border-teal-100 bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
                           {vivaCase.folderName}
-                        </span>
-                      ) : null}
-                      {vivaCase.accessType === "trial" ? (
-                        <span className="inline-flex rounded-full border border-cyan-100 bg-cyan-50 px-2 py-0.5 text-[11px] text-cyan-700">
-                          Trial
                         </span>
                       ) : null}
                     </div>

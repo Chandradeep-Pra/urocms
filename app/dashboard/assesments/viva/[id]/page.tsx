@@ -332,9 +332,6 @@ export default function CaseDetailsPage() {
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
                 {caseData.case.level}
               </span>
-              <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs text-cyan-700">
-                {caseData.accessType === "trial" ? "Trial Case" : "Restricted Case"}
-              </span>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs text-emerald-700">
                 Calm: {calmReady ? "Ready" : "Not set"}
               </span>
@@ -397,20 +394,6 @@ export default function CaseDetailsPage() {
                 {folder.title}
               </option>
             ))}
-          </select>
-
-          <select
-            className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none"
-            value={caseData.accessType}
-            onChange={(e) =>
-              setCaseData({
-                ...caseData,
-                accessType: e.target.value === "trial" ? "trial" : "restricted",
-              })
-            }
-          >
-            <option value="restricted">Restricted Case</option>
-            <option value="trial">Trial Case (Public Preview)</option>
           </select>
 
           <Textarea

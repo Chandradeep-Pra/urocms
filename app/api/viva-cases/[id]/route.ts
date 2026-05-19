@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import { requireAppUser } from "@/lib/server/appSession";
+import { canAccessViva } from "@/lib/appAccess";
 import {
   canAccessVivaCaseFromCourseIds,
   getVivaCaseById,
@@ -35,7 +36,9 @@ export async function GET(
   if ("response" in appAuth) return appAuth.response;
 
   try {
-    const allowed = await canAccessVivaCaseFromCourseIds(id, appAuth.user.activeCourseIds);
+    const allowed =
+      canAccessViva(appAuth.user.tier) ||
+      (await canAccessVivaCaseFromCourseIds(id, appAuth.user.activeCourseIds));
     if (!allowed) {
       return NextResponse.json(
         { error: "Viva case is not included in your current courses" },

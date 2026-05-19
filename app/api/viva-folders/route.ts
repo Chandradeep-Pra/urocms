@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import { requireAppUser } from "@/lib/server/appSession";
+import { canAccessViva } from "@/lib/appAccess";
 import {
   createVivaFolder,
   listVivaFolders,
@@ -22,6 +23,12 @@ export async function GET(req: NextRequest) {
   if ("response" in appAuth) return appAuth.response;
 
   try {
+    if (canAccessViva(appAuth.user.tier)) {
+      return NextResponse.json({
+        folders: await listVivaFolders(),
+      });
+    }
+
     return NextResponse.json({
       folders: await listVivaFoldersForCourseIds(appAuth.user.activeCourseIds),
     });

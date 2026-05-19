@@ -29,6 +29,12 @@ export async function GET(req: NextRequest) {
   if ("response" in appAuth) return appAuth.response;
 
   try {
+    if (appAuth.user.tier === "paid") {
+      return NextResponse.json({
+        cases: await listVivaCases(),
+      });
+    }
+
     return NextResponse.json({
       cases: await listVivaCasesForCourseIds(appAuth.user.activeCourseIds),
     });
