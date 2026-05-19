@@ -1,6 +1,7 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebaseAdmin";
 import type { AppUserSession } from "@/lib/server/appSession";
+import { syncCourseVivaAllowedUsers } from "@/lib/server/vivaService";
 
 export type CourseAccessTier = "free" | "members";
 
@@ -132,6 +133,7 @@ export async function updateCourse(
   const previousMemberUserIds = Array.isArray(previousData.memberUserIds)
     ? previousData.memberUserIds
     : [];
+  const previousSections = Array.isArray(previousData.sections) ? previousData.sections : [];
   const memberUsers = await resolveCourseMemberUsers(input.memberUserIds);
 
   await adminDb.collection("courses").doc(id).update({
@@ -168,11 +170,40 @@ export async function updateCourse(
         { merge: true }
       )
     ),
+    syncCourseVivaAllowedUsers({
+      courseId: id,
+      previousSections,
+      nextSections: input.sections,
+      memberUsers,
+    }),
   ]);
 }
 
 export async function deleteCourse(id: string) {
-  await adminDb.collection("courses").doc(id).delete();
+  const courseDoc = await adminDb.collection("courses").doc(id).get();
+  const courseData = courseDoc.data() ?? {};
+  const memberUserIds = Array.isArray(courseData.memberUserIds) ? courseData.memberUserIds : [];
+  const memberUsers = Array.isArray(courseData.memberUsers) ? courseData.memberUsers : [];
+  const previousSections = Array.isArray(courseData.sections) ? courseData.sections : [];
+
+  await Promise.all([
+    ...memberUserIds.map((userId: string) =>
+      adminDb.collection("users").doc(userId).set(
+        {
+          activeCourseIds: FieldValue.arrayRemove(id),
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      )
+    ),
+    syncCourseVivaAllowedUsers({
+      courseId: id,
+      previousSections,
+      nextSections: [],
+      memberUsers,
+    }),
+    adminDb.collection("courses").doc(id).delete(),
+  ]);
 }
 
 export async function loadCourseContentCatalog() {

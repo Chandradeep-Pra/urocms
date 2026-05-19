@@ -1,34 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { canAccessViva } from "@/lib/appAccess";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { listVivaCasesForCourseIds } from "@/lib/server/vivaService";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
 
-  if (!canAccessViva(auth.user.tier)) {
-    return tierLockedResponse({
-      feature: "ai-viva",
-      tier: auth.user.tier,
-      requiredTier: "paid",
-      reason: "AI viva is available only for paid users.",
-    });
-  }
-
   try {
-    const snapshot = await adminDb
-      .collection("vivaCases")
-      .where("isActive", "==", true)
-      .orderBy("createdAt", "desc")
-      .get();
+    const accessibleCases = await listVivaCasesForCourseIds(auth.user.activeCourseIds);
+    const trialCases = accessibleCases.filter((item) => item?.accessType === "trial");
 
-    const cases = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    if (!canAccessViva(auth.user.tier) && trialCases.length === 0) {
+      return tierLockedResponse({
+        feature: "ai-viva",
+        tier: auth.user.tier,
+        requiredTier: "paid",
+        reason: "AI viva is available only for paid users unless a trial case is published.",
+      });
+    }
 
-    return NextResponse.json({ tier: auth.user.tier, cases });
+    return NextResponse.json({
+      tier: auth.user.tier,
+      cases: canAccessViva(auth.user.tier) ? accessibleCases : trialCases,
+    });
   } catch (error) {
     console.error("App viva cases fetch error:", error);
     return NextResponse.json({ error: "Failed to fetch cases" }, { status: 500 });

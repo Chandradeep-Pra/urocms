@@ -15,10 +15,88 @@ function normalizeVivaCaseFolder(input: Record<string, unknown>) {
   };
 }
 
+function normalizeVivaAccessType(value: unknown) {
+  return value === "trial" ? "trial" : "restricted";
+}
+
+function normalizeEmailList(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return Array.from(
+    new Set(
+      value
+        .map((email) => String(email || "").trim().toLowerCase())
+        .filter(Boolean)
+    )
+  );
+}
+
+function normalizeCourseAllowedUserMap(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .map(([courseId, emails]) => [courseId, normalizeEmailList(emails)])
+      .filter(([courseId]) => Boolean(courseId))
+  );
+}
+
+function getManualAllowedUsers(data: Record<string, unknown>) {
+  const allowedUser = normalizeEmailList(data.allowedUser);
+  const courseAllowedUserMap = normalizeCourseAllowedUserMap(data.courseAllowedUserMap);
+  const courseManagedEmails = new Set(Object.values(courseAllowedUserMap).flat());
+
+  return allowedUser.filter((email) => !courseManagedEmails.has(email));
+}
+
+function buildAllowedUsersWithCourseMap(
+  manualAllowedUser: string[],
+  courseAllowedUserMap: Record<string, string[]>
+) {
+  return Array.from(
+    new Set([...manualAllowedUser, ...Object.values(courseAllowedUserMap).flat()])
+  );
+}
+
+function extractAiVivaIdsFromSections(sections: unknown) {
+  if (!Array.isArray(sections)) return [];
+
+  return Array.from(
+    new Set(
+      sections
+        .filter((section) => section?.contentType === "ai-vivas")
+        .flatMap((section) =>
+          Array.isArray(section?.linkedContentIds) ? section.linkedContentIds : []
+        )
+        .map((id) => String(id || "").trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+export function isTrialVivaCase(value: unknown) {
+  if (!value || typeof value !== "object") return false;
+  return normalizeVivaAccessType((value as Record<string, unknown>).accessType) === "trial";
+}
+
 export async function listVivaCases() {
   const snapshot = await adminDb
     .collection("vivaCases")
     .where("isActive", "==", true)
+    .orderBy("createdAt", "desc")
+    .get();
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+}
+
+export async function listTrialVivaCases() {
+  const snapshot = await adminDb
+    .collection("vivaCases")
+    .where("isActive", "==", true)
+    .where("accessType", "==", "trial")
     .orderBy("createdAt", "desc")
     .get();
 
@@ -41,25 +119,16 @@ async function getAiVivaIdsForCourseIds(courseIds: string[]) {
 
   return Array.from(
     new Set(
-      docs.flatMap((doc) => {
-        const data = doc.data() ?? {};
-        const sections = Array.isArray(data.sections) ? data.sections : [];
-
-        return sections
-          .filter((section) => section?.contentType === "ai-vivas")
-          .flatMap((section) =>
-            Array.isArray(section?.linkedContentIds) ? section.linkedContentIds : []
-          )
-          .map((id) => String(id).trim())
-          .filter(Boolean);
-      })
+      docs.flatMap((doc) => extractAiVivaIdsFromSections((doc.data() ?? {}).sections))
     )
   );
 }
 
 export async function listVivaCasesForCourseIds(courseIds: string[]) {
-  const allowedIds = await getAiVivaIdsForCourseIds(courseIds);
-  if (!allowedIds.length) return [];
+  const [allowedIds, trialCases] = await Promise.all([
+    getAiVivaIdsForCourseIds(courseIds),
+    listTrialVivaCases(),
+  ]);
 
   const cases = await Promise.all(
     allowedIds.map(async (caseId) => {
@@ -76,7 +145,14 @@ export async function listVivaCasesForCourseIds(courseIds: string[]) {
     })
   );
 
-  return cases.filter(Boolean);
+  return Array.from(
+    new Map(
+      [...trialCases, ...cases.filter(Boolean)].map((item) => {
+        const vivaCase = item as { id: string };
+        return [vivaCase.id, item];
+      })
+    ).values()
+  );
 }
 
 export async function listVivaFoldersForCourseIds(courseIds: string[]) {
@@ -110,6 +186,13 @@ export async function listVivaFoldersForCourseIds(courseIds: string[]) {
 }
 
 export async function canAccessVivaCaseFromCourseIds(id: string, courseIds: string[]) {
+  const doc = await adminDb.collection("vivaCases").doc(id).get();
+  if (!doc.exists) return false;
+
+  const data = doc.data() ?? {};
+  if (data.isActive === false) return false;
+  if (normalizeVivaAccessType(data.accessType) === "trial") return true;
+
   const allowedIds = await getAiVivaIdsForCourseIds(courseIds);
   return allowedIds.includes(id);
 }
@@ -124,6 +207,7 @@ export async function createVivaCase(input: Record<string, unknown>) {
   const docRef = await adminDb.collection("vivaCases").add({
     ...input,
     ...folder,
+    accessType: normalizeVivaAccessType(input.accessType),
     attemptsCount: 0,
     isActive: true,
     createdAt: FieldValue.serverTimestamp(),
@@ -155,6 +239,7 @@ export async function updateVivaCase(id: string, input: Record<string, unknown>)
     ...input,
     folderId: folder.folderId,
     folderName: folder.folderName,
+    accessType: normalizeVivaAccessType(input.accessType),
     updatedAt: FieldValue.serverTimestamp(),
   });
 
@@ -211,4 +296,48 @@ export async function createVivaFolder(input: { title?: unknown; description?: u
       description: folder.description,
     },
   };
+}
+
+export async function syncCourseVivaAllowedUsers(params: {
+  courseId: string;
+  previousSections: unknown;
+  nextSections: unknown;
+  memberUsers: Array<{ email?: string | null }>;
+}) {
+  const previousVivaIds = extractAiVivaIdsFromSections(params.previousSections);
+  const nextVivaIds = extractAiVivaIdsFromSections(params.nextSections);
+  const targetVivaIds = Array.from(new Set([...previousVivaIds, ...nextVivaIds]));
+
+  if (!targetVivaIds.length) return;
+
+  const nextMemberEmails = normalizeEmailList(
+    params.memberUsers.map((user) => String(user?.email || ""))
+  );
+
+  await Promise.all(
+    targetVivaIds.map(async (vivaId) => {
+      const docRef = adminDb.collection("vivaCases").doc(vivaId);
+      const doc = await docRef.get();
+      if (!doc.exists) return;
+
+      const data = (doc.data() ?? {}) as Record<string, unknown>;
+      const courseAllowedUserMap = normalizeCourseAllowedUserMap(data.courseAllowedUserMap);
+      const manualAllowedUsers = getManualAllowedUsers(data);
+
+      if (nextVivaIds.includes(vivaId) && nextMemberEmails.length > 0) {
+        courseAllowedUserMap[params.courseId] = nextMemberEmails;
+      } else {
+        delete courseAllowedUserMap[params.courseId];
+      }
+
+      await docRef.update({
+        allowedUser: buildAllowedUsersWithCourseMap(
+          manualAllowedUsers,
+          courseAllowedUserMap
+        ),
+        courseAllowedUserMap,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    })
+  );
 }
