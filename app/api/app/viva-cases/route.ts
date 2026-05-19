@@ -10,19 +10,24 @@ export async function GET(req: NextRequest) {
   try {
     const accessibleCases = await listVivaCasesForCourseIds(auth.user.activeCourseIds);
     const trialCases = accessibleCases.filter((item) => item?.accessType === "trial");
+    const courseGrantedCases = accessibleCases.filter((item) => item?.accessType !== "trial");
+    const hasCourseGrantedAccess = courseGrantedCases.length > 0;
 
-    if (!canAccessViva(auth.user.tier) && trialCases.length === 0) {
+    if (!canAccessViva(auth.user.tier) && !hasCourseGrantedAccess && trialCases.length === 0) {
       return tierLockedResponse({
         feature: "ai-viva",
         tier: auth.user.tier,
         requiredTier: "paid",
-        reason: "AI viva is available only for paid users unless a trial case is published.",
+        reason: "AI viva is available only for paid users unless a trial case is published or a course grants access.",
       });
     }
 
     return NextResponse.json({
       tier: auth.user.tier,
-      cases: canAccessViva(auth.user.tier) ? accessibleCases : trialCases,
+      cases:
+        canAccessViva(auth.user.tier) || hasCourseGrantedAccess
+          ? accessibleCases
+          : trialCases,
     });
   } catch (error) {
     console.error("App viva cases fetch error:", error);

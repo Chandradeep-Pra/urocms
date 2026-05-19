@@ -8,7 +8,11 @@ import {
   updateUserStats,
 } from "@/lib/server/candidateProgress";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
-import { getVivaCaseById, isTrialVivaCase } from "@/lib/server/vivaService";
+import {
+  canAccessVivaCaseFromCourseIds,
+  getVivaCaseById,
+  isTrialVivaCase,
+} from "@/lib/server/vivaService";
 
 export async function POST(req: NextRequest) {
   const auth = await requireAppUser(req);
@@ -24,13 +28,17 @@ export async function POST(req: NextRequest) {
 
     const vivaCase = await getVivaCaseById(caseId);
     const trialCase = isTrialVivaCase(vivaCase);
+    const courseGrantedAccess = await canAccessVivaCaseFromCourseIds(
+      caseId,
+      auth.user.activeCourseIds
+    );
 
-    if (!canAccessViva(auth.user.tier) && !trialCase) {
+    if (!canAccessViva(auth.user.tier) && !trialCase && !courseGrantedAccess) {
       return tierLockedResponse({
         feature: "ai-viva",
         tier: auth.user.tier,
         requiredTier: "paid",
-        reason: "AI viva is available only for paid users unless a trial case is published.",
+        reason: "AI viva is available only for paid users unless a trial case is published or a course grants access.",
       });
     }
 
