@@ -30,15 +30,29 @@ export async function POST(req: NextRequest) {
       const existingUserDoc = existingUserSnapshot.docs[0];
       const existingUser = existingUserDoc.data();
 
+      await adminDb.collection("users").doc(uid).set(
+        {
+          name: existingUser.name ?? "Guest User",
+          email: normalizedEmail,
+          tier: existingUser.tier ?? "guest",
+          googleAccessEmail: existingUser.googleAccessEmail ?? normalizedEmail,
+          source: "mobile-app",
+          linkedExistingUserId: existingUserDoc.id,
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
+
       return NextResponse.json({
         success: true,
         existing: true,
         user: {
-          id: existingUserDoc.id,
+          id: uid,
           name: existingUser.name ?? "Guest User",
           email: existingUser.email ?? normalizedEmail,
           tier: existingUser.tier ?? "guest",
           source: existingUser.source ?? "mobile-app",
+          linkedExistingUserId: existingUserDoc.id,
         },
       });
     }
@@ -47,9 +61,11 @@ export async function POST(req: NextRequest) {
       name: "Guest User",
       email: normalizedEmail,
       tier: "guest",
+      googleAccessEmail: normalizedEmail,
       createdAt: new Date(),
+      updatedAt: new Date(),
       source: "mobile-app",
-    });
+    }, { merge: true });
 
     return NextResponse.json({
       success: true,
