@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,8 +13,39 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { absoluteUrl, siteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "View Urologics pricing for FRCS Urology preparation, including course access, mocks, quizzes, and AI viva preparation plans.",
+  alternates: {
+    canonical: "/pricing",
+  },
+  openGraph: {
+    title: "Urologics Pricing",
+    description:
+      "Compare Urologics pricing plans for FRCS Urology preparation, course access, mocks, quizzes, and AI viva support.",
+    url: absoluteUrl("/pricing"),
+    images: [
+      {
+        url: absoluteUrl(siteConfig.defaultOgImage),
+        width: 500,
+        height: 500,
+        alt: "Urologics pricing",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Urologics Pricing",
+    description:
+      "Compare Urologics pricing plans for FRCS Urology preparation, course access, mocks, quizzes, and AI viva support.",
+    images: [absoluteUrl(siteConfig.defaultOgImage)],
+  },
+};
 
 type PricingPlanCard = {
   id: string;
@@ -237,9 +269,31 @@ async function getActiveCoupons(): Promise<PricingCoupon[]> {
 export default async function PricingPage() {
   const [plans, coupons] = await Promise.all([getPricingPlans(), getActiveCoupons()]);
   const groupedPlans = groupPlansByCategory(plans);
+  const offerCatalogSchema = {
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    name: "Urologics Pricing Plans",
+    url: absoluteUrl("/pricing"),
+    itemListElement: plans.map((plan, index) => ({
+      "@type": "Offer",
+      position: index + 1,
+      name: plan.name,
+      description: plan.subtitle || "Urologics learning access plan",
+      priceCurrency: "GBP",
+      price: String(plan.discountedPrice ?? plan.price ?? 0),
+      url: plan.embeddedLink || absoluteUrl("/pricing"),
+      category: plan.category || "Programs",
+    })),
+  };
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-cyan-50 px-6 py-10 text-[#071014]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(offerCatalogSchema),
+        }}
+      />
       <div className="mx-auto max-w-7xl">
         <div className="mb-14 flex items-start justify-between gap-6">
           <div className="max-w-4xl">
