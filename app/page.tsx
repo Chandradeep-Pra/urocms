@@ -21,7 +21,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Best FRCS Urology Course | Urologics",
+  title: "Urologics | World's First App Based Urology Course ",
   description:
     "Explore Urologics for FRCS Urology preparation with AI viva practice, video courses, chapter-wise quizzes, weekly mocks, grand mocks, and structured exam support.",
   alternates: {
