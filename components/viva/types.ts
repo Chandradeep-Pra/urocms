@@ -10,6 +10,14 @@ export interface Attempt {
   };
 }
 
+export interface PublicVivaParticipant {
+  name: string;
+  email: string;
+  source?: string;
+  status: "started";
+  startedAt: string;
+}
+
 export interface VivaExhibit {
   id: string;
   label: string;
@@ -28,6 +36,7 @@ export interface VivaCase {
   id: string;
   folderId?: string;
   folderName?: string;
+  accessType?: "restricted" | "public";
   case: {
     title: string;
     level: string;
@@ -53,10 +62,14 @@ export interface VivaCase {
   };
   attemptsCount?: number;
   attempts?: Attempt[];
+  publicParticipants?: PublicVivaParticipant[];
   isActive?: boolean;
 }
 
-export type VivaCaseForm = Omit<VivaCase, "id" | "attemptsCount" | "attempts">;
+export type VivaCaseForm = Omit<
+  VivaCase,
+  "id" | "attemptsCount" | "attempts" | "publicParticipants"
+>;
 
 const createId = (prefix: string) =>
   `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
@@ -78,6 +91,7 @@ export const createFastQuestion = (): FastQuestionConfig => ({
 export const createInitialVivaForm = (): VivaCaseForm => ({
   folderId: "",
   folderName: "",
+  accessType: "restricted",
   case: {
     title: "",
     level: "Intermediate",
@@ -200,6 +214,7 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
     id: rawCase?.id || createId("case"),
     folderId: rawCase?.folderId || "",
     folderName: rawCase?.folderName || "",
+    accessType: rawCase?.accessType === "public" ? "public" : "restricted",
     case: {
       title: rawCase?.case?.title || "",
       level: rawCase?.case?.level || "Intermediate",
@@ -235,6 +250,17 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
     },
     attemptsCount: typeof rawCase?.attemptsCount === "number" ? rawCase.attemptsCount : 0,
     attempts: Array.isArray(rawCase?.attempts) ? rawCase.attempts : [],
+    publicParticipants: Array.isArray(rawCase?.publicParticipants)
+      ? rawCase.publicParticipants
+          .map((item) => ({
+            name: String(item?.name || "").trim(),
+            email: String(item?.email || "").trim().toLowerCase(),
+            source: String(item?.source || "").trim(),
+            status: "started" as const,
+            startedAt: String(item?.startedAt || ""),
+          }))
+          .filter((item) => item.email)
+      : [],
     isActive: typeof rawCase?.isActive === "boolean" ? rawCase.isActive : true,
   };
 };
@@ -242,6 +268,7 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
 export const toVivaCasePayload = (form: VivaCaseForm) => ({
   folderId: form.folderId || "",
   folderName: form.folderName || "",
+  accessType: form.accessType === "public" ? "public" : "restricted",
   case: {
     ...form.case,
   },

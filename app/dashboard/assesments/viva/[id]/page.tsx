@@ -396,6 +396,20 @@ export default function CaseDetailsPage() {
             ))}
           </select>
 
+          <select
+            className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none"
+            value={caseData.accessType || "restricted"}
+            onChange={(e) =>
+              setCaseData({
+                ...caseData,
+                accessType: e.target.value === "public" ? "public" : "restricted",
+              })
+            }
+          >
+            <option value="restricted">Restricted access</option>
+            <option value="public">Public access</option>
+          </select>
+
           <Textarea
             value={caseData.case.stem}
             onChange={(e) =>
@@ -449,6 +463,45 @@ export default function CaseDetailsPage() {
             Add Email
           </Button>
         </section>
+
+        {caseData.accessType === "public" && (
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="space-y-1">
+              <h3 className="font-semibold text-slate-800">Public Starts</h3>
+              <p className="text-sm text-slate-500">
+                Visitors captured from external/public viva access before they start the case.
+              </p>
+            </div>
+
+            {caseData.publicParticipants?.length ? (
+              <div className="overflow-hidden rounded-2xl border border-slate-200">
+                <div className="grid grid-cols-[1.2fr_1.2fr_0.8fr_1fr] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <span>Name</span>
+                  <span>Email</span>
+                  <span>Source</span>
+                  <span>Started At</span>
+                </div>
+                <div className="divide-y divide-slate-200">
+                  {caseData.publicParticipants.map((participant, index) => (
+                    <div
+                      key={`${participant.email}-${participant.startedAt}-${index}`}
+                      className="grid grid-cols-[1.2fr_1.2fr_0.8fr_1fr] gap-3 px-4 py-3 text-sm text-slate-700"
+                    >
+                      <span>{participant.name}</span>
+                      <span className="break-all">{participant.email}</span>
+                      <span>{participant.source || "external-web"}</span>
+                      <span>{participant.startedAt || "-"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                No public starts captured yet.
+              </div>
+            )}
+          </section>
+        )}
 
         <section className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">

@@ -165,10 +165,13 @@ export async function createVivaCase(input: Record<string, unknown>) {
   }
 
   const folder = normalizeVivaCaseFolder(input);
+  const accessType = input.accessType === "public" ? "public" : "restricted";
   const docRef = await adminDb.collection("vivaCases").add({
     ...input,
     ...folder,
+    accessType,
     attemptsCount: 0,
+    publicParticipants: [],
     isActive: true,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
@@ -194,11 +197,13 @@ export async function getVivaCaseById(id: string) {
 
 export async function updateVivaCase(id: string, input: Record<string, unknown>) {
   const folder = normalizeVivaCaseFolder(input);
+  const accessType = input.accessType === "public" ? "public" : "restricted";
 
   await adminDb.collection("vivaCases").doc(id).update({
     ...input,
     folderId: folder.folderId,
     folderName: folder.folderName,
+    accessType,
     updatedAt: FieldValue.serverTimestamp(),
   });
 
@@ -212,6 +217,23 @@ export async function softDeleteVivaCase(id: string) {
   });
 
   return { success: true };
+}
+
+export async function getPublicVivaCaseById(id: string) {
+  const doc = await adminDb.collection("vivaCases").doc(id).get();
+  if (!doc.exists) {
+    throw new Error("Case not found");
+  }
+
+  const data = doc.data() ?? {};
+  if (data.isActive === false || data.accessType !== "public") {
+    throw new Error("Case not found");
+  }
+
+  return {
+    id: doc.id,
+    ...data,
+  };
 }
 
 export async function listVivaFolders() {

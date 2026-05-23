@@ -540,6 +540,20 @@ export default function AIVivaPage() {
                   <option>Advanced</option>
                 </select>
 
+                <select
+                  className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none"
+                  value={form.accessType || "restricted"}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      accessType: e.target.value === "public" ? "public" : "restricted",
+                    }))
+                  }
+                >
+                  <option value="restricted">Restricted access</option>
+                  <option value="public">Public access</option>
+                </select>
+
                 <Textarea
                   placeholder="Clinical Stem"
                   value={form.case.stem}
@@ -1073,6 +1087,15 @@ export default function AIVivaPage() {
                     <div className="flex flex-wrap gap-2">
                       <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">
                         {vivaCase.case.level}
+                      </span>
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] ${
+                          vivaCase.accessType === "public"
+                            ? "border border-sky-200 bg-sky-50 text-sky-700"
+                            : "border border-slate-200 bg-slate-50 text-slate-600"
+                        }`}
+                      >
+                        {vivaCase.accessType === "public" ? "Public" : "Restricted"}
                       </span>
                       {vivaCase.folderName ? (
                         <span className="inline-flex rounded-full border border-teal-100 bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
