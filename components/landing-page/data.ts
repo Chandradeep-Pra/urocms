@@ -49,7 +49,7 @@ export const features: LandingFeature[] = [
   },
   {
     title: "Urologics AI",
-    textPoints:["AI UROLOGY MENTOR","Experiment different examiners temperament","Choose your examiner from the credits","More thank 100+ AI Viva Scenarios","Personalised feedback scoreing after each viva","Monitor your progress during FRCS preparation"],
+    textPoints:["AI Urology Mentor","Experiment different examiners temperament","Choose your examiner from the credits","More thank 100+ AI Viva Scenarios","Personalised feedback scoreing after each viva","Monitor your progress during FRCS preparation"],
   },
   {
     title: "Practice with Mentor",

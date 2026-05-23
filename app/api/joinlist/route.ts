@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     const country = normalizeText(body.country);
     const phone = normalizeText(body.phone);
     const title = normalizeText(body.title);
+    const currentInstitute = normalizeText(body.currentInstitute);
     const note = normalizeText(body.note);
 
     if (!name || !email || !phone) {
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
       country,
       phone,
       title,
+      currentInstitute,
       note,
       source: "landing-page",
       createdAt: new Date().toISOString(),

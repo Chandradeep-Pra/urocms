@@ -7,7 +7,7 @@ const aiVivaLoginUrl = `/login?redirect=${encodeURIComponent(
 )}`;
 
 const aiVivaPoints = [
-  "AI UROLOGY MENTOR",
+  "AI Urology Mentor",
   "Experiment different examiners temperament",
   "Choose your examiner from the credits",
   "More than 100+ AI Viva Scenarios",

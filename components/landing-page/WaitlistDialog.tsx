@@ -54,7 +54,7 @@ export function WaitlistDialog({
 }) {
   const [countries, setCountries] = useState<CountryOption[]>(fallbackCountries);
   const [open, setOpen] = useState(false);
-  const [country, setCountry] = useState("India-+91");
+  const [country, setCountry] = useState("United Kingdom-+44");
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [error, setError] = useState("");
 
@@ -117,6 +117,7 @@ export function WaitlistDialog({
       country,
       phone: String(formData.get("phone") || ""),
       title: String(formData.get("title") || ""),
+      currentInstitute: String(formData.get("currentInstitute") || ""),
       note: String(formData.get("note") || ""),
     };
 
@@ -258,6 +259,17 @@ export function WaitlistDialog({
               <Input
                 name="title"
                 placeholder="Urologist, resident, doctor, educator..."
+                className="h-12 rounded-2xl border-[#0f7896]/14 bg-cyan-50/60"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-[#071014]/68">
+                Current Institute/Trust
+              </label>
+              <Input
+                name="currentInstitute"
+                placeholder="NHS Trust, hospital, medical college..."
                 className="h-12 rounded-2xl border-[#0f7896]/14 bg-cyan-50/60"
               />
             </div>

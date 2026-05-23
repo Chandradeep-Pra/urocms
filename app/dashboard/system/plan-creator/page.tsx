@@ -6,12 +6,12 @@ import { adminFetch } from "@/lib/client/adminApi";
 import { PlanAccessScopePanel } from "@/components/dashboard/plan-creator/PlanAccessScopePanel";
 import { CouponLauncherCard } from "@/components/dashboard/plan-creator/CouponLauncherCard";
 import {
+  createEmptyPlanVersion,
   emptyCatalog,
   emptyCouponForm,
   emptyForm,
   emptyScopes,
   emptySelection,
-  planPatterns,
 } from "@/components/dashboard/plan-creator/constants";
 import { PlanCreatorHeader } from "@/components/dashboard/plan-creator/PlanCreatorHeader";
 import { PlanFormCard } from "@/components/dashboard/plan-creator/PlanFormCard";
@@ -83,54 +83,6 @@ export default function PlanCreatorPage() {
     );
   }, [form.accessScopes]);
 
-  const monthlyLabelSuggestion = useMemo(() => {
-    const price = Number(form.price);
-    const months = Number(form.expiryMonths);
-
-    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(months) || months <= 0) {
-      return "";
-    }
-
-    const perMonth = Math.round(price / months);
-    return `\u00A3${perMonth}/month`;
-  }, [form.price, form.expiryMonths]);
-
-  const selectedCoupon = useMemo(
-    () => coupons.find((coupon) => coupon.id === form.couponId) || null,
-    [coupons, form.couponId]
-  );
-
-  const pricingPreview = useMemo(() => {
-    const originalPrice = Number(form.price);
-
-    if (!Number.isFinite(originalPrice) || originalPrice < 0) {
-      return {
-        originalPrice: 0,
-        discountedPrice: 0,
-        hasDiscount: false,
-      };
-    }
-
-    if (!selectedCoupon) {
-      return {
-        originalPrice,
-        discountedPrice: originalPrice,
-        hasDiscount: false,
-      };
-    }
-
-    const discountedPrice =
-      selectedCoupon.discountType === "percent"
-        ? Math.max(0, Math.round((originalPrice - (originalPrice * selectedCoupon.discountValue) / 100) * 100) / 100)
-        : Math.max(0, Math.round((originalPrice - selectedCoupon.discountValue) * 100) / 100);
-
-    return {
-      originalPrice,
-      discountedPrice,
-      hasDiscount: discountedPrice < originalPrice,
-    };
-  }, [form.price, selectedCoupon]);
-
   const filteredCatalog = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) {
@@ -195,38 +147,41 @@ export default function PlanCreatorPage() {
       ...emptyForm,
       accessScopes: { ...emptyScopes },
       selectedContent: { ...emptySelection },
+      versions: [createEmptyPlanVersion(3, { price: "49" })],
     });
-  };
-
-  const applyPattern = (patternKey: (typeof planPatterns)[number]["key"]) => {
-    const pattern = planPatterns.find((item) => item.key === patternKey);
-    if (!pattern) {
-      return;
-    }
-
-    setForm((prev) => ({
-      ...prev,
-      category: pattern.values.category,
-      durationLabel: pattern.values.durationLabel,
-      availabilityNote: pattern.values.availabilityNote,
-      featureBulletsText: pattern.values.featureBulletsText,
-      vivaMinutes: pattern.values.vivaMinutes,
-    }));
   };
 
   const hydrateForm = (plan: PricingPlan) => {
     setEditingId(plan.id);
+    const fallbackVersions =
+      Array.isArray(plan.versions) && plan.versions.length > 0
+        ? plan.versions
+        : [
+            {
+              id: "legacy-default",
+              months: Number(plan.expiryMonths || 3),
+              price: Number(plan.originalPrice ?? plan.price ?? 0),
+              couponId: plan.couponId || "",
+              embeddedLink: plan.embeddedLink || "",
+              durationLabel: plan.durationLabel || "",
+              billingLabel: plan.billingLabel || "",
+            },
+          ];
       setForm({
         name: plan.name,
         description: plan.description || "",
         tag: plan.tag || "",
         category: plan.category || "",
-        price: String(plan.price ?? ""),
-        embeddedLink: plan.embeddedLink || "",
-        couponId: plan.couponId || "",
-        expiryMonths: Number(plan.expiryMonths || 1),
-        durationLabel: plan.durationLabel || "",
-      billingLabel: plan.billingLabel || "",
+      versions: fallbackVersions.map((version, index) =>
+        createEmptyPlanVersion(Number(version.months || 3), {
+          id: String(version.id || `version-${index + 1}`),
+          price: String(version.price ?? version.originalPrice ?? ""),
+          couponId: version.couponId || "",
+          embeddedLink: version.embeddedLink || "",
+          durationLabel: version.durationLabel || "",
+          billingLabel: version.billingLabel || "",
+        })
+      ),
       availabilityNote: plan.availabilityNote || "",
       sortOrder: Number(plan.sortOrder || 0),
       vivaMinutes: Number(plan.vivaMinutes || 0),
@@ -254,12 +209,15 @@ export default function PlanCreatorPage() {
       description: form.description.trim(),
       tag: form.tag.trim(),
       category: form.category.trim(),
-      price: Number(form.price),
-      embeddedLink: form.embeddedLink.trim(),
-      couponId: form.couponId,
-      expiryMonths: Number(form.expiryMonths),
-      durationLabel: form.durationLabel.trim(),
-      billingLabel: form.billingLabel.trim(),
+      versions: form.versions.map((version) => ({
+        id: version.id,
+        months: Number(version.months),
+        price: Number(version.price),
+        couponId: version.couponId,
+        embeddedLink: version.embeddedLink.trim(),
+        durationLabel: version.durationLabel.trim(),
+        billingLabel: version.billingLabel.trim(),
+      })),
       availabilityNote: form.availabilityNote.trim(),
       sortOrder: Number(form.sortOrder),
       vivaMinutes: Number(form.vivaMinutes),
@@ -282,13 +240,21 @@ export default function PlanCreatorPage() {
       return;
     }
 
-    if (!Number.isFinite(payload.price) || payload.price < 0) {
-      toast.error("Enter a valid price");
+    if (payload.versions.length === 0) {
+      toast.error("Add at least one plan version");
       return;
     }
 
-    if ((!Number.isFinite(payload.expiryMonths) || payload.expiryMonths <= 0) && !payload.durationLabel) {
-      toast.error("Add a valid expiry month count or a custom duration label");
+    if (
+      payload.versions.some(
+        (version) =>
+          !Number.isFinite(version.price) ||
+          version.price < 0 ||
+          !Number.isFinite(version.months) ||
+          version.months <= 0
+      )
+    ) {
+      toast.error("Each version needs a valid month count and price");
       return;
     }
 
@@ -456,12 +422,9 @@ export default function PlanCreatorPage() {
               form={form}
               setForm={setForm}
               coupons={coupons}
-              monthlyLabelSuggestion={monthlyLabelSuggestion}
-              pricingPreview={pricingPreview}
               totalScopedGroups={totalScopedGroups}
               totalSelected={totalSelected}
               saving={saving}
-              onApplyPattern={applyPattern}
               onSave={handleSave}
             />
             <SavedPlansPanel plans={plans} loading={loading} onEdit={hydrateForm} onDelete={handleDelete} />

@@ -17,16 +17,20 @@ export type PlanAccessScopes = {
   vivaFolderIds: string[];
 };
 
+export type PricingPlanVersionInput = {
+  id: string;
+  months: number;
+  price: number;
+  couponId: string;
+  embeddedLink: string;
+  durationLabel: string;
+  billingLabel: string;
+};
+
 export type PricingPlanInput = {
   name: string;
   description: string;
   tag: string;
-  price: number;
-  embeddedLink: string;
-  couponId: string;
-  expiryMonths: number;
-  durationLabel: string;
-  billingLabel: string;
   availabilityNote: string;
   category: string;
   sortOrder: number;
@@ -35,6 +39,7 @@ export type PricingPlanInput = {
   isActive: boolean;
   selectedContent: PlanSelection;
   accessScopes: PlanAccessScopes;
+  versions: PricingPlanVersionInput[];
 };
 
 export type PricingCouponInput = {
@@ -94,17 +99,41 @@ function sanitizeFeatureBullets(value: unknown) {
     : [];
 }
 
+function parsePricingPlanVersions(body: any): PricingPlanVersionInput[] {
+  const rawVersions = Array.isArray(body?.versions) ? body.versions : [];
+
+  return rawVersions.map((version: any, index: number) => ({
+    id: String(version?.id ?? `version-${index + 1}`).trim() || `version-${index + 1}`,
+    months: Number(version?.months ?? 0),
+    price: Number(version?.price ?? 0),
+    couponId: String(version?.couponId ?? "").trim(),
+    embeddedLink: String(version?.embeddedLink ?? "").trim(),
+    durationLabel: String(version?.durationLabel ?? "").trim(),
+    billingLabel: String(version?.billingLabel ?? "").trim(),
+  }));
+}
+
 export function parsePricingPlanInput(body: any): PricingPlanInput {
+  const parsedVersions = parsePricingPlanVersions(body);
+  const fallbackVersion =
+    parsedVersions.length > 0
+      ? parsedVersions
+      : [
+          {
+            id: "legacy-default",
+            months: Number(body?.expiryMonths ?? 0),
+            price: Number(body?.price ?? 0),
+            couponId: String(body?.couponId ?? "").trim(),
+            embeddedLink: String(body?.embeddedLink ?? "").trim(),
+            durationLabel: String(body?.durationLabel ?? "").trim(),
+            billingLabel: String(body?.billingLabel ?? "").trim(),
+          },
+        ];
+
   return {
     name: String(body?.name ?? "").trim(),
     description: String(body?.description ?? "").trim(),
     tag: String(body?.tag ?? "").trim(),
-    price: Number(body?.price ?? 0),
-    embeddedLink: String(body?.embeddedLink ?? "").trim(),
-    couponId: String(body?.couponId ?? "").trim(),
-    expiryMonths: Number(body?.expiryMonths ?? 0),
-    durationLabel: String(body?.durationLabel ?? "").trim(),
-    billingLabel: String(body?.billingLabel ?? "").trim(),
     availabilityNote: String(body?.availabilityNote ?? "").trim(),
     category: String(body?.category ?? "").trim(),
     sortOrder: Number(body?.sortOrder ?? 0),
@@ -113,24 +142,31 @@ export function parsePricingPlanInput(body: any): PricingPlanInput {
     isActive: body?.isActive !== false,
     selectedContent: normalizePlanSelection(body?.selectedContent),
     accessScopes: normalizePlanAccessScopes(body?.accessScopes),
+    versions: fallbackVersion,
   };
 }
 
-async function resolvePlanPricing(input: PricingPlanInput) {
-  const originalPrice = input.price;
+async function resolvePlanVersionPricing(version: PricingPlanVersionInput) {
+  const originalPrice = version.price;
 
-  if (!input.couponId) {
+  if (!version.couponId) {
     return {
+      id: version.id,
+      months: version.months,
+      price: originalPrice,
       originalPrice,
       discountedPrice: originalPrice,
       couponId: "",
       couponCode: "",
       couponDiscountType: null,
       couponDiscountValue: null,
+      embeddedLink: version.embeddedLink,
+      durationLabel: version.durationLabel,
+      billingLabel: version.billingLabel,
     };
   }
 
-  const couponDoc = await adminDb.collection("pricingCoupons").doc(input.couponId).get();
+  const couponDoc = await adminDb.collection("pricingCoupons").doc(version.couponId).get();
   if (!couponDoc.exists) {
     throw new Error("Selected coupon no longer exists");
   }
@@ -149,16 +185,33 @@ async function resolvePlanPricing(input: PricingPlanInput) {
 
   const discountedPrice =
     discountType === "percent"
-      ? Math.max(0, Math.round((originalPrice - (originalPrice * discountValue) / 100) * 100) / 100)
+      ? Math.max(
+          0,
+          Math.round((originalPrice - (originalPrice * discountValue) / 100) * 100) / 100
+        )
       : Math.max(0, Math.round((originalPrice - discountValue) * 100) / 100);
 
   return {
+    id: version.id,
+    months: version.months,
+    price: originalPrice,
     originalPrice,
     discountedPrice,
     couponId: couponDoc.id,
     couponCode: String(coupon.code || ""),
     couponDiscountType: discountType,
     couponDiscountValue: discountValue,
+    embeddedLink: version.embeddedLink,
+    durationLabel: version.durationLabel,
+    billingLabel: version.billingLabel,
+  };
+}
+
+async function resolvePlanPricing(input: PricingPlanInput) {
+  const versions = await Promise.all(input.versions.map(resolvePlanVersionPricing));
+  return {
+    versions,
+    primaryVersion: versions[0],
   };
 }
 
@@ -167,12 +220,18 @@ export function validatePricingPlanInput(input: PricingPlanInput) {
     return "Plan name is required";
   }
 
-  if (!Number.isFinite(input.price) || input.price < 0) {
-    return "Price must be a valid number";
+  if (!Array.isArray(input.versions) || input.versions.length === 0) {
+    return "Add at least one plan version";
   }
 
-  if ((!Number.isFinite(input.expiryMonths) || input.expiryMonths <= 0) && !input.durationLabel) {
-    return "Add a valid expiry in months or a custom duration label";
+  for (const version of input.versions) {
+    if (!Number.isFinite(version.price) || version.price < 0) {
+      return "Each version must have a valid price";
+    }
+
+    if (!Number.isFinite(version.months) || version.months <= 0) {
+      return "Each version must have a valid duration in months";
+    }
   }
 
   return null;
@@ -232,9 +291,9 @@ export async function loadPricingAdminData() {
     const selectedContent = normalizePlanSelection(data.selectedContent);
     const accessScopes = normalizePlanAccessScopes(data.accessScopes);
 
-        return {
-          id: doc.id,
-          ...data,
+    return {
+      id: doc.id,
+      ...data,
       selectedContent,
       accessScopes,
       contentCounts: data.contentCounts ?? countPlanSelection(selectedContent),
@@ -243,15 +302,46 @@ export async function loadPricingAdminData() {
       billingLabel: data.billingLabel ?? "",
       availabilityNote: data.availabilityNote ?? "",
       featureBullets: sanitizeFeatureBullets(data.featureBullets),
-          sortOrder: Number(data.sortOrder ?? 0),
-          vivaMinutes: Number(data.vivaMinutes ?? 0),
-          embeddedLink: String(data.embeddedLink ?? ""),
-          couponId: String(data.couponId ?? ""),
-          couponCode: String(data.couponCode ?? ""),
-          originalPrice: Number(data.originalPrice ?? data.price ?? 0),
-          discountedPrice: Number(data.discountedPrice ?? data.price ?? 0),
-        };
-      });
+      sortOrder: Number(data.sortOrder ?? 0),
+      vivaMinutes: Number(data.vivaMinutes ?? 0),
+      embeddedLink: String(data.embeddedLink ?? ""),
+      couponId: String(data.couponId ?? ""),
+      couponCode: String(data.couponCode ?? ""),
+      originalPrice: Number(data.originalPrice ?? data.price ?? 0),
+      discountedPrice: Number(data.discountedPrice ?? data.price ?? 0),
+      versions: Array.isArray(data.versions)
+        ? data.versions.map((version: any, index: number) => ({
+            id: String(version?.id ?? `version-${index + 1}`),
+            months: Number(version?.months ?? 0),
+            price: Number(version?.price ?? version?.originalPrice ?? 0),
+            originalPrice: Number(
+              version?.originalPrice ?? version?.price ?? data.originalPrice ?? data.price ?? 0
+            ),
+            discountedPrice: Number(
+              version?.discountedPrice ?? version?.price ?? data.discountedPrice ?? data.price ?? 0
+            ),
+            couponId: String(version?.couponId ?? ""),
+            couponCode: String(version?.couponCode ?? ""),
+            embeddedLink: String(version?.embeddedLink ?? ""),
+            durationLabel: String(version?.durationLabel ?? ""),
+            billingLabel: String(version?.billingLabel ?? ""),
+          }))
+        : [
+            {
+              id: "legacy-default",
+              months: Number(data.expiryMonths ?? 0),
+              price: Number(data.price ?? 0),
+              originalPrice: Number(data.originalPrice ?? data.price ?? 0),
+              discountedPrice: Number(data.discountedPrice ?? data.price ?? 0),
+              couponId: String(data.couponId ?? ""),
+              couponCode: String(data.couponCode ?? ""),
+              embeddedLink: String(data.embeddedLink ?? ""),
+              durationLabel: String(data.durationLabel ?? ""),
+              billingLabel: String(data.billingLabel ?? ""),
+            },
+          ],
+    };
+  });
 
   const coupons = couponsSnap.docs.map((doc) => ({
     id: doc.id,
@@ -347,27 +437,32 @@ export async function loadPricingAdminData() {
 
 export async function createPricingPlan(input: PricingPlanInput) {
   const pricing = await resolvePlanPricing(input);
+  const primaryVersion = pricing.primaryVersion;
 
   const docRef = await adminDb.collection("pricingPlans").add({
     name: input.name,
     description: input.description,
     tag: input.tag,
-    price: input.price,
-    originalPrice: pricing.originalPrice,
-    discountedPrice: pricing.discountedPrice,
-    embeddedLink: input.embeddedLink,
-    couponId: pricing.couponId,
-    couponCode: pricing.couponCode,
-    couponDiscountType: pricing.couponDiscountType,
-    couponDiscountValue: pricing.couponDiscountValue,
-    expiryMonths: Number.isFinite(input.expiryMonths) && input.expiryMonths > 0 ? input.expiryMonths : 0,
-    durationLabel: input.durationLabel,
-    billingLabel: input.billingLabel,
+    price: primaryVersion.price,
+    originalPrice: primaryVersion.originalPrice,
+    discountedPrice: primaryVersion.discountedPrice,
+    embeddedLink: primaryVersion.embeddedLink,
+    couponId: primaryVersion.couponId,
+    couponCode: primaryVersion.couponCode,
+    couponDiscountType: primaryVersion.couponDiscountType,
+    couponDiscountValue: primaryVersion.couponDiscountValue,
+    expiryMonths:
+      Number.isFinite(primaryVersion.months) && primaryVersion.months > 0
+        ? primaryVersion.months
+        : 0,
+    durationLabel: primaryVersion.durationLabel,
+    billingLabel: primaryVersion.billingLabel,
     availabilityNote: input.availabilityNote,
     category: input.category,
     sortOrder: Number.isFinite(input.sortOrder) ? input.sortOrder : 0,
     vivaMinutes: Number.isFinite(input.vivaMinutes) && input.vivaMinutes > 0 ? input.vivaMinutes : 0,
     featureBullets: input.featureBullets,
+    versions: pricing.versions,
     currency: "GBP",
     isActive: input.isActive,
     selectedContent: input.selectedContent,
@@ -382,27 +477,32 @@ export async function createPricingPlan(input: PricingPlanInput) {
 
 export async function updatePricingPlan(id: string, input: PricingPlanInput) {
   const pricing = await resolvePlanPricing(input);
+  const primaryVersion = pricing.primaryVersion;
 
   await adminDb.collection("pricingPlans").doc(id).update({
     name: input.name,
     description: input.description,
     tag: input.tag,
-    price: input.price,
-    originalPrice: pricing.originalPrice,
-    discountedPrice: pricing.discountedPrice,
-    embeddedLink: input.embeddedLink,
-    couponId: pricing.couponId,
-    couponCode: pricing.couponCode,
-    couponDiscountType: pricing.couponDiscountType,
-    couponDiscountValue: pricing.couponDiscountValue,
-    expiryMonths: Number.isFinite(input.expiryMonths) && input.expiryMonths > 0 ? input.expiryMonths : 0,
-    durationLabel: input.durationLabel,
-    billingLabel: input.billingLabel,
+    price: primaryVersion.price,
+    originalPrice: primaryVersion.originalPrice,
+    discountedPrice: primaryVersion.discountedPrice,
+    embeddedLink: primaryVersion.embeddedLink,
+    couponId: primaryVersion.couponId,
+    couponCode: primaryVersion.couponCode,
+    couponDiscountType: primaryVersion.couponDiscountType,
+    couponDiscountValue: primaryVersion.couponDiscountValue,
+    expiryMonths:
+      Number.isFinite(primaryVersion.months) && primaryVersion.months > 0
+        ? primaryVersion.months
+        : 0,
+    durationLabel: primaryVersion.durationLabel,
+    billingLabel: primaryVersion.billingLabel,
     availabilityNote: input.availabilityNote,
     category: input.category,
     sortOrder: Number.isFinite(input.sortOrder) ? input.sortOrder : 0,
     vivaMinutes: Number.isFinite(input.vivaMinutes) && input.vivaMinutes > 0 ? input.vivaMinutes : 0,
     featureBullets: input.featureBullets,
+    versions: pricing.versions,
     currency: "GBP",
     isActive: input.isActive,
     selectedContent: input.selectedContent,
@@ -426,9 +526,7 @@ export async function importPricingPresets() {
       .limit(1)
       .get();
 
-    const ref = existing.empty
-      ? adminDb.collection("pricingPlans").doc()
-      : existing.docs[0].ref;
+    const ref = existing.empty ? adminDb.collection("pricingPlans").doc() : existing.docs[0].ref;
 
     batch.set(
       ref,
@@ -442,6 +540,20 @@ export async function importPricingPresets() {
         expiryMonths: preset.expiryMonths,
         durationLabel: preset.durationLabel ?? "",
         billingLabel: preset.billingLabel ?? "",
+        versions: [
+          {
+            id: `${preset.presetKey}-default`,
+            months: preset.expiryMonths,
+            price: preset.price,
+            originalPrice: preset.price,
+            discountedPrice: preset.price,
+            couponId: "",
+            couponCode: "",
+            embeddedLink: "",
+            durationLabel: preset.durationLabel ?? "",
+            billingLabel: preset.billingLabel ?? "",
+          },
+        ],
         availabilityNote: preset.availabilityNote ?? "",
         featureBullets: preset.featureBullets,
         sortOrder: preset.sortOrder,

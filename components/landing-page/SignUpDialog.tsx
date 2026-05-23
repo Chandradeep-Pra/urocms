@@ -2,16 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Chrome, Loader2 } from "lucide-react";
 import {
   createUserWithEmailAndPassword,
@@ -19,6 +9,16 @@ import {
   signInWithPopup,
   updateProfile,
 } from "firebase/auth";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { auth } from "@/lib/firebaseClient";
 
 export function SignUpDialog({ children }: { children: React.ReactNode }) {
@@ -34,7 +34,7 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     if (!email || !password || !name) {
       setError("Please fill in all fields");
       return;
@@ -43,14 +43,12 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       const credential = await createUserWithEmailAndPassword(auth, email, password);
-      
+
       await updateProfile(credential.user, {
         displayName: name,
       });
 
       const token = await credential.user.getIdToken();
-      
-      // Hit validate-user to create the user document in Firestore with 'free' tier
       const response = await fetch("/api/validate-user", {
         method: "POST",
         headers: {
@@ -83,8 +81,6 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
 
       const credential = await signInWithPopup(auth, provider);
       const token = await credential.user.getIdToken();
-
-      // Use the existing Google complete API which handles Firestore user creation/merging
       const response = await fetch("/api/auth/google/complete", {
         method: "POST",
         headers: {
@@ -109,67 +105,71 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md bg-[#111816] border border-emerald-900/40 text-white shadow-2xl shadow-emerald-500/20">
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-md rounded-[32px] border border-[#0f7896]/14 bg-white p-6 text-[#071014] shadow-[0_24px_70px_rgba(15,120,150,0.18)]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-extrabold tracking-tight text-emerald-400 text-center">
+          <DialogTitle className="text-center text-3xl font-extrabold tracking-tight text-[#0f7896]">
             Join Urologics
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSignUp} className="space-y-4 mt-4">
+        <form onSubmit={handleSignUp} className="mt-4 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-slate-400">Full Name</Label>
+            <Label htmlFor="name" className="text-[#071014]/68">
+              Full Name
+            </Label>
             <Input
               id="name"
               placeholder="Dr. John Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-[#0d1412] border-emerald-900/40 text-white placeholder-slate-500 focus-visible:ring-emerald-500/40"
+              className="h-12 rounded-2xl border-[#0f7896]/14 bg-cyan-50/60 text-[#071014] placeholder-[#071014]/35 focus-visible:ring-[#0f7896]/25"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-slate-400">Email</Label>
+            <Label htmlFor="email" className="text-[#071014]/68">
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
               placeholder="doctor@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-[#0d1412] border-emerald-900/40 text-white placeholder-slate-500 focus-visible:ring-emerald-500/40"
+              className="h-12 rounded-2xl border-[#0f7896]/14 bg-cyan-50/60 text-[#071014] placeholder-[#071014]/35 focus-visible:ring-[#0f7896]/25"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-slate-400">Password</Label>
+            <Label htmlFor="password" className="text-[#071014]/68">
+              Password
+            </Label>
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-[#0d1412] border-emerald-900/40 text-white placeholder-slate-500 focus-visible:ring-emerald-500/40"
+              className="h-12 rounded-2xl border-[#0f7896]/14 bg-cyan-50/60 text-[#071014] placeholder-[#071014]/35 focus-visible:ring-[#0f7896]/25"
             />
           </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
           <Button
             type="submit"
             disabled={loading || googleLoading}
-            className="w-full bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl py-6 font-semibold shadow-lg shadow-emerald-500/30"
+            className="w-full rounded-2xl bg-[#0f7896] py-6 text-base font-bold text-white shadow-[0_12px_36px_rgba(15,120,150,0.24)] hover:bg-[#1294ba]"
           >
             {loading ? "Creating account..." : "Sign Up"}
           </Button>
         </form>
 
-        <div className="flex items-center gap-3 my-4">
-          <div className="h-px flex-1 bg-emerald-900/40" />
-          <span className="text-xs uppercase tracking-[0.2em] text-slate-500">or</span>
-          <div className="h-px flex-1 bg-emerald-900/40" />
+        <div className="my-4 flex items-center gap-3">
+          <div className="h-px flex-1 bg-[#0f7896]/14" />
+          <span className="text-xs uppercase tracking-[0.2em] text-[#071014]/40">or</span>
+          <div className="h-px flex-1 bg-[#0f7896]/14" />
         </div>
 
         <Button
@@ -177,7 +177,7 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
           variant="outline"
           onClick={handleGoogleSignUp}
           disabled={loading || googleLoading}
-          className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-6 text-base font-semibold text-black hover:bg-white/[0.07] hover:text-black"
+          className="w-full rounded-2xl border border-[#0f7896]/16 bg-white py-6 text-base font-bold text-[#071014] shadow-sm hover:border-[#0f7896]/30 hover:bg-cyan-50 hover:text-[#071014]"
         >
           {googleLoading ? (
             <>

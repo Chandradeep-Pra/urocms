@@ -12,6 +12,7 @@ import type {
   CouponFormValues,
   PlanAccessScopes,
   PlanFormValues,
+  PlanVersionFormValues,
   PlanSelection,
 } from "@/components/dashboard/plan-creator/types";
 
@@ -42,17 +43,26 @@ export const emptyCatalog: CatalogResponse = {
   vivaFolders: [],
 };
 
+export function createEmptyPlanVersion(
+  months = 3,
+  overrides: Partial<PlanVersionFormValues> = {}
+): PlanVersionFormValues {
+  return {
+    id: overrides.id ?? `version-${months}-${Math.random().toString(36).slice(2, 9)}`,
+    months,
+    price: overrides.price ?? "",
+    couponId: overrides.couponId ?? "",
+    embeddedLink: overrides.embeddedLink ?? "",
+    durationLabel: overrides.durationLabel ?? "",
+    billingLabel: overrides.billingLabel ?? "",
+  };
+}
+
 export const emptyForm: PlanFormValues = {
   name: "",
   description: "",
   tag: "",
   category: "",
-  price: "49",
-  embeddedLink: "",
-  couponId: "",
-  expiryMonths: 1,
-  durationLabel: "",
-  billingLabel: "",
   availabilityNote: "",
   sortOrder: 0,
   vivaMinutes: 0,
@@ -60,6 +70,7 @@ export const emptyForm: PlanFormValues = {
   isActive: true,
   accessScopes: emptyScopes,
   selectedContent: emptySelection,
+  versions: [createEmptyPlanVersion(3, { price: "49" })],
 };
 
 export const emptyCouponForm: CouponFormValues = {
@@ -72,7 +83,7 @@ export const emptyCouponForm: CouponFormValues = {
   isActive: true,
 };
 
-export const expiryPresets = [1, 2, 3, 6, 12];
+export const expiryPresets = [3, 6, 9, 12];
 
 export const featureSuggestions = [
   "Live Lectures + Viva Practice",

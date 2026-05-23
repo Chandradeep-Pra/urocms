@@ -35,6 +35,7 @@ export type PricingPlan = {
   description: string;
   tag?: string;
   category?: string;
+  versions?: PricingPlanVersion[];
   price: number;
   originalPrice?: number;
   discountedPrice?: number;
@@ -60,6 +61,19 @@ export type PricingPlan = {
     vivaCases: number;
     total: number;
   };
+};
+
+export type PricingPlanVersion = {
+  id: string;
+  months: number;
+  price: number;
+  originalPrice?: number;
+  discountedPrice?: number;
+  couponId?: string;
+  couponCode?: string;
+  embeddedLink?: string;
+  durationLabel?: string;
+  billingLabel?: string;
 };
 
 export type PricingCoupon = {
@@ -90,12 +104,6 @@ export type PlanFormValues = {
   description: string;
   tag: string;
   category: string;
-  price: string;
-  embeddedLink: string;
-  couponId: string;
-  expiryMonths: number;
-  durationLabel: string;
-  billingLabel: string;
   availabilityNote: string;
   sortOrder: number;
   vivaMinutes: number;
@@ -103,6 +111,17 @@ export type PlanFormValues = {
   isActive: boolean;
   accessScopes: PlanAccessScopes;
   selectedContent: PlanSelection;
+  versions: PlanVersionFormValues[];
+};
+
+export type PlanVersionFormValues = {
+  id: string;
+  months: number;
+  price: string;
+  couponId: string;
+  embeddedLink: string;
+  durationLabel: string;
+  billingLabel: string;
 };
 
 export type CouponFormValues = {

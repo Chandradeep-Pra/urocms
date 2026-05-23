@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { ArrowDownToLine, Crown } from "lucide-react";
+import { ArrowDownToLine, Crown, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,38 +9,100 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { expiryPresets, featureSuggestions, planPatterns, vivaMinutePresets } from "@/components/dashboard/plan-creator/constants";
+import { createEmptyPlanVersion, expiryPresets, vivaMinutePresets } from "@/components/dashboard/plan-creator/constants";
 import type { PlanFormValues, PricingCoupon } from "@/components/dashboard/plan-creator/types";
+
+function formatGbp(price: number) {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    maximumFractionDigits: 0,
+  }).format(price);
+}
 
 export function PlanFormCard({
   editingId,
   form,
   setForm,
   coupons,
-  monthlyLabelSuggestion,
-  pricingPreview,
   totalScopedGroups,
   totalSelected,
   saving,
-  onApplyPattern,
   onSave,
 }: {
   editingId: string | null;
   form: PlanFormValues;
   setForm: Dispatch<SetStateAction<PlanFormValues>>;
   coupons: PricingCoupon[];
-  monthlyLabelSuggestion: string;
-  pricingPreview: {
-    originalPrice: number;
-    discountedPrice: number;
-    hasDiscount: boolean;
-  };
   totalScopedGroups: number;
   totalSelected: number;
   saving: boolean;
-  onApplyPattern: (key: (typeof planPatterns)[number]["key"]) => void;
   onSave: () => void;
 }) {
+  const updateVersion = (
+    versionId: string,
+    patch: Partial<PlanFormValues["versions"][number]>
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      versions: prev.versions.map((version) =>
+        version.id === versionId ? { ...version, ...patch } : version
+      ),
+    }));
+  };
+
+  const addVersion = (months: number) => {
+    setForm((prev) => {
+      if (prev.versions.some((version) => Number(version.months) === months)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        versions: [...prev.versions, createEmptyPlanVersion(months)],
+      };
+    });
+  };
+
+  const removeVersion = (versionId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      versions:
+        prev.versions.length === 1
+          ? prev.versions
+          : prev.versions.filter((version) => version.id !== versionId),
+    }));
+  };
+
+  const versionPreview = form.versions.map((version) => {
+    const coupon = coupons.find((item) => item.id === version.couponId) || null;
+    const originalPrice = Number(version.price || 0);
+
+    if (!coupon) {
+      return {
+        id: version.id,
+        originalPrice,
+        discountedPrice: originalPrice,
+        hasDiscount: false,
+      };
+    }
+
+    const discountedPrice =
+      coupon.discountType === "percent"
+        ? Math.max(
+            0,
+            Math.round((originalPrice - (originalPrice * coupon.discountValue) / 100) * 100) / 100
+          )
+        : Math.max(0, Math.round((originalPrice - coupon.discountValue) * 100) / 100);
+
+    return {
+      id: version.id,
+      originalPrice,
+      discountedPrice,
+      hasDiscount: discountedPrice < originalPrice,
+    };
+  });
+
   return (
     <Card className="border-slate-200 shadow-sm">
       <CardContent className="space-y-6 p-6">
@@ -50,7 +112,7 @@ export function PlanFormCard({
               {editingId ? "Edit plan" : "Create plan"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Configure price, duration, display labels, and the exact unlock package.
+              Set shared plan details once, then add 3, 6, 9, or 12 month versions underneath.
             </p>
           </div>
           {editingId ? (
@@ -61,35 +123,6 @@ export function PlanFormCard({
         </div>
 
         <div className="space-y-5">
-          {/* <div className="space-y-3">
-            <Label>Plan pattern</Label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {planPatterns.map((pattern) => {
-                const Icon = pattern.icon;
-                return (
-                  <button
-                    key={pattern.key}
-                    type="button"
-                    onClick={() => onApplyPattern(pattern.key)}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-slate-300 hover:bg-white"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-slate-700 shadow-sm">
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{pattern.title}</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-500">
-                          {pattern.description}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div> */}
-
           <div className="space-y-2">
             <Label htmlFor="plan-name">Plan name</Label>
             <Input
@@ -139,129 +172,6 @@ export function PlanFormCard({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="plan-price">Price (GBP)</Label>
-              <Input
-                id="plan-price"
-                type="number"
-                min="0"
-                value={form.price}
-                onChange={(event) => setForm((prev) => ({ ...prev, price: event.target.value }))}
-                placeholder="799"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="plan-coupon">Coupon (optional)</Label>
-              <select
-                id="plan-coupon"
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-900"
-                value={form.couponId}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, couponId: event.target.value }))
-                }
-              >
-                <option value="">No coupon</option>
-                {coupons.map((coupon) => (
-                  <option key={coupon.id} value={coupon.id}>
-                    {coupon.code} ·{" "}
-                    {coupon.discountType === "percent"
-                      ? `${coupon.discountValue}% off`
-                      : `£${coupon.discountValue} off`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="plan-expiry">Expiry (months)</Label>
-              <Input
-                id="plan-expiry"
-                type="number"
-                min="0"
-                value={form.expiryMonths}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    expiryMonths: Number(event.target.value || 0),
-                  }))
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="plan-embedded-link">Embedded link (optional)</Label>
-              <Input
-                id="plan-embedded-link"
-                value={form.embeddedLink}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, embeddedLink: event.target.value }))
-                }
-                placeholder="https://buy.stripe.com/... or embedded checkout URL"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Quick expiry presets</Label>
-            <div className="flex flex-wrap gap-2">
-              {expiryPresets.map((months) => (
-                <button
-                  key={months}
-                  type="button"
-                  onClick={() => setForm((prev) => ({ ...prev, expiryMonths: months }))}
-                  className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                    form.expiryMonths === months
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                  }`}
-                >
-                  {months} month{months > 1 ? "s" : ""}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="plan-duration-label">Display duration label</Label>
-              <Input
-                id="plan-duration-label"
-                value={form.durationLabel}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, durationLabel: event.target.value }))
-                }
-                placeholder="6 Months / 2 Mocks / 16 Sessions"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="plan-billing-label">Billing label</Label>
-              <Input
-                id="plan-billing-label"
-                value={form.billingLabel}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, billingLabel: event.target.value }))
-                }
-                placeholder="\u00A3130/month"
-              />
-              {monthlyLabelSuggestion ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setForm((prev) => ({ ...prev, billingLabel: monthlyLabelSuggestion }))
-                  }
-                  className="text-xs font-medium text-emerald-600 transition hover:text-emerald-700"
-                >
-                  Use suggested label: {monthlyLabelSuggestion}
-                </button>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
               <Label htmlFor="plan-availability">Availability note</Label>
               <Input
                 id="plan-availability"
@@ -287,6 +197,21 @@ export function PlanFormCard({
                 }
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="plan-features">Feature bullets</Label>
+            <Textarea
+              id="plan-features"
+              value={form.featureBulletsText}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, featureBulletsText: event.target.value }))
+              }
+              placeholder={
+                "Live Lectures + Viva Practice\nFull Recordings Access\nAI Viva Mock (500 minutes)"
+              }
+              className="min-h-[120px]"
+            />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -332,47 +257,185 @@ export function PlanFormCard({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="plan-features">Feature bullets</Label>
-            <Textarea
-              id="plan-features"
-              value={form.featureBulletsText}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, featureBulletsText: event.target.value }))
-              }
-              placeholder={
-                "Live Lectures + Viva Practice\nFull Recordings Access\nAI Viva Mock (500 minutes)"
-              }
-              className="min-h-[120px]"
-            />
-            {/* <div className="flex flex-wrap gap-2">
-              {featureSuggestions.map((feature) => (
-                <button
-                  key={feature}
-                  type="button"
-                  onClick={() =>
-                    setForm((prev) => {
-                      const existing = prev.featureBulletsText
-                        .split("\n")
-                        .map((item) => item.trim())
-                        .filter(Boolean);
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Plan versions</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Add the plan durations you want to offer. Each version can have its own price,
+                  coupon, billing label, and checkout link.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {expiryPresets.map((months) => (
+                  <button
+                    key={months}
+                    type="button"
+                    onClick={() => addVersion(months)}
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition hover:border-slate-300"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {months} months
+                  </button>
+                ))}
+              </div>
+            </div>
 
-                      if (existing.includes(feature)) {
-                        return prev;
-                      }
+            <div className="mt-4 space-y-4">
+              {form.versions
+                .slice()
+                .sort((a, b) => Number(a.months) - Number(b.months))
+                .map((version) => {
+                  const preview =
+                    versionPreview.find((item) => item.id === version.id) || versionPreview[0];
+                  const monthlyLabelSuggestion =
+                    Number(version.price) > 0 && Number(version.months) > 0
+                      ? `£${Math.round(Number(version.price) / Number(version.months))}/month`
+                      : "";
 
-                      return {
-                        ...prev,
-                        featureBulletsText: [...existing, feature].join("\n"),
-                      };
-                    })
-                  }
-                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 transition hover:border-slate-300 hover:bg-white"
-                >
-                  + {feature}
-                </button>
-              ))}
-            </div> */}
+                  return (
+                    <div key={version.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-base font-semibold text-slate-900">
+                            {version.months} month version
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            This version is what users will switch to on the pricing page.
+                          </p>
+                        </div>
+                        {form.versions.length > 1 ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                            onClick={() => removeVersion(version.id)}
+                          >
+                            <Trash2 className="mr-1.5 h-4 w-4" />
+                            Remove
+                          </Button>
+                        ) : null}
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Months</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={version.months}
+                            onChange={(event) =>
+                              updateVersion(version.id, {
+                                months: Number(event.target.value || 0),
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Price (GBP)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={version.price}
+                            onChange={(event) =>
+                              updateVersion(version.id, { price: event.target.value })
+                            }
+                            placeholder="199"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Coupon (optional)</Label>
+                          <select
+                            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-900"
+                            value={version.couponId}
+                            onChange={(event) =>
+                              updateVersion(version.id, { couponId: event.target.value })
+                            }
+                          >
+                            <option value="">No coupon</option>
+                            {coupons.map((coupon) => (
+                              <option key={coupon.id} value={coupon.id}>
+                                {coupon.code} ·{" "}
+                                {coupon.discountType === "percent"
+                                  ? `${coupon.discountValue}% off`
+                                  : `£${coupon.discountValue} off`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Embedded link (optional)</Label>
+                          <Input
+                            value={version.embeddedLink}
+                            onChange={(event) =>
+                              updateVersion(version.id, { embeddedLink: event.target.value })
+                            }
+                            placeholder="https://buy.stripe.com/... or embedded checkout URL"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Display duration label</Label>
+                          <Input
+                            value={version.durationLabel}
+                            onChange={(event) =>
+                              updateVersion(version.id, { durationLabel: event.target.value })
+                            }
+                            placeholder="3 Months"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Billing label</Label>
+                          <Input
+                            value={version.billingLabel}
+                            onChange={(event) =>
+                              updateVersion(version.id, { billingLabel: event.target.value })
+                            }
+                            placeholder="£66/month"
+                          />
+                          {monthlyLabelSuggestion ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateVersion(version.id, {
+                                  billingLabel: monthlyLabelSuggestion,
+                                })
+                              }
+                              className="text-xs font-medium text-emerald-600 transition hover:text-emerald-700"
+                            >
+                              Use suggested label: {monthlyLabelSuggestion}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div className="flex items-center gap-2 text-emerald-900">
+                          <ArrowDownToLine className="h-4 w-4" />
+                          <p className="text-sm font-semibold">Version preview</p>
+                        </div>
+                        <div className="mt-3 grid gap-2 text-sm text-emerald-900/80">
+                          <p>Original price: {formatGbp(preview?.originalPrice || 0)}</p>
+                          <p>
+                            Discounted price: {formatGbp(preview?.discountedPrice || 0)}
+                            {preview?.hasDiscount ? " applied" : ""}
+                          </p>
+                          <p>{version.couponId ? "Coupon attached to this version" : "No coupon attached"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
 
           <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -398,31 +461,28 @@ export function PlanFormCard({
             <div className="mt-3 grid gap-2 text-sm text-slate-700">
               <p>{totalScopedGroups} access scopes selected</p>
               <p>{totalSelected} content items selected</p>
-              <p>
-                Duration:{" "}
-                {form.durationLabel ||
-                  `${form.expiryMonths} month${form.expiryMonths > 1 ? "s" : ""}`}
-              </p>
+              <p>{form.versions.length} duration version(s) configured</p>
               <p>AI Viva Minutes: {Number(form.vivaMinutes || 0)}</p>
-              {form.billingLabel ? <p>Billing: {form.billingLabel}</p> : null}
-              {form.embeddedLink ? (
-                <p className="break-all text-xs text-slate-500">{form.embeddedLink}</p>
-              ) : null}
             </div>
           </div>
 
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
             <div className="flex items-center gap-2 text-emerald-900">
               <ArrowDownToLine className="h-4 w-4" />
-              <p className="text-sm font-semibold">Pricing preview</p>
+              <p className="text-sm font-semibold">Version coverage</p>
             </div>
-            <div className="mt-3 grid gap-2 text-sm text-emerald-900/80">
-              <p>Original price: £{pricingPreview.originalPrice || 0}</p>
-              <p>
-                Discounted price: £{pricingPreview.discountedPrice || 0}
-                {pricingPreview.hasDiscount ? " applied" : ""}
-              </p>
-              <p>{form.couponId ? "Coupon attached to this plan" : "No coupon attached"}</p>
+            <div className="mt-3 flex flex-wrap gap-2 text-sm text-emerald-900/80">
+              {form.versions
+                .slice()
+                .sort((a, b) => Number(a.months) - Number(b.months))
+                .map((version) => (
+                  <span
+                    key={version.id}
+                    className="rounded-full border border-emerald-200 bg-white px-3 py-1"
+                  >
+                    {version.months} months
+                  </span>
+                ))}
             </div>
           </div>
         </div>

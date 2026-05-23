@@ -49,7 +49,7 @@ export function ExpandableCardGrid({ items }: { items: ExpandableCardItem[] }) {
             <h3
               className={`font-bold tracking-tight transition-all duration-300 ${
                 isActive
-                  ? "mb-4 text-3xl text-white"
+                  ? "mb-4 text-2xl text-white"
                   : "my-auto text-center text-2xl text-[#071014]"
               }`}
             >

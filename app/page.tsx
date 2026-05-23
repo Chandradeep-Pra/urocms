@@ -97,8 +97,8 @@ export default function Page() {
       <PlatformSection />
       <FaceToFaceSection />
       <AiVivaSection />
-      <SuccessStoriesSection />
       <AppScreensSection />
+      <SuccessStoriesSection />
       <PricingSection />
       <LandingFooter />
     </main>
