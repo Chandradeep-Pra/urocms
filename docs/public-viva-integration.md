@@ -20,6 +20,46 @@ Only cases with `accessType = "public"` can be fetched through the public route.
 
 ## Public API Endpoints
 
+### 0. Fetch all public viva cases
+
+```http
+GET /api/public/viva-cases
+```
+
+Success response:
+
+```json
+{
+  "cases": [
+    {
+      "id": "abc123",
+      "accessType": "public",
+      "case": {
+        "title": "Ureteric Injury Viva",
+        "level": "Intermediate",
+        "stem": "A 45-year-old patient..."
+      },
+      "exhibits": [],
+      "marking_criteria": {
+        "must_mention": [],
+        "critical_fail": []
+      },
+      "modes": {
+        "calmAndComposed": {
+          "enabled": true
+        },
+        "fastAndFurious": {
+          "enabled": false,
+          "questionCount": 3,
+          "questions": []
+        }
+      },
+      "isActive": true
+    }
+  ]
+}
+```
+
 ### 1. Fetch a public viva case
 
 ```http
