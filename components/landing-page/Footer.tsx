@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Youtube, Mail, Linkedin } from "lucide-react";
 
-const doctorProfileUrl = "https://www.artemishospitals.com/doctor/profile/dr-ankit-goyal";
+const doctorProfileUrl = "https://www.youtube.com/@ankitgoel2863";
 
 export function LandingFooter() {
   return (
