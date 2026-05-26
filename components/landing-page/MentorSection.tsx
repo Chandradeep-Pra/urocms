@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Award } from "lucide-react";
+
+const doctorProfileUrl = "https://www.artemishospitals.com/doctor/profile/dr-ankit-goyal";
 
 const mentorHighlights = [
   {
@@ -76,7 +79,14 @@ export function MentorSection() {
             <h3 className="text-2xl font-bold tracking-tight text-[#071014] sm:text-3xl md:text-5xl leading-tight">
               <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Urologics</span> launched by the
               Founder of FRCS Urology course{" "}
-              <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Dr. Ankit Goel</span>
+              <Link
+                href={doctorProfileUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent underline decoration-[#0f7896]/30 underline-offset-8 transition hover:decoration-[#0f7896]"
+              >
+                Dr. Ankit Goel
+              </Link>
             </h3>
 
             <div className="mt-6 flex items-center gap-3">

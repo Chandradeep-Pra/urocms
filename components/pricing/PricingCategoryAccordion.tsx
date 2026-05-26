@@ -285,9 +285,7 @@ export function PricingCategoryAccordion({
 }: {
   groupedPlans: GroupedPlans[];
 }) {
-  const [openCategories, setOpenCategories] = useState<string[]>(
-    groupedPlans.length > 0 ? [groupedPlans[0].category] : []
-  );
+  const [openCategories, setOpenCategories] = useState<string[]>([]);
 
   const toggleCategory = (category: string) => {
     setOpenCategories((current) => (current.includes(category) ? [] : [category]));

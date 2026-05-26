@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     locale: "en_GB",
     url: getSiteUrl(),
     siteName: siteConfig.name,
-    title: "Urologics | Premium FRCS Urology Prep Platform",
+    title: "Urologics | Premium FRCS Urology Learning Platform",
     description: siteConfig.description,
     images: [
       {

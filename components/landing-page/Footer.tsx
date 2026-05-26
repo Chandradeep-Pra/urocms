@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Instagram, Youtube, Mail } from "lucide-react";
+import { Instagram, Youtube, Mail, Linkedin } from "lucide-react";
+
+const doctorProfileUrl = "https://www.artemishospitals.com/doctor/profile/dr-ankit-goyal";
 
 export function LandingFooter() {
   return (
@@ -23,18 +25,26 @@ export function LandingFooter() {
             </div>
 
             <p className="mt-4 text-sm leading-6 text-[#071014]/60">
-              Premium FRCS preparation platform built for clinically serious candidates.
+              Premium FRCS Urology Learning Platform founded by the Gold Medalist,{" "}
+              <a
+                href={doctorProfileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-[#0f7896] underline decoration-[#0f7896]/30 underline-offset-4 transition hover:decoration-[#0f7896]"
+              >
+                Dr. Ankit Goel
+              </a>
             </p>
 
             {/* Socials */}
             <div className="mt-5 flex gap-3">
-              <a className="rounded-xl border border-[#0f7896]/14 p-2 text-[#0f7896] hover:bg-[#0f7896] hover:text-white transition">
-                <Instagram className="h-4 w-4" />
+              <a className="rounded-xl border border-[#0f7896]/14 p-2 text-[#0f7896] hover:bg-[#0f7896] hover:text-white transition" href="https://www.linkedin.com/in/ankitgoelfrcs/" target="_blank" rel="noopener noreferrer">
+                <Linkedin className="h-4 w-4" />
               </a>
-              <a className="rounded-xl border border-[#0f7896]/14 p-2 text-[#0f7896] hover:bg-[#0f7896] hover:text-white transition">
+              <a className="rounded-xl border border-[#0f7896]/14 p-2 text-[#0f7896] hover:bg-[#0f7896] hover:text-white transition" href="https://www.youtube.com/@ankitgoel2863" target="_blank" rel="noopener noreferrer">
                 <Youtube className="h-4 w-4" />
               </a>
-              <a className="rounded-xl border border-[#0f7896]/14 p-2 text-[#0f7896] hover:bg-[#0f7896] hover:text-white transition">
+              <a className="rounded-xl border border-[#0f7896]/14 p-2 text-[#0f7896] hover:bg-[#0f7896] hover:text-white transition" href="mailto:ankitgoel402@gmail.com" target="_blank" rel="noopener noreferrer">
                 <Mail className="h-4 w-4" />
               </a>
             </div>
@@ -63,7 +73,7 @@ export function LandingFooter() {
           </div>
 
           {/* Support */}
-          <div>
+          {/* <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#0f7896]">
               Support
             </p>
@@ -82,7 +92,7 @@ export function LandingFooter() {
                 Privacy Policy
               </Link>
             </div>
-          </div>
+          </div> */}
 
           {/* Mentor / Company */}
           <div>
@@ -92,14 +102,15 @@ export function LandingFooter() {
 
             <div className="mt-4 space-y-3 text-sm text-[#071014]/70">
               <p>Under the direction of</p>
-              <p className="font-medium text-[#071014]">Dr. Ankit Goel</p>
-
-              <Link
-                href="/login"
-                className="inline-block mt-3 text-xs uppercase tracking-[0.18em] text-[#0f7896] underline underline-offset-4 hover:text-[#071014]"
+              <a
+                href={doctorProfileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[#0f7896] underline decoration-[#0f7896]/30 underline-offset-4 transition hover:decoration-[#0f7896]"
               >
-                Admin Login
-              </Link>
+                Dr. Ankit Goel
+              </a>
+
             </div>
           </div>
         </div>
