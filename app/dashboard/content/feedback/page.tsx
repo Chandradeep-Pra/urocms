@@ -39,7 +39,6 @@ type FeedbackResponseItem = {
   currentRole: string;
   examTrack: string;
   feedback: string;
-  consentToPublish: boolean;
   submittedAt?: { _seconds?: number } | string | null;
 };
 
@@ -258,7 +257,7 @@ export default function FeedbackLinksPage() {
             <div className="rounded-2xl border border-slate-200 p-4">
               <p className="text-sm font-medium text-slate-900">Candidate fields included</p>
               <p className="mt-2 text-sm text-slate-500">
-                Full name, email, current institute/trust, current role, exam track, feedback, and consent to publish.
+                Full name, email, current institute/trust, current role, exam track, and feedback.
               </p>
             </div>
 
@@ -451,10 +450,6 @@ export default function FeedbackLinksPage() {
                     <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700">
                       {item.feedback}
                     </p>
-                  </div>
-
-                  <div className="mt-3 text-xs text-slate-500">
-                    Consent to publish: {item.consentToPublish ? "Yes" : "No"}
                   </div>
                 </div>
               ))}

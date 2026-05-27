@@ -1,6 +1,6 @@
 "use client";
 
-import { CirclePlay, Star } from "lucide-react";
+import { CirclePlay, Quote } from "lucide-react";
 import { useEffect, useState } from "react";
 import VideoPlayerLayout from "@/components/videos/VideoPlayerLayout";
 
@@ -20,9 +20,6 @@ export function SuccessStoriesSection() {
     title: string;
     videoUrl: string;
   } | null>(null);
-
-  const marqueeTestimonials =
-    testimonials.length > 0 ? [...testimonials, ...testimonials] : [];
 
   useEffect(() => {
     let active = true;
@@ -49,65 +46,66 @@ export function SuccessStoriesSection() {
   return (
     <section id="stories" className="bg-cyan-50 px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-20 text-center">
+        <div className="mb-12 text-center">
           <h2 className="text-3xl font-extrabold tracking-tight text-[#071014] sm:text-6xl">
-            Success <span className="bg-gradient-to-r from-[#0f7896] to-[#1294ba] bg-clip-text text-transparent">Stories</span>
+            Success{" "}
+            <span className="text-[#0f7896]">Stories</span>
           </h2>
         </div>
 
         {testimonials.length > 0 ? (
-          <div className="group ">
-            <div className="flex min-w-max gap-5 animate-marquee group-hover:[animation-play-state:paused]">
-              {marqueeTestimonials.map((item, index) => {
-                const title = item.title || "Success Story";
+          <div className="overflow-x-auto pb-4">
+            <div className="flex gap-5 pr-2">
+              {testimonials.map((item) => (
+                <article
+                  key={item.id}
+                  className="relative min-h-[340px] w-[82vw] max-w-[360px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)]"
+                >
+                  <span className="pointer-events-none absolute -left-3 -top-6 text-[180px] font-black leading-none text-[#0f7896]/10">
+                    "
+                  </span>
 
-                return (
-                  <button
-                    key={`${item.id}-${index}`}
-                    type="button"
-                    onClick={() =>
-                      setSelectedVideo({ title, videoUrl: item.videoUrl })
-                    }
-                    className="w-[68vw] max-w-[280px] shrink-0 overflow-hidden rounded-[24px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)] transition-all duration-300 hover:-translate-y-1 hover:border-[#0f7896]/28 hover:shadow-[0_22px_55px_rgba(15,120,150,0.16)] sm:w-[420px] sm:max-w-none sm:rounded-[28px]"
-                  >
-                    <div className="relative aspect-video overflow-hidden bg-cyan-50">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg`}
-                        alt={title}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                      />
+                  <div className="absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-[#0f7896]/10" />
 
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10" />
-
-                      <div className="absolute inset-0 grid place-items-center">
-                        <div className="grid h-14 w-14 place-items-center rounded-full bg-white/95 text-[#0f7896] shadow-[0_14px_35px_rgba(0,0,0,0.18)] transition group-hover:scale-110">
-                          <CirclePlay className="h-7 w-7" />
-                        </div>
-                      </div>
+                  <div className="relative flex h-full flex-col p-6 pt-12">
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[#0f7896]/8 px-3 py-1 text-xs font-semibold text-[#0f7896]">
+                      <Quote className="h-3.5 w-3.5" />
+                      Candidate Testimonial
                     </div>
 
-                    <div className="p-5">
-                      <div className="mb-3 flex gap-1 text-[#D4A017]">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={i} className="h-4 w-4 fill-current" />
-                        ))}
-                      </div>
+                    <p className="mt-5 text-[15px] leading-7 text-[#071014]">
+                      {item.quote}
+                    </p>
 
-                      <h3 className="line-clamp-2 text-base font-semibold leading-snug text-[#071014]">
-                        {title}
-                      </h3>
-
-                      {(item.candidateName || item.candidateRole) ? (
-                        <p className="mt-2 text-sm text-[#0f7896]">
-                          {item.candidateName}
-                          {item.candidateRole ? ` • ${item.candidateRole}` : ""}
+                    <div className="mt-6">
+                      <p className="text-sm font-bold text-[#071014]">
+                        {item.candidateName || item.title || "Candidate"}
+                      </p>
+                      {(item.candidateRole || item.title) ? (
+                        <p className="mt-1 text-sm text-[#0f7896]">
+                          {item.candidateRole || item.title}
                         </p>
                       ) : null}
                     </div>
-                  </button>
-                );
-              })}
+
+                    {item.videoUrl ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedVideo({
+                            title: item.title || item.candidateName || "Success Story",
+                            videoUrl: item.videoUrl,
+                          })
+                        }
+                        className="mt-auto inline-flex w-fit items-center gap-2 rounded-full border border-[#0f7896]/15 bg-white px-4 py-2 text-sm font-semibold text-[#0f7896] shadow-sm transition hover:border-[#0f7896]/30 hover:bg-[#0f7896]/5"
+                      >
+                        <CirclePlay className="h-4 w-4" />
+                        Watch Story
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
         ) : (

@@ -16,7 +16,18 @@ export type TestimonialRecord = {
 };
 
 function normalizeString(value: unknown) {
-  return String(value ?? "").trim();
+  const normalized = String(value ?? "").trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  const lower = normalized.toLowerCase();
+  if (lower === "undefined" || lower === "null") {
+    return "";
+  }
+
+  return normalized;
 }
 
 function normalizeSortOrder(value: unknown) {
@@ -54,7 +65,15 @@ export function extractYoutubeId(input: string): string | null {
 }
 
 function buildYoutubeUrl(value: string) {
-  const youtubeId = extractYoutubeId(value);
+  const normalizedValue = normalizeString(value);
+  if (!normalizedValue) {
+    return {
+      youtubeId: "",
+      videoUrl: "",
+    };
+  }
+
+  const youtubeId = extractYoutubeId(normalizedValue);
   if (!youtubeId) {
     throw new Error("Valid YouTube URL or video ID is required");
   }
@@ -113,12 +132,12 @@ export async function createTestimonial(input: Record<string, unknown>) {
   const isActive = input.isActive !== false;
   const sourceVideo = normalizeString(input.videoUrl || input.youtubeId);
 
-  if (!title) {
-    throw new Error("Title is required");
+  if (!title && !candidateName) {
+    throw new Error("Either title or candidate name is required");
   }
 
-  if (!sourceVideo) {
-    throw new Error("YouTube URL is required");
+  if (!quote) {
+    throw new Error("Quote is required");
   }
 
   const { youtubeId, videoUrl } = buildYoutubeUrl(sourceVideo);
@@ -149,12 +168,12 @@ export async function updateTestimonial(id: string, input: Record<string, unknow
   const isActive = input.isActive !== false;
   const sourceVideo = normalizeString(input.videoUrl || input.youtubeId);
 
-  if (!title) {
-    throw new Error("Title is required");
+  if (!title && !candidateName) {
+    throw new Error("Either title or candidate name is required");
   }
 
-  if (!sourceVideo) {
-    throw new Error("YouTube URL is required");
+  if (!quote) {
+    throw new Error("Quote is required");
   }
 
   const { youtubeId, videoUrl } = buildYoutubeUrl(sourceVideo);

@@ -25,7 +25,6 @@ export type FeedbackResponseRecord = {
   currentRole: string;
   examTrack: string;
   feedback: string;
-  consentToPublish: boolean;
   submittedAt?: unknown;
 };
 
@@ -75,7 +74,6 @@ function mapFeedbackResponse(
     currentRole: normalizeString(data.currentRole),
     examTrack: normalizeString(data.examTrack),
     feedback: normalizeString(data.feedback),
-    consentToPublish: normalizeBoolean(data.consentToPublish, false),
     submittedAt: data.submittedAt,
   } satisfies FeedbackResponseRecord;
 }
@@ -214,7 +212,6 @@ export async function listFeedbackResponses(formId: string) {
 export async function listPublishableFeedbackResponses() {
   const snapshot = await adminDb
     .collection("feedbackResponses")
-    .where("consentToPublish", "==", true)
     .orderBy("submittedAt", "desc")
     .get();
 
@@ -241,7 +238,6 @@ export async function submitFeedbackResponse(
   const currentRole = normalizeString(input.currentRole);
   const examTrack = normalizeString(input.examTrack);
   const feedback = normalizeString(input.feedback);
-  const consentToPublish = normalizeBoolean(input.consentToPublish, false);
 
   if (!fullName) {
     throw new Error("Full name is required");
@@ -281,7 +277,6 @@ export async function submitFeedbackResponse(
     currentRole,
     examTrack,
     feedback,
-    consentToPublish,
     submittedAt: FieldValue.serverTimestamp(),
   });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Pencil, Trash2, Video } from "lucide-react";
+import { Loader2, Pencil, Quote, Trash2, Video } from "lucide-react";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/client/adminApi";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,6 @@ type PublishableFeedback = {
   currentRole: string;
   examTrack: string;
   feedback: string;
-  consentToPublish: boolean;
   submittedAt?: { _seconds?: number } | string | null;
 };
 
@@ -142,8 +141,13 @@ export default function TestimonialsPage() {
   }
 
   async function saveTestimonial() {
-    if (!form.title.trim()) {
-      toast.error("Title is required");
+    if (!form.title.trim() && !form.candidateName.trim()) {
+      toast.error("Add either a card title or candidate name");
+      return;
+    }
+
+    if (!form.quote.trim()) {
+      toast.error("Quote is required");
       return;
     }
 
@@ -151,13 +155,16 @@ export default function TestimonialsPage() {
 
     const payload = {
       title: form.title,
-      videoUrl: form.videoUrl,
       candidateName: form.candidateName,
       candidateRole: form.candidateRole,
       quote: form.quote,
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
     };
+
+    if (form.videoUrl?.trim()) {
+      Object.assign(payload, { videoUrl: form.videoUrl.trim() });
+    }
 
     const toastId = toast.loading(editingId ? "Saving testimonial..." : "Creating testimonial...");
 
@@ -230,7 +237,7 @@ export default function TestimonialsPage() {
                 {editingId ? "Edit Testimonial" : "Create Testimonial"}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Add a YouTube testimonial with the fields already used by the landing page.
+                Create a quote-only testimonial or attach a YouTube video if you have one.
               </p>
             </div>
 
@@ -240,17 +247,17 @@ export default function TestimonialsPage() {
                 id="testimonial-title"
                 value={form.title}
                 onChange={(e) => update("title", e.target.value)}
-                placeholder="Passed FRCS Urology with structured prep"
+                placeholder="Optional title, e.g. Passed FRCS Urology with structured prep"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="testimonial-video">YouTube URL</Label>
+              <Label htmlFor="testimonial-video">YouTube URL (optional)</Label>
               <Input
                 id="testimonial-video"
                 value={form.videoUrl}
                 onChange={(e) => update("videoUrl", e.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
+                placeholder="https://www.youtube.com/watch?v=... or leave blank"
               />
             </div>
 
@@ -335,7 +342,7 @@ export default function TestimonialsPage() {
                     Candidate Feedback Ready For Testimonials
                   </h3>
                   <p className="mt-1 text-sm text-slate-600">
-                    These candidates consented to publication. Use any response to prefill the testimonial form, then add a YouTube video before publishing it to the landing page.
+                    Use any submitted response to prefill the testimonial form, then publish it as either a quote-only testimonial or add a YouTube video.
                   </p>
                 </div>
 
@@ -394,19 +401,37 @@ export default function TestimonialsPage() {
             items.map((item) => (
               <Card key={item.id} className="overflow-hidden rounded-3xl border shadow-sm">
                 <CardContent className="grid gap-0 p-0 md:grid-cols-[280px_minmax(0,1fr)]">
-                  <div className="relative aspect-video bg-slate-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg`}
-                      alt={item.title}
-                      className="h-full w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-slate-950/15" />
-                    <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-slate-900">
-                      <Video className="h-3.5 w-3.5" />
-                      YouTube Testimonial
+                  {item.youtubeId ? (
+                    <div className="relative aspect-video bg-slate-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg`}
+                        alt={item.title}
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-slate-950/15" />
+                      <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-slate-900">
+                        <Video className="h-3.5 w-3.5" />
+                        Video Testimonial
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="relative flex min-h-[220px] items-end overflow-hidden bg-slate-50 p-6">
+                      <span className="pointer-events-none absolute left-3 top-0 text-[180px] font-black leading-none text-slate-100">
+                        "
+                      </span>
+                      <div className="absolute bottom-0 right-0 h-28 w-28 rounded-full bg-cyan-100/70" />
+                      <div className="relative">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm">
+                          <Quote className="h-3.5 w-3.5" />
+                          Quote Testimonial
+                        </div>
+                        <p className="mt-4 line-clamp-5 text-sm leading-7 text-slate-700">
+                          {item.quote}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-4 p-5">
                     <div className="flex items-start justify-between gap-3">
@@ -429,14 +454,19 @@ export default function TestimonialsPage() {
                       <span className="rounded-full bg-slate-100 px-3 py-1">
                         Sort order: {item.sortOrder}
                       </span>
-                      <a
-                        href={item.videoUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
-                      >
-                        Open Video
-                      </a>
+                      <span className="rounded-full bg-slate-100 px-3 py-1">
+                        {item.youtubeId ? "Video" : "Quote only"}
+                      </span>
+                      {item.videoUrl ? (
+                        <a
+                          href={item.videoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
+                        >
+                          Open Video
+                        </a>
+                      ) : null}
                     </div>
 
                     <div className="flex gap-2">

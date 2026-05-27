@@ -21,7 +21,6 @@ type SubmitState = {
   currentRole: string;
   examTrack: string;
   feedback: string;
-  consentToPublish: boolean;
 };
 
 const initialState: SubmitState = {
@@ -31,7 +30,6 @@ const initialState: SubmitState = {
   currentRole: "",
   examTrack: "",
   feedback: "",
-  consentToPublish: false,
 };
 
 export default function PublicFeedbackForm({ form }: PublicFeedbackFormProps) {
@@ -160,19 +158,6 @@ export default function PublicFeedbackForm({ form }: PublicFeedbackFormProps) {
                     disabled={!form.isActive || submitting}
                   />
                 </div>
-
-                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={state.consentToPublish}
-                    onChange={(e) => update("consentToPublish", e.target.checked)}
-                    disabled={!form.isActive || submitting}
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0f7896] focus:ring-[#0f7896]"
-                  />
-                  <span className="text-sm leading-6 text-slate-600">
-                    I am happy for this feedback to be used publicly as a testimonial.
-                  </span>
-                </label>
 
                 {error ? (
                   <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
