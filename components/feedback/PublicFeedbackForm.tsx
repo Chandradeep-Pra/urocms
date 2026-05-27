@@ -140,7 +140,7 @@ export default function PublicFeedbackForm({ form }: PublicFeedbackFormProps) {
                 </div>
 
                 <Field
-                  label="Exam Track"
+                  label="Course Attended"
                   value={state.examTrack}
                   onChange={(value) => update("examTrack", value)}
                   placeholder="FRCS Section 1 / Section 2 / FEBU / Other"
