@@ -55,6 +55,10 @@ export async function POST(
 
     const attemptType =
       mockData?.type === "grand-mock" ? "grand-mock" : "mock";
+    const mockTitle =
+      String(mockData?.title || mockData?.quiz?.title || "").trim() || null;
+    const mockDescription =
+      String(mockData?.description || mockData?.quiz?.description || "").trim() || null;
     const percent =
       totalQuestions > 0 ? toPercent(correctCount || normalizedMarks, totalQuestions) : null;
     const createdAt = new Date().toISOString();
@@ -81,6 +85,8 @@ export async function POST(
       }),
       userAttemptRef.set({
         mockId: id,
+        mockTitle,
+        mockDescription,
         quizId: mockData?.quizId ?? null,
         type: attemptType,
         score: normalizedMarks,

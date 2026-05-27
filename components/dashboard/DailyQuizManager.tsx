@@ -79,6 +79,7 @@ export default function DailyQuizManager() {
   const [selectedAttempts, setSelectedAttempts] = useState<QuizAttempt[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [aiTopic, setAiTopic] = useState("");
+  const [pickingTopic, setPickingTopic] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
@@ -224,16 +225,35 @@ export default function DailyQuizManager() {
     }
   }
 
-  async function generateAI() {
-    if (!aiTopic.trim()) {
-      toast.warning("Please enter a topic first");
-      return;
-    }
+  async function pickTopic() {
+    try {
+      setPickingTopic(true);
+      const res = await adminFetch("/api/daily-quiz/pick-topic", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to pick topic");
 
+      const nextTopic = data?.examTrack
+        ? `${data.examTrack} Urology - ${data.topic}`
+        : data?.topic || "";
+      setAiTopic(nextTopic);
+      toast.success("Topic selected", {
+        description: nextTopic,
+      });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to pick topic");
+    } finally {
+      setPickingTopic(false);
+    }
+  }
+
+  async function generateAI() {
+    let loadingToast: string | number | undefined;
     try {
       setLoadingAI(true);
 
-      const loadingToast = toast.loading("Generating AI question...");
+      loadingToast = toast.loading("Generating AI question...");
 
       const res = await adminFetch("/api/daily-quiz/generate", {
         method: "POST",
@@ -241,17 +261,24 @@ export default function DailyQuizManager() {
         body: JSON.stringify({ topic: aiTopic }),
       });
 
-      if (!res.ok) throw new Error();
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || "AI generation failed");
+      }
 
-      const data = await res.json();
       setQuiz(data.quiz);
+      if (data?.topic) {
+        setAiTopic(data.examTrack ? `${data.examTrack} Urology - ${data.topic}` : data.topic);
+      }
 
-      toast.dismiss(loadingToast);
       toast.success("AI Question Generated", {
+        id: loadingToast,
         description: "You can edit before publishing.",
       });
-    } catch {
-      toast.error("AI generation failed");
+    } catch (error: any) {
+      toast.error(error?.message || "AI generation failed", {
+        id: loadingToast,
+      });
     } finally {
       setLoadingAI(false);
     }
@@ -263,10 +290,11 @@ export default function DailyQuizManager() {
       return;
     }
 
+    let loadingToast: string | number | undefined;
     try {
       setPublishing(true);
 
-      const loadingToast = toast.loading("Publishing quiz...");
+      loadingToast = toast.loading("Publishing quiz...");
 
       const res = await adminFetch("/api/daily-quiz", {
         method: "POST",
@@ -274,10 +302,13 @@ export default function DailyQuizManager() {
         body: JSON.stringify(quiz),
       });
 
-      if (!res.ok) throw new Error();
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to publish quiz");
+      }
 
-      toast.dismiss(loadingToast);
       toast.success("Quiz Published Successfully", {
+        id: loadingToast,
         description: "Today's quiz is now live.",
       });
 
@@ -285,8 +316,10 @@ export default function DailyQuizManager() {
       setAiTopic("");
       await Promise.all([fetchLive(), fetchHistory()]);
       setActiveTab("insights");
-    } catch {
-      toast.error("Failed to publish quiz");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to publish quiz", {
+        id: loadingToast,
+      });
     } finally {
       setPublishing(false);
     }
@@ -370,14 +403,21 @@ export default function DailyQuizManager() {
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <input
-                  placeholder="Enter topic (e.g. Renal Cell Carcinoma)"
+                  placeholder="Enter topic or let Gemini choose one"
                   className="flex-1 rounded-xl px-4 py-2 text-black"
                   value={aiTopic}
                   onChange={(e) => setAiTopic(e.target.value)}
                 />
                 <button
+                  onClick={pickTopic}
+                  disabled={pickingTopic || loadingAI}
+                  className="rounded-xl bg-white/20 px-5 py-2 font-semibold text-white transition hover:bg-white/30"
+                >
+                  {pickingTopic ? "Picking..." : "Pick Topic"}
+                </button>
+                <button
                   onClick={generateAI}
-                  disabled={loadingAI}
+                  disabled={loadingAI || pickingTopic}
                   className="rounded-xl bg-white px-5 py-2 font-semibold text-purple-700 transition hover:scale-105"
                 >
                   {loadingAI ? "Generating..." : "Generate"}

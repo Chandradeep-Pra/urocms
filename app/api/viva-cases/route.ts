@@ -29,14 +29,34 @@ export async function GET(req: NextRequest) {
   if ("response" in appAuth) return appAuth.response;
 
   try {
-    if (appAuth.user.tier === "paid") {
-      return NextResponse.json({
-        cases: await listVivaCases(),
-      });
-    }
+    const allCases = await listVivaCases();
+    const courseCases = await listVivaCasesForCourseIds(appAuth.user.activeCourseIds);
+    const courseCaseIds = new Set(courseCases.map((item: any) => item?.id).filter(Boolean));
+    const paidUnlocked = appAuth.user.tier === "paid";
+    const cases = allCases.map((item: any) => {
+      const isPublic = item?.accessType === "public";
+      const courseGranted = courseCaseIds.has(item.id);
+      const allowed = isPublic || paidUnlocked || courseGranted;
+
+      return {
+        ...item,
+        accessType: isPublic ? "public" : "restricted",
+        access: {
+          tier: appAuth.user.tier,
+          allowed,
+          mode: allowed ? (isPublic ? "public" : "full") : "locked",
+          requiredTier: isPublic ? null : "paid",
+          reason: allowed
+            ? null
+            : "AI viva is available only for paid users unless a course grants access.",
+          courseGranted,
+          isPublic,
+        },
+      };
+    });
 
     return NextResponse.json({
-      cases: await listVivaCasesForCourseIds(appAuth.user.activeCourseIds),
+      cases,
     });
   } catch (err) {
     console.error(err);

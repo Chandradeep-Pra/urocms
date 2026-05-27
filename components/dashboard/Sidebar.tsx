@@ -20,6 +20,7 @@ import {
   Users,
   Video,
   Bell,
+  Link2,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -47,6 +48,8 @@ export const nav = [
     children: [
       { name: "Questions", href: "/dashboard/content/questions", icon: HelpCircle },
       { name: "Videos", href: "/dashboard/content/videos", icon: Video },
+      { name: "Feedback Links", href: "/dashboard/content/feedback", icon: Link2 },
+      { name: "Testimonials", href: "/dashboard/content/testimonials", icon: Sparkles },
       { name: "Announcements", href: "/dashboard/content/announcement", icon: Megaphone },
       { name: "Notifications", href: "/dashboard/content/notifications", icon: Bell },
       // { name: "Resources", href: "/dashboard/content/resources", icon: FileText },

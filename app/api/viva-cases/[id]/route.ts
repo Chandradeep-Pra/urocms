@@ -7,6 +7,7 @@ import { canAccessViva } from "@/lib/appAccess";
 import {
   canAccessVivaCaseFromCourseIds,
   getVivaCaseById,
+  getPublicVivaCaseById,
   softDeleteVivaCase,
   updateVivaCase,
 } from "@/lib/server/vivaService";
@@ -36,7 +37,10 @@ export async function GET(
   if ("response" in appAuth) return appAuth.response;
 
   try {
+    const publicCase = await getPublicVivaCaseById(id).catch(() => null);
+
     const allowed =
+      Boolean(publicCase) ||
       canAccessViva(appAuth.user.tier) ||
       (await canAccessVivaCaseFromCourseIds(id, appAuth.user.activeCourseIds));
     if (!allowed) {
@@ -47,7 +51,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      case: await getVivaCaseById(id),
+      case: publicCase ?? (await getVivaCaseById(id)),
     });
 
   } catch (err) {

@@ -361,6 +361,5 @@ export async function listAppCoursesForUser(user: AppUserSession) {
           required: course.accessTier === "free" ? "free-account" : "course-membership",
         },
       };
-    })
-    .filter((course) => course.access.allowed);
+    });
 }

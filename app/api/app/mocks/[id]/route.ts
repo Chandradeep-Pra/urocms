@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FREE_WEEKLY_MOCK_PREVIEW_LIMIT, getMockAccess } from "@/lib/appAccess";
+import { getMockAccess } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
-import { grantWeeklyMockPreview, getWeeklyMockPreviewUsage } from "@/lib/server/appUsage";
-import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
+import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(
   req: NextRequest,
@@ -12,15 +11,6 @@ export async function GET(
   if ("response" in auth) return auth.response;
 
   const mockAccess = getMockAccess(auth.user.tier);
-
-  if (!mockAccess.allowed) {
-    return tierLockedResponse({
-      feature: "mocks",
-      tier: auth.user.tier,
-      requiredTier: mockAccess.requiredTier ?? "free",
-      reason: mockAccess.reason ?? "Mocks are locked.",
-    });
-  }
 
   try {
     const { id } = await context.params;
@@ -67,47 +57,26 @@ export async function GET(
     let visibleQuestions = questions;
     let accessPayload: Record<string, unknown> = {
       tier: auth.user.tier,
-      allowed: true,
+      allowed: mockAccess.allowed,
       mode: mockAccess.mode,
-      weeklyQuestionLimit: mockAccess.weeklyQuestionLimit,
+      previewLimit: mockAccess.previewLimit ?? null,
       totalQuestionCount: questions.length,
       returnedQuestionCount: questions.length,
+      requiredTier: mockAccess.requiredTier ?? null,
+      reason: mockAccess.reason ?? null,
     };
 
-    if (auth.user.tier === "free") {
-      const usageBefore = await getWeeklyMockPreviewUsage(
-        auth.user.uid,
-        FREE_WEEKLY_MOCK_PREVIEW_LIMIT
-      );
-
-      const grant = await grantWeeklyMockPreview({
-        uid: auth.user.uid,
-        contentId: id,
-        weeklyLimit: FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
-        availableQuestionCount: questions.length,
-      });
-
-      if (grant.grantedQuestions <= 0) {
-        return tierLockedResponse({
-          feature: "mocks",
-          tier: auth.user.tier,
-          requiredTier: "paid",
-          reason: "Your free weekly mock preview is exhausted. Upgrade to paid to continue.",
-        });
-      }
-
-      visibleQuestions = questions.slice(0, grant.grantedQuestions);
+    if (mockAccess.mode === "preview" && mockAccess.previewLimit) {
+      visibleQuestions = questions.slice(0, mockAccess.previewLimit);
       accessPayload = {
         tier: auth.user.tier,
-        allowed: true,
+        allowed: mockAccess.allowed,
         mode: "preview",
-        weeklyQuestionLimit: FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
+        previewLimit: mockAccess.previewLimit,
         totalQuestionCount: questions.length,
         returnedQuestionCount: visibleQuestions.length,
-        weeklyConsumedQuestions: grant.consumedQuestions,
-        weeklyRemainingQuestions: grant.remainingQuestions,
-        reusedExistingGrant: grant.reusedExistingGrant,
-        previouslyGrantedQuestions: usageBefore.usage.previewByContent?.[id] ?? 0,
+        requiredTier: mockAccess.requiredTier ?? null,
+        reason: mockAccess.reason ?? null,
       };
     }
 

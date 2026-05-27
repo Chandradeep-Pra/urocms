@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
-import { generateDailyQuizFromTopic } from "@/lib/server/dailyQuizService";
+import {
+  generateDailyQuizFromTopic,
+  pickUrologicsDailyQuizTopic,
+} from "@/lib/server/dailyQuizService";
 
 export async function POST(req: NextRequest) {
   const { response } = await requireAdminSession(req);
@@ -8,8 +11,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+    const topicPick = body.topic
+      ? null
+      : await pickUrologicsDailyQuizTopic();
+    const topic = body.topic
+      ? String(body.topic).trim()
+      : `${topicPick?.examTrack} Urology - ${topicPick?.topic}`;
+
     return NextResponse.json({
-      quiz: await generateDailyQuizFromTopic(body.topic),
+      quiz: await generateDailyQuizFromTopic(topic),
+      topic: topicPick?.topic || String(body.topic || "").trim(),
+      examTrack: topicPick?.examTrack || null,
     });
   } catch (error) {
     const message =

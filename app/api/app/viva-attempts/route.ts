@@ -53,16 +53,21 @@ export async function POST(req: NextRequest) {
       durationSeconds === undefined || durationSeconds === null
         ? null
         : toPositiveNumber(durationSeconds, 0);
+    const vivaCaseDoc = await adminDb.collection("vivaCases").doc(String(caseId)).get();
+    const vivaCaseData = vivaCaseDoc.data() ?? {};
+    const caseTitle = String(vivaCaseData?.case?.title || vivaCaseData?.title || "").trim() || null;
 
     await Promise.all([
       adminDb.collection("vivaAttempts").add({
         caseId,
         candidate,
+        caseTitle,
         report: report ?? null,
         createdAt: FieldValue.serverTimestamp(),
       }),
       getVivaAttemptsCollection(auth.user.uid).doc().set({
         caseId,
+        caseTitle,
         mode:
           mode === "Fast and Furious" ? "Fast and Furious" : "Calm and Composed",
         report: report ?? null,

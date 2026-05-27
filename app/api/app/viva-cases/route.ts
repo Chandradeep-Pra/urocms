@@ -1,34 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { canAccessViva } from "@/lib/appAccess";
 import { listVivaCases, listVivaCasesForCourseIds } from "@/lib/server/vivaService";
-import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
+import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
 
   try {
-    if (canAccessViva(auth.user.tier)) {
-      return NextResponse.json({
-        tier: auth.user.tier,
-        cases: await listVivaCases(),
-      });
-    }
-
+    const allCases = await listVivaCases();
     const courseGrantedCases = await listVivaCasesForCourseIds(auth.user.activeCourseIds);
+    const grantedIds = new Set(courseGrantedCases.map((item) => item?.id).filter(Boolean));
+    const paidUnlocked = canAccessViva(auth.user.tier);
+    const cases = allCases.map((item: any) => {
+      const isPublic = item?.accessType === "public";
+      const courseGranted = grantedIds.has(item.id);
+      const allowed = isPublic || paidUnlocked || courseGranted;
 
-    if (courseGrantedCases.length === 0) {
-      return tierLockedResponse({
-        feature: "ai-viva",
-        tier: auth.user.tier,
-        requiredTier: "paid",
-        reason: "AI viva is available only for paid users unless a course grants access.",
-      });
-    }
+      return {
+        ...item,
+        accessType: isPublic ? "public" : "restricted",
+        access: {
+          tier: auth.user.tier,
+          allowed,
+          mode: allowed ? (isPublic ? "public" : "full") : "locked",
+          requiredTier: isPublic ? null : "paid",
+          reason: allowed
+            ? null
+            : "AI viva is available only for paid users unless a course grants access.",
+          courseGranted,
+          isPublic,
+        },
+      };
+    });
 
     return NextResponse.json({
       tier: auth.user.tier,
-      cases: courseGrantedCases,
+      cases,
     });
   } catch (error) {
     console.error("App viva cases fetch error:", error);
