@@ -4,13 +4,17 @@ import {
   FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
   getTierModules,
 } from "@/lib/appAccess";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { resolveAppPlanAccess } from "@/lib/server/appPlanAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
-  const planAccess = await resolveAppPlanAccess(auth.user);
+  const [planAccess, accessContext] = await Promise.all([
+    resolveAppPlanAccess(auth.user),
+    buildAppContentAccessContext(auth.user),
+  ]);
 
   return NextResponse.json({
     valid: true,
@@ -33,5 +37,6 @@ export async function GET(req: NextRequest) {
     },
     plan: planAccess.plan,
     entitlements: planAccess.entitlements,
+    vivaCredit: accessContext.vivaCredit,
   });
 }

@@ -15,6 +15,7 @@ export interface AppUserSession {
   activePlanStatus: AppPlanStatus;
   planActivatedAt: unknown;
   planExpiresAt: unknown;
+  vivaMinutesUsed: number;
 }
 
 function getDefaultTier(signInProvider?: string): AppTier {
@@ -71,6 +72,7 @@ export async function requireAppUser(req: NextRequest) {
           activePlanStatus: "none",
           planActivatedAt: null,
           planExpiresAt: null,
+          vivaMinutesUsed: 0,
         } satisfies AppUserSession,
       };
     }
@@ -90,6 +92,9 @@ export async function requireAppUser(req: NextRequest) {
         activePlanStatus: normalizePlanStatus(user.activePlanStatus),
         planActivatedAt: user.planActivatedAt ?? null,
         planExpiresAt: user.planExpiresAt ?? null,
+        vivaMinutesUsed: Number.isFinite(Number(user.vivaMinutesUsed))
+          ? Math.max(0, Number(user.vivaMinutesUsed))
+          : 0,
       } satisfies AppUserSession,
     };
   } catch (error) {

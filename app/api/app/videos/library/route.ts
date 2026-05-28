@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
@@ -7,6 +8,7 @@ export async function GET(req: NextRequest) {
   if ("response" in auth) return auth.response;
 
   try {
+    const accessContext = await buildAppContentAccessContext(auth.user);
     const { searchParams } = new URL(req.url);
     const sectionId = searchParams.get("sectionId");
 
@@ -37,7 +39,25 @@ export async function GET(req: NextRequest) {
       requiresGoogleSession: false,
       isSyncedToCloudStorage: Boolean(doc.data().storagePath),
       ...doc.data(),
-    }));
+    })).map((video) => {
+      const access = accessContext.getVideoAccess({
+        id: String(video.id),
+        sectionId: typeof video.sectionId === "string" ? video.sectionId : null,
+        effectiveAccessTier: typeof video.effectiveAccessTier === "string" ? video.effectiveAccessTier : null,
+        accessTier: typeof video.accessTier === "string" ? video.accessTier : null,
+      });
+
+      return {
+        ...video,
+        access: {
+          allowed: access.allowed,
+          mode: access.mode,
+          previewLimit: access.previewLimit,
+          reason: access.reason,
+          courseIds: access.courseIds,
+        },
+      };
+    });
 
     const videos = allVideos.filter((video) =>
       video.provider === "drive" ? Boolean(video.storagePath) : true
@@ -57,6 +77,16 @@ export async function GET(req: NextRequest) {
             data.accessTier === "paid"
               ? "paid"
               : "free",
+          access: (() => {
+            const unlockedVideos = sectionVideos.filter((video) => video.access?.mode === "full").length;
+            if (unlockedVideos === sectionVideos.length && sectionVideos.length > 0) {
+              return { allowed: true, mode: "full" as const };
+            }
+            if (unlockedVideos > 0) {
+              return { allowed: true, mode: "partial" as const };
+            }
+            return { allowed: false, mode: "locked" as const };
+          })(),
           videoCount: sectionVideos.length,
           videos: sectionVideos,
         };

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { canAccessViva } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import {
   getVivaAttemptsCollection,
   toPositiveNumber,
   updateUserStats,
 } from "@/lib/server/candidateProgress";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
-import { canAccessVivaCaseFromCourseIds } from "@/lib/server/vivaService";
 
 export async function POST(req: NextRequest) {
   const auth = await requireAppUser(req);
@@ -22,23 +21,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "caseId is required" }, { status: 400 });
     }
 
-    const courseGrantedAccess = await canAccessVivaCaseFromCourseIds(
-      caseId,
-      auth.user.activeCourseIds
-    );
+    const caseDoc = await adminDb.collection("vivaCases").doc(String(caseId)).get();
+    if (!caseDoc.exists) {
+      return NextResponse.json({ error: "Case not found" }, { status: 404 });
+    }
 
-    if (!canAccessViva(auth.user.tier) && !courseGrantedAccess) {
+    const vivaCaseData = caseDoc.data() ?? {};
+    const accessContext = await buildAppContentAccessContext(auth.user);
+    const access = accessContext.getVivaAccess({
+      id: String(caseId),
+      folderId: vivaCaseData?.folderId ? String(vivaCaseData.folderId) : null,
+      accessType: vivaCaseData?.accessType === "public" ? "public" : "restricted",
+    });
+
+    if (!access.allowed || access.mode === "locked") {
       return tierLockedResponse({
         feature: "ai-viva",
         tier: auth.user.tier,
         requiredTier: "paid",
-        reason: "AI viva is available only for paid users unless a course grants access.",
+        reason:
+          access.reason ||
+          "This AI viva case is locked until the matching course or section is unlocked.",
       });
     }
 
     const candidate = {
       uid: auth.user.uid,
-      name: auth.user.name || "Paid User",
+      name: auth.user.name || "Candidate",
       email: auth.user.email || "",
     };
 
@@ -53,9 +62,10 @@ export async function POST(req: NextRequest) {
       durationSeconds === undefined || durationSeconds === null
         ? null
         : toPositiveNumber(durationSeconds, 0);
-    const vivaCaseDoc = await adminDb.collection("vivaCases").doc(String(caseId)).get();
-    const vivaCaseData = vivaCaseDoc.data() ?? {};
-    const caseTitle = String(vivaCaseData?.case?.title || vivaCaseData?.title || "").trim() || null;
+    const consumedMinutes =
+      numericDuration && numericDuration > 0 ? Math.ceil(numericDuration / 60) : 0;
+    const caseTitle =
+      String(vivaCaseData?.case?.title || vivaCaseData?.title || "").trim() || null;
 
     await Promise.all([
       adminDb.collection("vivaAttempts").add({
@@ -75,16 +85,40 @@ export async function POST(req: NextRequest) {
         durationSeconds: numericDuration,
         submittedAt,
       }),
-      adminDb.collection("vivaCases").doc(caseId).update({
+      caseDoc.ref.update({
         attemptsCount: FieldValue.increment(1),
       }),
+      consumedMinutes > 0
+        ? adminDb.collection("users").doc(auth.user.uid).set(
+            {
+              vivaMinutesUsed: FieldValue.increment(consumedMinutes),
+              updatedAt: submittedAt,
+            },
+            { merge: true }
+          )
+        : Promise.resolve(),
       updateUserStats(auth.user.uid, (current) => ({
         vivaAttempts: current.vivaAttempts + 1,
         lastActivityAt: submittedAt,
       })),
     ]);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      vivaCredit: consumedMinutes
+        ? {
+            ...accessContext.vivaCredit,
+            usedMinutes: accessContext.vivaCredit.usedMinutes + consumedMinutes,
+            remainingMinutes:
+              accessContext.vivaCredit.totalMinutes > 0
+                ? Math.max(
+                    0,
+                    accessContext.vivaCredit.remainingMinutes - consumedMinutes
+                  )
+                : 0,
+          }
+        : accessContext.vivaCredit,
+    });
   } catch (error) {
     console.error("App viva attempt submit error:", error);
     return NextResponse.json({ error: "Failed to submit attempt" }, { status: 500 });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { canAccessViva } from "@/lib/appAccess";
-import { listVivaCases, listVivaCasesForCourseIds } from "@/lib/server/vivaService";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
+import { listVivaCases } from "@/lib/server/vivaService";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
@@ -8,28 +8,27 @@ export async function GET(req: NextRequest) {
   if ("response" in auth) return auth.response;
 
   try {
+    const accessContext = await buildAppContentAccessContext(auth.user);
     const allCases = await listVivaCases();
-    const courseGrantedCases = await listVivaCasesForCourseIds(auth.user.activeCourseIds);
-    const grantedIds = new Set(courseGrantedCases.map((item) => item?.id).filter(Boolean));
-    const paidUnlocked = canAccessViva(auth.user.tier);
     const cases = allCases.map((item: any) => {
-      const isPublic = item?.accessType === "public";
-      const courseGranted = grantedIds.has(item.id);
-      const allowed = isPublic || paidUnlocked || courseGranted;
+      const access = accessContext.getVivaAccess({
+        id: String(item.id),
+        folderId: item?.folderId ? String(item.folderId) : null,
+        accessType: item?.accessType === "public" ? "public" : "restricted",
+      });
 
       return {
         ...item,
-        accessType: isPublic ? "public" : "restricted",
+        accessType: item?.accessType === "public" ? "public" : "restricted",
         access: {
           tier: auth.user.tier,
-          allowed,
-          mode: allowed ? (isPublic ? "public" : "full") : "locked",
-          requiredTier: isPublic ? null : "paid",
-          reason: allowed
-            ? null
-            : "AI viva is available only for paid users unless a course grants access.",
-          courseGranted,
-          isPublic,
+          allowed: access.allowed,
+          mode: item?.accessType === "public" ? "public" : access.mode,
+          requiredTier: item?.accessType === "public" ? null : access.mode === "locked" ? "paid" : null,
+          reason: access.reason,
+          courseGranted: access.courseIds.length > 0,
+          isPublic: item?.accessType === "public",
+          courseIds: access.courseIds,
         },
       };
     });
@@ -37,6 +36,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       tier: auth.user.tier,
       cases,
+      vivaCredit: accessContext.vivaCredit,
     });
   } catch (error) {
     console.error("App viva cases fetch error:", error);

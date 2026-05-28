@@ -43,6 +43,8 @@ export function SuccessStoriesSection() {
     };
   }, []);
 
+  const marqueeTestimonials = testimonials.length > 0 ? [...testimonials, ...testimonials] : [];
+
   return (
     <section id="stories" className="bg-cyan-50 px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-7xl">
@@ -54,13 +56,13 @@ export function SuccessStoriesSection() {
         </div>
 
         {testimonials.length > 0 ? (
-          <div className="overflow-x-auto pb-4">
-            <div className="flex gap-5 pr-2">
-              {testimonials.map((item) => (
+          <div className="group overflow-hidden pb-4">
+            <div className="success-marquee flex w-max gap-5 pr-2 group-hover:[animation-play-state:paused]">
+              {marqueeTestimonials.map((item, index) => (
                 item.videoUrl ? (
                   <article
-                    key={item.id}
-                    className="w-[82vw] max-w-[360px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)]"
+                    key={`${item.id}-video-${index}`}
+                    className="h-[420px] w-[82vw] max-w-[360px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)]"
                   >
                     <div className="relative aspect-video bg-slate-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -91,7 +93,7 @@ export function SuccessStoriesSection() {
                       </div>
                     </div>
 
-                    <div className="space-y-4 p-6">
+                    <div className="flex h-[218px] flex-col justify-between p-6">
                       <div>
                         <p className="text-base font-bold text-[#071014]">
                           {item.candidateName || item.title || "Candidate"}
@@ -103,7 +105,7 @@ export function SuccessStoriesSection() {
                         ) : null}
                       </div>
 
-                      <p className="line-clamp-4 text-[15px] leading-7 text-[#071014]">
+                      <p className="line-clamp-2 text-[15px] leading-7 text-[#071014]">
                         {item.quote}
                       </p>
 
@@ -124,8 +126,8 @@ export function SuccessStoriesSection() {
                   </article>
                 ) : (
                   <article
-                    key={item.id}
-                    className="relative min-h-[340px] w-[82vw] max-w-[360px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)]"
+                    key={`${item.id}-quote-${index}`}
+                    className="relative h-[280px] w-[82vw] max-w-[360px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)]"
                   >
                     <span className="pointer-events-none absolute -left-3 -top-6 text-[180px] font-black leading-none text-[#0f7896]/10">
                       "
@@ -133,13 +135,13 @@ export function SuccessStoriesSection() {
 
                     <div className="absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-[#0f7896]/10" />
 
-                    <div className="relative flex h-full flex-col p-6 pt-12">
+                    <div className="relative flex h-full flex-col justify-center p-6">
                       <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[#0f7896]/8 px-3 py-1 text-xs font-semibold text-[#0f7896]">
                         <Quote className="h-3.5 w-3.5" />
                         Candidate Testimonial
                       </div>
 
-                      <p className="mt-5 text-[15px] leading-7 text-[#071014]">
+                      <p className="mt-5 line-clamp-2 text-[15px] leading-7 text-[#071014]">
                         {item.quote}
                       </p>
 

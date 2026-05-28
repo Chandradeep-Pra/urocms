@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { CourseAccessTierSwitch } from "@/components/dashboard/courses/CourseAccessTierSwitch";
+import { CourseMemberAccessGrantManager } from "@/components/dashboard/courses/CourseMemberAccessGrantManager";
 import { CourseMemberPicker } from "@/components/dashboard/courses/CourseMemberPicker";
 import { CourseSectionBuilder } from "@/components/dashboard/courses/CourseSectionBuilder";
 import { CourseSectionList } from "@/components/dashboard/courses/CourseSectionList";
@@ -17,6 +18,7 @@ import {
   emptySection,
   type Course,
   type CourseAccessTier,
+  type CourseMemberAccessGrant,
   type CourseMemberUser,
   type CourseSection,
   type SectionCatalog,
@@ -44,6 +46,7 @@ export default function CourseDetailPage() {
   });
   const [memberCatalog, setMemberCatalog] = useState<CourseMemberUser[]>([]);
   const [memberSearch, setMemberSearch] = useState("");
+  const [grantSearch, setGrantSearch] = useState("");
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
   const sectionCount = useMemo(() => course?.sections?.length ?? 0, [course]);
@@ -61,6 +64,22 @@ export default function CourseDetailPage() {
             showOnApp: Boolean(data.course.showOnApp),
             memberUserIds: Array.isArray(data.course.memberUserIds) ? data.course.memberUserIds : [],
             memberUsers: Array.isArray(data.course.memberUsers) ? data.course.memberUsers : [],
+            memberAccessGrants: Array.isArray(data.course.memberAccessGrants)
+              ? data.course.memberAccessGrants.map((grant: CourseMemberAccessGrant) => ({
+                  ...grant,
+                  sectionGrants: Array.isArray(grant.sectionGrants)
+                    ? grant.sectionGrants.map((sectionGrant) => ({
+                        ...sectionGrant,
+                        contentIds: Array.isArray(sectionGrant.contentIds)
+                          ? sectionGrant.contentIds
+                          : [],
+                        vivaMinutes: Number.isFinite(Number(sectionGrant.vivaMinutes))
+                          ? Math.max(0, Number(sectionGrant.vivaMinutes))
+                          : 0,
+                      }))
+                    : [],
+                }))
+              : [],
             sections: Array.isArray(data.course.sections)
               ? data.course.sections.map((section: CourseSection) => ({
                   ...section,
@@ -219,6 +238,177 @@ export default function CourseDetailPage() {
     });
   };
 
+  const addGrantUser = async (userId: string) => {
+    if (!course) return;
+
+    const user = memberCatalog.find((item) => item.id === userId);
+    if (!user) {
+      toast.error("User not found");
+      return;
+    }
+
+    if ((course.memberAccessGrants || []).some((grant) => grant.userId === userId)) {
+      return;
+    }
+
+    await persistCourse({
+      ...course,
+      memberAccessGrants: [
+        ...(course.memberAccessGrants || []),
+        {
+          userId: user.id,
+          name: user.name,
+          email: user.email,
+          sectionGrants: [],
+        },
+      ],
+    });
+  };
+
+  const removeGrantUser = async (userId: string) => {
+    if (!course) return;
+
+    await persistCourse({
+      ...course,
+      memberAccessGrants: (course.memberAccessGrants || []).filter(
+        (grant) => grant.userId !== userId
+      ),
+    });
+  };
+
+  const setGrantSectionMode = async (
+    userId: string,
+    sectionId: string,
+    mode: "none" | "full" | "partial"
+  ) => {
+    if (!course) return;
+
+    const nextGrants = (course.memberAccessGrants || []).map((grant) => {
+      if (grant.userId !== userId) return grant;
+
+      const existingGrant =
+        grant.sectionGrants.find((sectionGrant) => sectionGrant.sectionId === sectionId) ?? null;
+
+      if (mode === "none") {
+        return {
+          ...grant,
+          sectionGrants: grant.sectionGrants.filter(
+            (sectionGrant) => sectionGrant.sectionId !== sectionId
+          ),
+        };
+      }
+
+      const nextSectionGrant = {
+        sectionId,
+        accessMode: mode === "partial" ? "partial" : "full",
+        contentIds:
+          mode === "partial"
+            ? existingGrant?.contentIds || []
+            : [],
+        vivaMinutes: existingGrant?.vivaMinutes || 0,
+      };
+
+      const withoutCurrent = grant.sectionGrants.filter(
+        (sectionGrant) => sectionGrant.sectionId !== sectionId
+      );
+
+      return {
+        ...grant,
+        sectionGrants: [...withoutCurrent, nextSectionGrant],
+      };
+    });
+
+    await persistCourse({
+      ...course,
+      memberAccessGrants: nextGrants,
+    });
+  };
+
+  const toggleGrantSectionContent = async (
+    userId: string,
+    sectionId: string,
+    contentId: string
+  ) => {
+    if (!course) return;
+
+    const nextGrants = (course.memberAccessGrants || []).map((grant) => {
+      if (grant.userId !== userId) return grant;
+
+      const existingGrant =
+        grant.sectionGrants.find((sectionGrant) => sectionGrant.sectionId === sectionId) ?? {
+          sectionId,
+          accessMode: "partial" as const,
+          contentIds: [],
+          vivaMinutes: 0,
+        };
+
+      const nextContentIds = existingGrant.contentIds.includes(contentId)
+        ? existingGrant.contentIds.filter((id) => id !== contentId)
+        : [...existingGrant.contentIds, contentId];
+
+      const withoutCurrent = grant.sectionGrants.filter(
+        (sectionGrant) => sectionGrant.sectionId !== sectionId
+      );
+
+      return {
+        ...grant,
+        sectionGrants: [
+          ...withoutCurrent,
+          {
+            ...existingGrant,
+            accessMode: "partial",
+            contentIds: nextContentIds,
+          },
+        ],
+      };
+    });
+
+    await persistCourse({
+      ...course,
+      memberAccessGrants: nextGrants,
+    });
+  };
+
+  const setGrantVivaMinutes = async (
+    userId: string,
+    sectionId: string,
+    minutes: number
+  ) => {
+    if (!course) return;
+
+    const nextGrants = (course.memberAccessGrants || []).map((grant) => {
+      if (grant.userId !== userId) return grant;
+
+      const existingGrant =
+        grant.sectionGrants.find((sectionGrant) => sectionGrant.sectionId === sectionId) ?? {
+          sectionId,
+          accessMode: "full" as const,
+          contentIds: [],
+          vivaMinutes: 0,
+        };
+
+      const withoutCurrent = grant.sectionGrants.filter(
+        (sectionGrant) => sectionGrant.sectionId !== sectionId
+      );
+
+      return {
+        ...grant,
+        sectionGrants: [
+          ...withoutCurrent,
+          {
+            ...existingGrant,
+            vivaMinutes: Math.max(0, Number(minutes || 0)),
+          },
+        ],
+      };
+    });
+
+    await persistCourse({
+      ...course,
+      memberAccessGrants: nextGrants,
+    });
+  };
+
   const toggleSectionExpanded = (sectionId: string) => {
     setExpandedSections((prev) =>
       prev.includes(sectionId) ? prev.filter((id) => id !== sectionId) : [...prev, sectionId]
@@ -323,6 +513,19 @@ export default function CourseDetailPage() {
           memberSearch={memberSearch}
           onSearchChange={setMemberSearch}
           onToggleMember={toggleCourseMember}
+        />
+
+        <CourseMemberAccessGrantManager
+          course={course}
+          memberCatalog={memberCatalog}
+          catalog={catalog}
+          search={grantSearch}
+          onSearchChange={setGrantSearch}
+          onAddGrantUser={addGrantUser}
+          onRemoveGrantUser={removeGrantUser}
+          onSetSectionMode={setGrantSectionMode}
+          onToggleSectionContent={toggleGrantSectionContent}
+          onSetVivaMinutes={setGrantVivaMinutes}
         />
 
         <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">

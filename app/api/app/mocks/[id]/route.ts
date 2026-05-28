@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMockAccess } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(
@@ -10,9 +10,8 @@ export async function GET(
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
 
-  const mockAccess = getMockAccess(auth.user.tier);
-
   try {
+    const accessContext = await buildAppContentAccessContext(auth.user);
     const { id } = await context.params;
     const mockDoc = await adminDb.collection("mocks").doc(id).get();
 
@@ -21,6 +20,10 @@ export async function GET(
     }
 
     const mockData = mockDoc.data();
+    const mockAccess = accessContext.getMockAccess({
+      id: mockDoc.id,
+      type: String(mockData?.type || "mock"),
+    });
     const quizDoc = await adminDb.collection("quizzes").doc(mockData?.quizId).get();
 
     if (!quizDoc.exists) {
@@ -62,8 +65,9 @@ export async function GET(
       previewLimit: mockAccess.previewLimit ?? null,
       totalQuestionCount: questions.length,
       returnedQuestionCount: questions.length,
-      requiredTier: mockAccess.requiredTier ?? null,
+      requiredTier: mockAccess.mode === "locked" ? "paid" : null,
       reason: mockAccess.reason ?? null,
+      courseIds: mockAccess.courseIds,
     };
 
     if (mockAccess.mode === "preview" && mockAccess.previewLimit) {
@@ -75,8 +79,14 @@ export async function GET(
         previewLimit: mockAccess.previewLimit,
         totalQuestionCount: questions.length,
         returnedQuestionCount: visibleQuestions.length,
-        requiredTier: mockAccess.requiredTier ?? null,
+        requiredTier: null,
         reason: mockAccess.reason ?? null,
+        courseIds: mockAccess.courseIds,
+      };
+    } else {
+      accessPayload = {
+        ...accessPayload,
+        courseIds: mockAccess.courseIds,
       };
     }
 

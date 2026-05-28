@@ -17,6 +17,8 @@ import {
   getResolvedGoogleCloudStorageBucket,
   sanitizeStoragePathPart,
 } from "@/lib/server/googleCloudStorage";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
+import type { AppUserSession } from "@/lib/server/appSession";
 import { parseVideo } from "@/utils/urlParser";
 
 export type VideoAccessTier = "free" | "paid";
@@ -285,12 +287,21 @@ export async function playVideoFromFirestore(input: PlayVideoFromFirestoreInput)
 
   if (
     input.mode === "app" &&
-    effectiveAccessTier === "paid" &&
-    input.user?.tier !== "paid"
+    input.user
   ) {
-    const error = new Error("Paid access required");
-    (error as any).status = 403;
-    throw error;
+    const accessContext = await buildAppContentAccessContext(input.user as AppUserSession);
+    const access = accessContext.getVideoAccess({
+      id: videoDoc.id,
+      sectionId: typeof data.sectionId === "string" ? data.sectionId : null,
+      effectiveAccessTier,
+      accessTier: normalizeTier(data.accessTier),
+    });
+
+    if (access.mode !== "full") {
+      const error = new Error(access.reason || "Video access is locked");
+      (error as any).status = 403;
+      throw error;
+    }
   }
 
   const provider = data.storagePath

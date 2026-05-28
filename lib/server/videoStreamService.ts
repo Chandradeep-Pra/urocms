@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { isPaidTier } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { type AppUserSession } from "@/lib/server/appSession";
 import {
   fetchDriveFileStream,
@@ -37,10 +37,20 @@ export async function buildDriveVideoStreamResponse(params: {
   }
 
   const accessTier = normalizeEffectiveVideoTier(video);
-  if (params.mode === "app" && accessTier === "paid" && !isPaidTier(params.user?.tier || "guest")) {
-    const error = new Error("Paid access required");
-    (error as Error & { status?: number }).status = 403;
-    throw error;
+  if (params.mode === "app" && params.user) {
+    const accessContext = await buildAppContentAccessContext(params.user);
+    const access = accessContext.getVideoAccess({
+      id: params.videoId,
+      sectionId: typeof video.sectionId === "string" ? video.sectionId : null,
+      effectiveAccessTier: accessTier,
+      accessTier: typeof video.accessTier === "string" ? video.accessTier : null,
+    });
+
+    if (access.mode !== "full") {
+      const error = new Error(access.reason || "Video access is locked");
+      (error as Error & { status?: number }).status = 403;
+      throw error;
+    }
   }
 
   const accessEmail = params.user?.googleAccessEmail || params.user?.email || null;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getQuizAccess } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
   if ("response" in auth) return auth.response;
 
   try {
+    const accessContext = await buildAppContentAccessContext(auth.user);
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
 
@@ -23,7 +24,11 @@ export async function GET(req: NextRequest) {
     const quizzes = snapshot.docs.map((doc) => {
       const data = doc.data();
       const quizType = String(data.type ?? "chapter");
-      const access = getQuizAccess(auth.user.tier, quizType);
+      const access = accessContext.getQuizAccess({
+        id: doc.id,
+        bankIds: Array.isArray(data.bankIds) ? data.bankIds : [],
+        type: quizType,
+      });
 
       return {
         id: doc.id,
@@ -38,8 +43,9 @@ export async function GET(req: NextRequest) {
           allowed: access.allowed,
           mode: access.mode,
           previewLimit: access.previewLimit,
-          requiredTier: access.requiredTier ?? null,
+          requiredTier: access.mode === "locked" ? "paid" : null,
           reason: access.reason ?? null,
+          courseIds: access.courseIds,
         },
       };
     });

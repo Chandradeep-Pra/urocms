@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMockAccess } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
 
-  const mockAccess = getMockAccess(auth.user.tier);
-
   try {
+    const accessContext = await buildAppContentAccessContext(auth.user);
     const snapshot = await adminDb.collection("mocks").orderBy("createdAt", "desc").get();
 
     const mocks = snapshot.docs.map((doc) => {
       const data = doc.data();
+      const access = accessContext.getMockAccess({
+        id: doc.id,
+        type: String(data.type || "mock"),
+      });
 
       return {
         id: doc.id,
@@ -23,11 +26,12 @@ export async function GET(req: NextRequest) {
         ...data,
         access: {
           tier: auth.user.tier,
-          allowed: mockAccess.allowed,
-          mode: mockAccess.mode,
-          previewLimit: mockAccess.previewLimit ?? null,
-          requiredTier: mockAccess.requiredTier ?? null,
-          reason: mockAccess.reason ?? null,
+          allowed: access.allowed,
+          mode: access.mode,
+          previewLimit: access.previewLimit ?? null,
+          requiredTier: access.mode === "locked" ? "paid" : null,
+          reason: access.reason ?? null,
+          courseIds: access.courseIds,
         },
       };
     });

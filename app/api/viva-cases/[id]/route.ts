@@ -3,9 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import { requireAppUser } from "@/lib/server/appSession";
-import { canAccessViva } from "@/lib/appAccess";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import {
-  canAccessVivaCaseFromCourseIds,
   getVivaCaseById,
   getPublicVivaCaseById,
   softDeleteVivaCase,
@@ -37,21 +36,30 @@ export async function GET(
   if ("response" in appAuth) return appAuth.response;
 
   try {
-    const publicCase = await getPublicVivaCaseById(id).catch(() => null);
+    const vivaCase = await getVivaCaseById(id);
+    const publicCase =
+      vivaCase?.accessType === "public"
+        ? await getPublicVivaCaseById(id).catch(() => null)
+        : null;
+    const accessContext = await buildAppContentAccessContext(appAuth.user);
+    const access = accessContext.getVivaAccess({
+      id,
+      folderId: vivaCase?.folderId ? String(vivaCase.folderId) : null,
+      accessType: vivaCase?.accessType === "public" ? "public" : "restricted",
+    });
 
-    const allowed =
-      Boolean(publicCase) ||
-      canAccessViva(appAuth.user.tier) ||
-      (await canAccessVivaCaseFromCourseIds(id, appAuth.user.activeCourseIds));
-    if (!allowed) {
+    if (!access.allowed || access.mode === "locked") {
       return NextResponse.json(
-        { error: "Viva case is not included in your current courses" },
+        {
+          error:
+            access.reason || "Viva case is not included in your current courses",
+        },
         { status: 403 }
       );
     }
 
     return NextResponse.json({
-      case: publicCase ?? (await getVivaCaseById(id)),
+      case: publicCase ?? vivaCase,
     });
 
   } catch (err) {

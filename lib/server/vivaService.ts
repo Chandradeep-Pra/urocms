@@ -283,7 +283,16 @@ export async function syncCourseVivaAllowedUsers(params: {
   courseId: string;
   previousSections: unknown;
   nextSections: unknown;
-  memberUsers: Array<{ email?: string | null }>;
+  fullMemberUsers: Array<{ email?: string | null }>;
+  memberAccessGrants: Array<{
+    userId: string;
+    email?: string | null;
+    sectionGrants?: Array<{
+      sectionId: string;
+      accessMode: "full" | "partial";
+      contentIds: string[];
+    }>;
+  }>;
 }) {
   const previousVivaIds = extractAiVivaIdsFromSections(params.previousSections);
   const nextVivaIds = extractAiVivaIdsFromSections(params.nextSections);
@@ -291,9 +300,53 @@ export async function syncCourseVivaAllowedUsers(params: {
 
   if (!targetVivaIds.length) return;
 
-  const nextMemberEmails = normalizeEmailList(
-    params.memberUsers.map((user) => String(user?.email || ""))
+  const nextSections = Array.isArray(params.nextSections) ? params.nextSections : [];
+  const fullMemberEmails = normalizeEmailList(
+    params.fullMemberUsers.map((user) => String(user?.email || ""))
   );
+  const vivaEmailMap = new Map<string, string[]>();
+
+  nextSections.forEach((section: any) => {
+    if (section?.contentType !== "ai-vivas") return;
+    const linkedIds = Array.isArray(section?.linkedContentIds) ? section.linkedContentIds : [];
+    linkedIds.forEach((vivaId: string) => {
+      vivaEmailMap.set(
+        String(vivaId),
+        normalizeEmailList([
+          ...(vivaEmailMap.get(String(vivaId)) ?? []),
+          ...fullMemberEmails,
+        ])
+      );
+    });
+  });
+
+  params.memberAccessGrants.forEach((grant) => {
+    const email = String(grant?.email || "").trim().toLowerCase();
+    if (!email) return;
+
+    (grant.sectionGrants || []).forEach((sectionGrant) => {
+      const section = nextSections.find(
+        (item: any) => item?.id === sectionGrant.sectionId && item?.contentType === "ai-vivas"
+      );
+      if (!section) return;
+
+      const sectionLinkedIds = Array.isArray(section?.linkedContentIds)
+        ? section.linkedContentIds.map((id: unknown) => String(id || "").trim()).filter(Boolean)
+        : [];
+      const targetIds =
+        sectionGrant.accessMode === "partial" && sectionGrant.contentIds.length > 0
+          ? sectionGrant.contentIds
+          : sectionLinkedIds;
+
+      targetIds.forEach((vivaId) => {
+        if (!sectionLinkedIds.includes(vivaId)) return;
+        vivaEmailMap.set(
+          vivaId,
+          normalizeEmailList([...(vivaEmailMap.get(vivaId) ?? []), email])
+        );
+      });
+    });
+  });
 
   await Promise.all(
     targetVivaIds.map(async (vivaId) => {
@@ -305,8 +358,10 @@ export async function syncCourseVivaAllowedUsers(params: {
       const courseAllowedUserMap = normalizeCourseAllowedUserMap(data.courseAllowedUserMap);
       const manualAllowedUsers = getManualAllowedUsers(data);
 
-      if (nextVivaIds.includes(vivaId) && nextMemberEmails.length > 0) {
-        courseAllowedUserMap[params.courseId] = nextMemberEmails;
+      const courseEmails = vivaEmailMap.get(vivaId) ?? [];
+
+      if (nextVivaIds.includes(vivaId) && courseEmails.length > 0) {
+        courseAllowedUserMap[params.courseId] = courseEmails;
       } else {
         delete courseAllowedUserMap[params.courseId];
       }

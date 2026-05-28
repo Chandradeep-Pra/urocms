@@ -23,6 +23,20 @@ export type CourseSection = {
   linkedContentIds: string[];
 };
 
+export type CourseSectionGrant = {
+  sectionId: string;
+  accessMode: "full" | "partial";
+  contentIds: string[];
+  vivaMinutes: number;
+};
+
+export type CourseMemberAccessGrant = {
+  userId: string;
+  name?: string;
+  email?: string;
+  sectionGrants: CourseSectionGrant[];
+};
+
 export type Course = {
   id: string;
   title: string;
@@ -32,6 +46,7 @@ export type Course = {
   showOnApp?: boolean;
   memberUserIds?: string[];
   memberUsers?: Array<{ id: string; name?: string; email?: string }>;
+  memberAccessGrants?: CourseMemberAccessGrant[];
   sections?: CourseSection[];
 };
 

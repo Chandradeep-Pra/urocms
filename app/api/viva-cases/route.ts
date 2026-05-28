@@ -3,10 +3,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import { requireAppUser } from "@/lib/server/appSession";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import {
   createVivaCase,
   listVivaCases,
-  listVivaCasesForCourseIds,
 } from "@/lib/server/vivaService";
 import { publishNotification } from "@/lib/server/notificationService";
 
@@ -29,28 +29,28 @@ export async function GET(req: NextRequest) {
   if ("response" in appAuth) return appAuth.response;
 
   try {
+    const accessContext = await buildAppContentAccessContext(appAuth.user);
     const allCases = await listVivaCases();
-    const courseCases = await listVivaCasesForCourseIds(appAuth.user.activeCourseIds);
-    const courseCaseIds = new Set(courseCases.map((item: any) => item?.id).filter(Boolean));
-    const paidUnlocked = appAuth.user.tier === "paid";
     const cases = allCases.map((item: any) => {
       const isPublic = item?.accessType === "public";
-      const courseGranted = courseCaseIds.has(item.id);
-      const allowed = isPublic || paidUnlocked || courseGranted;
+      const access = accessContext.getVivaAccess({
+        id: String(item.id),
+        folderId: item?.folderId ? String(item.folderId) : null,
+        accessType: isPublic ? "public" : "restricted",
+      });
 
       return {
         ...item,
         accessType: isPublic ? "public" : "restricted",
         access: {
           tier: appAuth.user.tier,
-          allowed,
-          mode: allowed ? (isPublic ? "public" : "full") : "locked",
-          requiredTier: isPublic ? null : "paid",
-          reason: allowed
-            ? null
-            : "AI viva is available only for paid users unless a course grants access.",
-          courseGranted,
+          allowed: access.allowed,
+          mode: isPublic ? "public" : access.mode,
+          requiredTier: isPublic ? null : access.mode === "locked" ? "paid" : null,
+          reason: access.reason,
+          courseGranted: access.courseIds.length > 0,
           isPublic,
+          courseIds: access.courseIds,
         },
       };
     });

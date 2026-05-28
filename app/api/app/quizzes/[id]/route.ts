@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getQuizAccess } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
 import { formatQuestionsForApp, getQuestionsForQuiz } from "@/lib/server/quizContent";
 
@@ -12,6 +12,7 @@ export async function GET(
   if ("response" in auth) return auth.response;
 
   try {
+    const accessContext = await buildAppContentAccessContext(auth.user);
     const { id } = await context.params;
     const doc = await adminDb.collection("quizzes").doc(id).get();
 
@@ -21,13 +22,17 @@ export async function GET(
 
     const quizData = doc.data() ?? {};
     const quizType = String(quizData.type ?? "chapter");
-    const access = getQuizAccess(auth.user.tier, quizType);
+    const access = accessContext.getQuizAccess({
+      id: doc.id,
+      bankIds: Array.isArray(quizData.bankIds) ? quizData.bankIds : [],
+      type: quizType,
+    });
 
     if (!access.allowed) {
       return tierLockedResponse({
         feature: quizType === "chapter" ? "chapter-quiz" : quizType,
         tier: auth.user.tier,
-        requiredTier: access.requiredTier ?? "paid",
+        requiredTier: "paid",
         reason: access.reason ?? "Locked",
       });
     }
