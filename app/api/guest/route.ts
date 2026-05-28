@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { normalizeEmail } from "@/lib/server/userIdentity";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     const uid = decoded.uid;
     const { email } = await req.json();
-    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
 
     if (!normalizedEmail) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -29,16 +30,29 @@ export async function POST(req: NextRequest) {
     if (!existingUserSnapshot.empty) {
       const existingUserDoc = existingUserSnapshot.docs[0];
       const existingUser = existingUserDoc.data();
+      const resolvedTier = existingUser.tier === "paid" ? "paid" : "free";
+
+      if (resolvedTier !== existingUser.tier) {
+        await existingUserDoc.ref.set(
+          {
+            tier: resolvedTier,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      }
 
       await adminDb.collection("users").doc(uid).set(
         {
           name: existingUser.name ?? "Guest User",
           email: normalizedEmail,
-          tier: existingUser.tier ?? "guest",
+          tier: resolvedTier,
           googleAccessEmail: existingUser.googleAccessEmail ?? normalizedEmail,
           source: "mobile-app",
           linkedExistingUserId: existingUserDoc.id,
-          updatedAt: new Date(),
+          canonicalUserId: existingUserDoc.id,
+          isShadowDuplicate: true,
+          updatedAt: new Date().toISOString(),
         },
         { merge: true }
       );
@@ -50,7 +64,7 @@ export async function POST(req: NextRequest) {
           id: uid,
           name: existingUser.name ?? "Guest User",
           email: existingUser.email ?? normalizedEmail,
-          tier: existingUser.tier ?? "guest",
+          tier: resolvedTier,
           source: existingUser.source ?? "mobile-app",
           linkedExistingUserId: existingUserDoc.id,
         },
@@ -60,11 +74,13 @@ export async function POST(req: NextRequest) {
     await adminDb.collection("users").doc(uid).set({
       name: "Guest User",
       email: normalizedEmail,
-      tier: "guest",
+      tier: "free",
       googleAccessEmail: normalizedEmail,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       source: "mobile-app",
+      canonicalUserId: uid,
+      isShadowDuplicate: false,
     }, { merge: true });
 
     return NextResponse.json({
@@ -74,7 +90,7 @@ export async function POST(req: NextRequest) {
         id: uid,
         name: "Guest User",
         email: normalizedEmail,
-        tier: "guest",
+        tier: "free",
         source: "mobile-app",
       },
     });

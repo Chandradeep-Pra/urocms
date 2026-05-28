@@ -6,21 +6,47 @@ export interface VideoSectionRecord {
   id: string;
   title: string;
   accessTier: VideoSectionAccessTier;
+  sortOrder: number;
+}
+
+function normalizeSortOrder(value: unknown, fallback: number) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
 }
 
 export async function listVideoSections(): Promise<VideoSectionRecord[]> {
   const snapshot = await adminDb.collection("videoSections").get();
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    title: String(doc.data().title || ""),
-    accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
-  }));
+  return snapshot.docs
+    .map((doc, index) => ({
+      id: doc.id,
+      title: String(doc.data().title || ""),
+      accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
+      sortOrder: normalizeSortOrder(doc.data().sortOrder, index + 1),
+    }))
+    .sort((a, b) => {
+      if (a.sortOrder !== b.sortOrder) {
+        return a.sortOrder - b.sortOrder;
+      }
+
+      return a.title.localeCompare(b.title);
+    });
 }
 
 export async function createVideoSection(input: {
   title: string;
   accessTier?: VideoSectionAccessTier;
+  sortOrder?: number;
 }) {
   const title = input.title?.trim();
   if (!title) {
@@ -28,10 +54,17 @@ export async function createVideoSection(input: {
   }
 
   const accessTier = input.accessTier === "paid" ? "paid" : "free";
+  const requestedSortOrder = normalizeSortOrder(input.sortOrder, 0);
+  const sections = await listVideoSections();
+  const nextSortOrder =
+    requestedSortOrder > 0
+      ? requestedSortOrder
+      : sections.reduce((max, section) => Math.max(max, section.sortOrder), 0) + 1;
 
   const docRef = await adminDb.collection("videoSections").add({
     title,
     accessTier,
+    sortOrder: nextSortOrder,
     createdAt: new Date(),
   });
 
@@ -40,7 +73,7 @@ export async function createVideoSection(input: {
 
 export async function updateVideoSection(
   id: string,
-  input: { title?: string; accessTier?: VideoSectionAccessTier }
+  input: { title?: string; accessTier?: VideoSectionAccessTier; sortOrder?: number }
 ) {
   const sectionRef = adminDb.collection("videoSections").doc(id);
   const currentSectionDoc = await sectionRef.get();
@@ -66,6 +99,11 @@ export async function updateVideoSection(
 
   if (input.accessTier) {
     payload.accessTier = input.accessTier === "paid" ? "paid" : "free";
+  }
+
+  const requestedSortOrder = normalizeSortOrder(input.sortOrder, 0);
+  if (requestedSortOrder > 0) {
+    payload.sortOrder = requestedSortOrder;
   }
 
   const videosSnapshot = await adminDb

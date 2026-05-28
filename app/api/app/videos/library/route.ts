@@ -3,6 +3,21 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 
+function normalizeSortOrder(value: unknown, fallback: number) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
+}
+
 export async function GET(req: NextRequest) {
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
@@ -22,56 +37,87 @@ export async function GET(req: NextRequest) {
       query.get(),
       adminDb.collection("videoSections").get(),
     ]);
+    const sectionOrderMap = new Map(
+      sectionsSnapshot.docs.map((doc, index) => [
+        doc.id,
+        normalizeSortOrder(doc.data().sortOrder, index + 1),
+      ])
+    );
 
-    const allVideos = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
-      effectiveAccessTier:
-        doc.data().effectiveAccessTier === "paid" ? "paid" : "free",
-      access: {
-        allowed:
-          doc.data().effectiveAccessTier === "paid"
-            ? auth.user.tier === "paid"
-            : auth.user.tier !== "guest",
-        requiredTier:
+    const allVideos = snapshot.docs
+      .map((doc, index) => ({
+        id: doc.id,
+        ...doc.data(),
+        accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
+        effectiveAccessTier:
           doc.data().effectiveAccessTier === "paid" ? "paid" : "free",
-      },
-      requiresGoogleSession: false,
-      isSyncedToCloudStorage: Boolean(doc.data().storagePath),
-      ...doc.data(),
-    })).map((video) => {
-      const access = accessContext.getVideoAccess({
-        id: String(video.id),
-        sectionId: typeof video.sectionId === "string" ? video.sectionId : null,
-        effectiveAccessTier: typeof video.effectiveAccessTier === "string" ? video.effectiveAccessTier : null,
-        accessTier: typeof video.accessTier === "string" ? video.accessTier : null,
-      });
-
-      return {
-        ...video,
+        sortOrder: normalizeSortOrder(doc.data().sortOrder, index + 1),
         access: {
-          allowed: access.allowed,
-          mode: access.mode,
-          previewLimit: access.previewLimit,
-          reason: access.reason,
-          courseIds: access.courseIds,
+          allowed:
+            doc.data().effectiveAccessTier === "paid"
+              ? auth.user.tier === "paid"
+              : auth.user.tier !== "guest",
+          requiredTier:
+            doc.data().effectiveAccessTier === "paid" ? "paid" : "free",
         },
-      };
-    });
+        requiresGoogleSession: false,
+        isSyncedToCloudStorage: Boolean(doc.data().storagePath),
+      }))
+      .map((video) => {
+        const access = accessContext.getVideoAccess({
+          id: String(video.id),
+          sectionId: typeof video.sectionId === "string" ? video.sectionId : null,
+          effectiveAccessTier: typeof video.effectiveAccessTier === "string" ? video.effectiveAccessTier : null,
+          accessTier: typeof video.accessTier === "string" ? video.accessTier : null,
+        });
+
+        return {
+          ...video,
+          sortOrder: normalizeSortOrder(video.sortOrder, 0),
+          access: {
+            allowed: access.allowed,
+            mode: access.mode,
+            previewLimit: access.previewLimit,
+            reason: access.reason,
+            courseIds: access.courseIds,
+          },
+        };
+      });
 
     const videos = allVideos.filter((video) =>
       video.provider === "drive" ? Boolean(video.storagePath) : true
-    );
+    ).sort((a, b) => {
+      const sectionA = sectionOrderMap.get(String(a.sectionId || "")) ?? Number.MAX_SAFE_INTEGER;
+      const sectionB = sectionOrderMap.get(String(b.sectionId || "")) ?? Number.MAX_SAFE_INTEGER;
+      if (sectionA !== sectionB) {
+        return sectionA - sectionB;
+      }
+
+      if (a.sortOrder !== b.sortOrder) {
+        return a.sortOrder - b.sortOrder;
+      }
+
+      return String(a.title || "").localeCompare(String(b.title || ""));
+    });
 
     const sections = sectionsSnapshot.docs
-      .map((doc) => {
+      .map((doc, index) => {
         const data = doc.data() ?? {};
-        const sectionVideos = videos.filter((video) => video.sectionId === doc.id);
+        const sectionVideos = videos
+          .filter((video) => video.sectionId === doc.id)
+          .sort((a, b) => {
+            if (a.sortOrder !== b.sortOrder) {
+              return a.sortOrder - b.sortOrder;
+            }
+
+            return String(a.title || "").localeCompare(String(b.title || ""));
+          });
 
         return {
           id: doc.id,
           title: String(data.title || ""),
           accessTier: data.accessTier === "paid" ? "paid" : "free",
+          sortOrder: normalizeSortOrder(data.sortOrder, index + 1),
           effectiveAccessTier:
             sectionVideos.some((video) => video.effectiveAccessTier === "paid") ||
             data.accessTier === "paid"
@@ -92,7 +138,14 @@ export async function GET(req: NextRequest) {
         };
       })
       .filter((section) => (sectionId ? section.id === sectionId : true))
-      .filter((section) => section.videoCount > 0);
+      .filter((section) => section.videoCount > 0)
+      .sort((a, b) => {
+        if (a.sortOrder !== b.sortOrder) {
+          return a.sortOrder - b.sortOrder;
+        }
+
+        return a.title.localeCompare(b.title);
+      });
 
     return NextResponse.json({
       tier: auth.user.tier,

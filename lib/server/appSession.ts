@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { type AppTier } from "@/lib/appAccess";
 import { type AppPlanStatus } from "@/lib/server/appPlanAccess";
+import { normalizeEmail, resolveCanonicalUserRecord } from "@/lib/server/userIdentity";
 
 export interface AppUserSession {
   uid: string;
@@ -58,30 +59,20 @@ export async function requireAppUser(req: NextRequest) {
       };
 
       await userRef.set(nextUser, { merge: true });
-
-      return {
-        user: {
-          uid: decoded.uid,
-          email: decoded.email ?? null,
-          name: null,
-          tier: defaultTier,
-          googleAccessEmail: decoded.email ?? null,
-          source: decoded.firebase.sign_in_provider ?? null,
-          activeCourseIds: [],
-          activePlanId: null,
-          activePlanStatus: "none",
-          planActivatedAt: null,
-          planExpiresAt: null,
-          vivaMinutesUsed: 0,
-        } satisfies AppUserSession,
-      };
     }
 
-    const user = userDoc.data() ?? {};
+    const resolved = await resolveCanonicalUserRecord({
+      authUid: decoded.uid,
+      email: normalizeEmail(decoded.email),
+      signInProvider: decoded.firebase.sign_in_provider ?? null,
+      firebaseName: decoded.name ?? null,
+      source: decoded.firebase.sign_in_provider ?? null,
+    });
+    const user = resolved.userData ?? {};
 
     return {
       user: {
-        uid: decoded.uid,
+        uid: resolved.uid,
         email: user.email ?? decoded.email ?? null,
         name: user.name ?? decoded.name ?? null,
         tier: normalizeTier(user.tier),

@@ -10,6 +10,21 @@ import {
   updateDrivePermissionRole,
 } from "@/lib/server/googleDrive";
 
+function normalizeSortOrder(value: unknown, fallback: number) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
+}
+
 export async function loadAdminVideoLibrary(params: {
   sectionId?: string | null;
   userId: string;
@@ -20,17 +35,40 @@ export async function loadAdminVideoLibrary(params: {
     query = query.where("sectionId", "==", params.sectionId);
   }
 
-  const [userDoc, snapshot] = await Promise.all([
+  const [userDoc, snapshot, sectionsSnapshot] = await Promise.all([
     adminDb.collection("users").doc(params.userId).get(),
     query.get(),
+    adminDb.collection("videoSections").get(),
   ]);
   const tier = userDoc.exists ? userDoc.data()?.tier ?? "guest" : "guest";
+  const sectionOrderMap = new Map(
+    sectionsSnapshot.docs.map((doc, index) => [
+      doc.id,
+      normalizeSortOrder(doc.data().sortOrder, index + 1),
+    ])
+  );
 
-  const videos = snapshot.docs.map((doc) => ({
-    id: doc.id,
-    accessTier: "free",
-    ...doc.data(),
-  }));
+  const videos = snapshot.docs
+    .map((doc, index) => ({
+      id: doc.id,
+      ...doc.data(),
+      accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
+      sortOrder: normalizeSortOrder(doc.data().sortOrder, index + 1),
+    }))
+    .sort((a, b) => {
+      const sectionA = sectionOrderMap.get(String(a.sectionId || "")) ?? Number.MAX_SAFE_INTEGER;
+      const sectionB = sectionOrderMap.get(String(b.sectionId || "")) ?? Number.MAX_SAFE_INTEGER;
+
+      if (sectionA !== sectionB) {
+        return sectionA - sectionB;
+      }
+
+      if (a.sortOrder !== b.sortOrder) {
+        return a.sortOrder - b.sortOrder;
+      }
+
+      return String(a.title || "").localeCompare(String(b.title || ""));
+    });
 
   return { tier, videos };
 }

@@ -25,6 +25,7 @@ interface SectionOption {
   id: string;
   title: string;
   accessTier?: "free" | "paid";
+  sortOrder?: number;
 }
 
 interface Props {
@@ -44,6 +45,7 @@ export default function SectionActionPanel({
   const [attachOpen, setAttachOpen] = useState(false);
   const [sectionTitle, setSectionTitle] = useState("");
   const [sectionAccessTier, setSectionAccessTier] = useState<"free" | "paid">("free");
+  const [sectionSortOrder, setSectionSortOrder] = useState("");
   const [savingSection, setSavingSection] = useState(false);
   const [loadingFolders, setLoadingFolders] = useState(false);
   const [loadingVideos, setLoadingVideos] = useState(false);
@@ -67,6 +69,9 @@ export default function SectionActionPanel({
 
     setSectionTitle(section.title);
     setSectionAccessTier(section.accessTier === "paid" ? "paid" : "free");
+    setSectionSortOrder(
+      typeof section.sortOrder === "number" ? String(section.sortOrder) : ""
+    );
   }, [section]);
 
   useEffect(() => {
@@ -133,6 +138,7 @@ export default function SectionActionPanel({
       await updateVideoSection(section.id, {
         title: sectionTitle,
         accessTier: sectionAccessTier,
+        sortOrder: sectionSortOrder.trim() ? Number(sectionSortOrder) : undefined,
       });
       await onSectionsUpdated();
       toast.success("Section updated");
@@ -230,6 +236,13 @@ export default function SectionActionPanel({
               value={sectionTitle}
               onChange={(event) => setSectionTitle(event.target.value)}
               placeholder="Section name"
+            />
+            <Input
+              type="number"
+              min="1"
+              value={sectionSortOrder}
+              onChange={(event) => setSectionSortOrder(event.target.value)}
+              placeholder="Section sort order"
             />
             <div className="grid gap-2 sm:grid-cols-2">
               {(["free", "paid"] as const).map((tier) => (

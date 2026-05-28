@@ -34,6 +34,7 @@ export default function AddVideoDialog({
     videoUrl: "",
     sectionId: "",
     accessTier: "free" as "free" | "paid",
+    sortOrder: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -49,7 +50,10 @@ export default function AddVideoDialog({
     await adminFetch("/api/videos/videoItem", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        sortOrder: form.sortOrder.trim() ? Number(form.sortOrder) : undefined,
+      }),
     });
 
     setForm({
@@ -58,6 +62,7 @@ export default function AddVideoDialog({
       videoUrl: "",
       sectionId: "",
       accessTier: "free",
+      sortOrder: "",
     });
 
     setLoading(false);
@@ -132,6 +137,18 @@ export default function AddVideoDialog({
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Sort Order</label>
+              <Input
+                type="number"
+                min="1"
+                placeholder="Auto"
+                value={form.sortOrder}
+                onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
+                className="h-11 rounded-xl"
+              />
             </div>
           </div>
 

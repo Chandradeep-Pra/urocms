@@ -15,6 +15,7 @@ export interface Section {
   id: string;
   title: string;
   accessTier?: "free" | "paid";
+  sortOrder?: number;
 }
 
 export interface VideoItem {
@@ -24,6 +25,7 @@ export interface VideoItem {
   videoUrl: string;
   sectionId: string;
   accessTier?: "free" | "paid";
+  sortOrder?: number;
   provider?: "youtube" | "drive" | "storage";
   thumbnailUrl?: string;
   storagePath?: string;

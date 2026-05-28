@@ -9,8 +9,10 @@ type Testimonial = {
   title: string;
   videoUrl: string;
   youtubeId: string;
+  imageUrl: string;
   candidateName: string;
   candidateRole: string;
+  companyName: string;
   quote: string;
 };
 
@@ -94,15 +96,30 @@ export function SuccessStoriesSection() {
                     </div>
 
                     <div className="flex h-[218px] flex-col justify-between p-6">
-                      <div>
-                        <p className="text-base font-bold text-[#071014]">
-                          {item.candidateName || item.title || "Candidate"}
-                        </p>
-                        {(item.candidateRole || item.title) ? (
-                          <p className="mt-1 text-sm text-[#0f7896]">
-                            {item.candidateRole || item.title}
-                          </p>
+                      <div className="flex items-start gap-3">
+                        {item.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.imageUrl}
+                            alt={item.candidateName || item.title || "Candidate"}
+                            className="h-12 w-12 rounded-2xl object-cover"
+                          />
                         ) : null}
+                        <div>
+                          <p className="text-base font-bold text-[#071014]">
+                            {item.candidateName || item.title || "Candidate"}
+                          </p>
+                          {item.companyName ? (
+                            <p className="mt-1 text-sm italic text-[#0f7896]">
+                              {item.companyName}
+                            </p>
+                          ) : null}
+                          {(item.candidateRole || item.title) ? (
+                            <p className="mt-1 text-sm text-[#0f7896]">
+                              {item.candidateRole || item.title}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
 
                       <p className="line-clamp-2 text-[15px] leading-7 text-[#071014]">
@@ -127,7 +144,7 @@ export function SuccessStoriesSection() {
                 ) : (
                   <article
                     key={`${item.id}-quote-${index}`}
-                    className="relative h-[280px] w-[82vw] max-w-[360px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)]"
+                    className="relative h-[420px] w-[82vw] max-w-[360px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)]"
                   >
                     <span className="pointer-events-none absolute -left-3 -top-6 text-[180px] font-black leading-none text-[#0f7896]/10">
                       "
@@ -145,15 +162,30 @@ export function SuccessStoriesSection() {
                         {item.quote}
                       </p>
 
-                      <div className="mt-6">
-                        <p className="text-sm font-bold text-[#071014]">
-                          {item.candidateName || item.title || "Candidate"}
-                        </p>
-                        {(item.candidateRole || item.title) ? (
-                          <p className="mt-1 text-sm text-[#0f7896]">
-                            {item.candidateRole || item.title}
-                          </p>
+                      <div className="mt-6 flex items-start gap-3">
+                        {item.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.imageUrl}
+                            alt={item.candidateName || item.title || "Candidate"}
+                            className="h-12 w-12 rounded-2xl object-cover"
+                          />
                         ) : null}
+                        <div>
+                          <p className="text-sm font-bold text-[#071014]">
+                            {item.candidateName || item.title || "Candidate"}
+                          </p>
+                          {item.companyName ? (
+                            <p className="mt-1 text-sm italic text-[#0f7896]">
+                              {item.companyName}
+                            </p>
+                          ) : null}
+                          {(item.candidateRole || item.title) ? (
+                            <p className="mt-1 text-sm text-[#0f7896]">
+                              {item.candidateRole || item.title}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   </article>

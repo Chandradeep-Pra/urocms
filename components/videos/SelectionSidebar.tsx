@@ -20,6 +20,7 @@ export default function SectionSidebar({
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
+  const [draftSortOrder, setDraftSortOrder] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const items = [
@@ -27,14 +28,16 @@ export default function SectionSidebar({
     ...sections.map((section) => ({
       id: section.id,
       title: section.title,
+      sortOrder: section.sortOrder,
       count:
         typeof section.videoCount === "number" ? section.videoCount : null,
     })),
   ];
 
-  const startEditing = (id: string, title: string) => {
+  const startEditing = (id: string, title: string, sortOrder?: number) => {
     setEditingId(id);
     setDraftTitle(title);
+    setDraftSortOrder(typeof sortOrder === "number" ? String(sortOrder) : "");
   };
 
   const saveEdit = async (id: string) => {
@@ -52,7 +55,10 @@ export default function SectionSidebar({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ title }),
+        body: JSON.stringify({
+          title,
+          sortOrder: draftSortOrder.trim() ? Number(draftSortOrder) : undefined,
+        }),
       });
 
       const data = await res.json().catch(() => null);
@@ -62,6 +68,7 @@ export default function SectionSidebar({
 
       setEditingId(null);
       setDraftTitle("");
+      setDraftSortOrder("");
       await onSectionsChanged();
       toast.success("Section renamed");
     } catch (error: any) {
@@ -130,6 +137,14 @@ export default function SectionSidebar({
                     className="h-9 border-white/20 bg-white text-slate-900"
                     autoFocus
                   />
+                  <Input
+                    type="number"
+                    min="1"
+                    value={draftSortOrder}
+                    onChange={(e) => setDraftSortOrder(e.target.value)}
+                    className="h-9 border-white/20 bg-white text-slate-900"
+                    placeholder="Sort order"
+                  />
                   <div className="flex gap-2">
                     <Button
                       type="button"
@@ -152,6 +167,7 @@ export default function SectionSidebar({
                       onClick={() => {
                         setEditingId(null);
                         setDraftTitle("");
+                        setDraftSortOrder("");
                       }}
                     >
                       <X className="h-4 w-4" />
@@ -180,12 +196,21 @@ export default function SectionSidebar({
 
                   {s.id !== "all" && (
                     <div className="flex shrink-0 gap-1">
+                      <span
+                        className={`grid h-7 min-w-7 place-items-center rounded-full px-2 text-[11px] font-semibold ${
+                          activeSection === s.id
+                            ? "bg-white/15 text-white"
+                            : "bg-white text-slate-500"
+                        }`}
+                      >
+                        {typeof s.sortOrder === "number" ? s.sortOrder : "-"}
+                      </span>
                       <Button
                         type="button"
                         size="icon-xs"
                         variant={activeSection === s.id ? "secondary" : "ghost"}
                         disabled={loadingId === s.id}
-                        onClick={() => startEditing(s.id, s.title)}
+                        onClick={() => startEditing(s.id, s.title, s.sortOrder)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>

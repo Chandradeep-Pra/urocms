@@ -6,8 +6,10 @@ export type TestimonialRecord = {
   title: string;
   videoUrl: string;
   youtubeId: string;
+  imageUrl: string;
   candidateName: string;
   candidateRole: string;
+  companyName: string;
   quote: string;
   sortOrder: number;
   isActive: boolean;
@@ -92,8 +94,10 @@ function mapTestimonial(doc: FirebaseFirestore.QueryDocumentSnapshot | FirebaseF
     title: normalizeString(data.title),
     videoUrl: normalizeString(data.videoUrl),
     youtubeId: normalizeString(data.youtubeId),
+    imageUrl: normalizeString(data.imageUrl),
     candidateName: normalizeString(data.candidateName),
     candidateRole: normalizeString(data.candidateRole),
+    companyName: normalizeString(data.companyName),
     quote: normalizeString(data.quote),
     sortOrder: normalizeSortOrder(data.sortOrder),
     isActive: Boolean(data.isActive),
@@ -127,10 +131,12 @@ export async function createTestimonial(input: Record<string, unknown>) {
   const title = normalizeString(input.title);
   const candidateName = normalizeString(input.candidateName);
   const candidateRole = normalizeString(input.candidateRole);
+  const companyName = normalizeString(input.companyName);
   const quote = normalizeString(input.quote);
   const sortOrder = normalizeSortOrder(input.sortOrder);
   const isActive = input.isActive !== false;
   const sourceVideo = normalizeString(input.videoUrl || input.youtubeId);
+  const imageUrl = normalizeString(input.imageUrl);
 
   if (!title && !candidateName) {
     throw new Error("Either title or candidate name is required");
@@ -146,11 +152,13 @@ export async function createTestimonial(input: Record<string, unknown>) {
     title,
     candidateName,
     candidateRole,
+    companyName,
     quote,
     sortOrder,
     isActive,
     youtubeId,
     videoUrl,
+    imageUrl,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
@@ -163,10 +171,12 @@ export async function updateTestimonial(id: string, input: Record<string, unknow
   const title = normalizeString(input.title);
   const candidateName = normalizeString(input.candidateName);
   const candidateRole = normalizeString(input.candidateRole);
+  const companyName = normalizeString(input.companyName);
   const quote = normalizeString(input.quote);
   const sortOrder = normalizeSortOrder(input.sortOrder);
   const isActive = input.isActive !== false;
   const sourceVideo = normalizeString(input.videoUrl || input.youtubeId);
+  const imageUrl = normalizeString(input.imageUrl);
 
   if (!title && !candidateName) {
     throw new Error("Either title or candidate name is required");
@@ -182,11 +192,13 @@ export async function updateTestimonial(id: string, input: Record<string, unknow
     title,
     candidateName,
     candidateRole,
+    companyName,
     quote,
     sortOrder,
     isActive,
     youtubeId,
     videoUrl,
+    imageUrl,
     updatedAt: FieldValue.serverTimestamp(),
   });
 

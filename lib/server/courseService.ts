@@ -3,6 +3,7 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import type { AppUserSession } from "@/lib/server/appSession";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { syncCourseVivaAllowedUsers } from "@/lib/server/vivaService";
+import { isVisibleUserDoc, normalizeEmail } from "@/lib/server/userIdentity";
 
 export type CourseAccessTier = "free" | "members";
 
@@ -383,16 +384,40 @@ export async function loadCourseContentCatalog() {
 export async function loadCourseMembersCatalog() {
   const snapshot = await adminDb.collection("users").orderBy("createdAt", "desc").get();
 
-  return snapshot.docs.map((doc) => {
-    const data = doc.data() ?? {};
-    return {
-      id: doc.id,
-      name: String(data.name || "").trim(),
-      email: String(data.email || "").trim(),
-      tier: data.tier === "paid" ? "paid" : data.tier === "free" ? "free" : "guest",
-      activeCourseIds: Array.isArray(data.activeCourseIds) ? data.activeCourseIds : [],
-    };
+  const visibleUsers = snapshot.docs
+    .filter((doc) => isVisibleUserDoc(doc.data() ?? {}))
+    .map((doc) => {
+      const data = doc.data() ?? {};
+      return {
+        id: doc.id,
+        name: String(data.name || "").trim(),
+        email: String(data.email || "").trim(),
+        tier: data.tier === "paid" ? "paid" : data.tier === "free" ? "free" : "guest",
+        activeCourseIds: Array.isArray(data.activeCourseIds) ? data.activeCourseIds : [],
+      };
+    });
+
+  const deduped = new Map<string, (typeof visibleUsers)[number]>();
+
+  visibleUsers.forEach((user) => {
+    const key = normalizeEmail(user.email) || user.id;
+    const existing = deduped.get(key);
+    if (!existing) {
+      deduped.set(key, user);
+      return;
+    }
+
+    if (existing.tier !== "paid" && user.tier === "paid") {
+      deduped.set(key, user);
+      return;
+    }
+
+    if (existing.tier === "guest" && user.tier === "free") {
+      deduped.set(key, user);
+    }
   });
+
+  return Array.from(deduped.values());
 }
 
 export async function listAppCoursesForUser(user: AppUserSession) {

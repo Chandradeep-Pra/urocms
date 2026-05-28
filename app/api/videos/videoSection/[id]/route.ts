@@ -14,8 +14,8 @@ export async function PATCH(
 
   try {
     const params = await context.params;
-    const { title, accessTier } = await req.json();
-    await updateVideoSection(params.id, { title, accessTier });
+    const { title, accessTier, sortOrder } = await req.json();
+    await updateVideoSection(params.id, { title, accessTier, sortOrder });
     return Response.json({ success: true });
   } catch (error: any) {
     return Response.json(

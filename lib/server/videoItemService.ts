@@ -10,7 +10,23 @@ export interface VideoItemInput {
   videoUrl: string;
   sectionId?: string;
   accessTier?: "free" | "paid";
+  sortOrder?: number;
   thumbnailUrl?: string;
+}
+
+function normalizeSortOrder(value: unknown, fallback: number) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
 }
 
 export async function listVideoItems(sectionId?: string) {
@@ -22,12 +38,31 @@ export async function listVideoItems(sectionId?: string) {
 
   const snapshot = await query.get();
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
-    thumbnailUrl: doc.data().thumbnailUrl || "",
-    ...doc.data(),
-  }));
+  return snapshot.docs
+    .map((doc, index) => ({
+      id: doc.id,
+      ...doc.data(),
+      accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
+      thumbnailUrl: doc.data().thumbnailUrl || "",
+      sortOrder: normalizeSortOrder(doc.data().sortOrder, index + 1),
+    }))
+    .sort((a, b) => {
+      const sectionA = String(a.sectionId || "");
+      const sectionB = String(b.sectionId || "");
+
+      if (!sectionId && sectionA !== sectionB) {
+        return sectionA.localeCompare(sectionB);
+      }
+
+      const orderA = normalizeSortOrder(a.sortOrder, 0);
+      const orderB = normalizeSortOrder(b.sortOrder, 0);
+
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+
+      return String(a.title || "").localeCompare(String(b.title || ""));
+    });
 }
 
 async function ensureVideoNotDuplicated(

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Pencil, Quote, Trash2, Video } from "lucide-react";
+import { ImageUp, Loader2, Pencil, Quote, Trash2, Video } from "lucide-react";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/client/adminApi";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,10 @@ type Testimonial = {
   title: string;
   videoUrl: string;
   youtubeId: string;
+  imageUrl: string;
   candidateName: string;
   candidateRole: string;
+  companyName: string;
   quote: string;
   sortOrder: number;
   isActive: boolean;
@@ -37,8 +39,10 @@ type PublishableFeedback = {
 type FormState = {
   title: string;
   videoUrl?: string;
+  imageUrl?: string;
   candidateName: string;
   candidateRole: string;
+  companyName: string;
   quote: string;
   sortOrder: string;
   isActive: boolean;
@@ -47,8 +51,10 @@ type FormState = {
 const emptyForm: FormState = {
   title: "",
   videoUrl: "",
+  imageUrl: "",
   candidateName: "",
   candidateRole: "",
+  companyName: "",
   quote: "",
   sortOrder: "0",
   isActive: true,
@@ -60,6 +66,7 @@ export default function TestimonialsPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const submitLabel = useMemo(() => {
@@ -110,8 +117,10 @@ export default function TestimonialsPage() {
     setForm({
       title: item.title,
       videoUrl: item.videoUrl,
+      imageUrl: item.imageUrl,
       candidateName: item.candidateName,
       candidateRole: item.candidateRole,
+      companyName: item.companyName,
       quote: item.quote,
       sortOrder: String(item.sortOrder ?? 0),
       isActive: item.isActive,
@@ -123,6 +132,35 @@ export default function TestimonialsPage() {
     setForm(emptyForm);
   }
 
+  async function uploadImage(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "testimonials");
+
+    const toastId = toast.loading("Uploading testimonial image...");
+    try {
+      setUploadingImage(true);
+      const res = await fetch("/api/cloudinary-upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || "Could not upload image");
+      }
+
+      update("imageUrl", data.url);
+      toast.success("Testimonial image uploaded", { id: toastId });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not upload image", {
+        id: toastId,
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
   function useFeedbackAsDraft(item: PublishableFeedback) {
     setEditingId(null);
     setForm({
@@ -131,8 +169,10 @@ export default function TestimonialsPage() {
           ? `${item.examTrack} feedback from ${item.fullName}`
           : `Candidate feedback from ${item.fullName}`,
       videoUrl: "",
+      imageUrl: "",
       candidateName: item.fullName,
-      candidateRole: [item.currentRole, item.examTrack].filter(Boolean).join(" • "),
+      candidateRole: [item.currentRole, item.examTrack].filter(Boolean).join(" / "),
+      companyName: item.currentInstitute,
       quote: item.feedback,
       sortOrder: "0",
       isActive: true,
@@ -157,6 +197,7 @@ export default function TestimonialsPage() {
       title: form.title,
       candidateName: form.candidateName,
       candidateRole: form.candidateRole,
+      companyName: form.companyName,
       quote: form.quote,
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
@@ -164,6 +205,10 @@ export default function TestimonialsPage() {
 
     if (form.videoUrl?.trim()) {
       Object.assign(payload, { videoUrl: form.videoUrl.trim() });
+    }
+
+    if (form.imageUrl?.trim()) {
+      Object.assign(payload, { imageUrl: form.imageUrl.trim() });
     }
 
     const toastId = toast.loading(editingId ? "Saving testimonial..." : "Creating testimonial...");
@@ -261,6 +306,43 @@ export default function TestimonialsPage() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="testimonial-image">Candidate Image (optional)</Label>
+              <Input
+                id="testimonial-image"
+                value={form.imageUrl}
+                onChange={(e) => update("imageUrl", e.target.value)}
+                placeholder="Cloudinary image URL or upload below"
+              />
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  <ImageUp className="h-4 w-4" />
+                  {uploadingImage ? "Uploading..." : "Upload Image"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingImage}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        void uploadImage(file);
+                      }
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                {form.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={form.imageUrl}
+                    alt="Testimonial preview"
+                    className="h-14 w-14 rounded-2xl object-cover"
+                  />
+                ) : null}
+              </div>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="testimonial-name">Candidate Name</Label>
@@ -279,6 +361,16 @@ export default function TestimonialsPage() {
                   value={form.candidateRole}
                   onChange={(e) => update("candidateRole", e.target.value)}
                   placeholder="FRCS Urology Candidate"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="testimonial-company">Company / Institute</Label>
+                <Input
+                  id="testimonial-company"
+                  value={form.companyName}
+                  onChange={(e) => update("companyName", e.target.value)}
+                  placeholder="Artemis Hospitals"
                 />
               </div>
             </div>
@@ -438,7 +530,9 @@ export default function TestimonialsPage() {
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900">{item.title}</h3>
                         <p className="mt-1 text-sm text-slate-500">
-                          {item.candidateName || "Candidate"}{item.candidateRole ? ` • ${item.candidateRole}` : ""}
+                          {item.candidateName || "Candidate"}
+                          {item.companyName ? ` • ${item.companyName}` : ""}
+                          {item.candidateRole ? ` • ${item.candidateRole}` : ""}
                         </p>
                       </div>
                       <div className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600">
@@ -449,6 +543,15 @@ export default function TestimonialsPage() {
                     <p className="text-sm leading-6 text-slate-600">
                       {item.quote || "No quote added yet."}
                     </p>
+
+                    {item.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.imageUrl}
+                        alt={item.candidateName || item.title}
+                        className="h-14 w-14 rounded-2xl object-cover"
+                      />
+                    ) : null}
 
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                       <span className="rounded-full bg-slate-100 px-3 py-1">

@@ -26,6 +26,7 @@ export default function AddSectionDialog({
 }: Props) {
   const [title, setTitle] = useState("");
   const [accessTier, setAccessTier] = useState<"free" | "paid">("free");
+  const [sortOrder, setSortOrder] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
@@ -39,11 +40,16 @@ export default function AddSectionDialog({
     await adminFetch("/api/videos/videoSection", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, accessTier }),
+      body: JSON.stringify({
+        title,
+        accessTier,
+        sortOrder: sortOrder.trim() ? Number(sortOrder) : undefined,
+      }),
     });
 
     setTitle("");
     setAccessTier("free");
+    setSortOrder("");
     setLoading(false);
     setOpen(false);
     onCreated();
@@ -71,6 +77,20 @@ export default function AddSectionDialog({
               placeholder="e.g. React Fundamentals"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              className="h-11"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Sort Order
+            </label>
+            <Input
+              type="number"
+              min="1"
+              placeholder="Auto"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
               className="h-11"
             />
           </div>

@@ -1,4 +1,5 @@
 import { adminDb } from "@/lib/firebaseAdmin";
+import { isVisibleUserDoc, normalizeEmail } from "@/lib/server/userIdentity";
 
 export type UserTier = "guest" | "free" | "paid";
 
@@ -65,7 +66,9 @@ export async function getGuestUsers(): Promise<AdminUser[]> {
     courseSnapshot.docs.map((doc) => [doc.id, String(doc.data().title || doc.id)])
   );
 
-  return snapshot.docs.map((doc) => normalizeUser(doc, courseTitleMap));
+  return snapshot.docs
+    .filter((doc) => isVisibleUserDoc(doc.data() ?? {}))
+    .map((doc) => normalizeUser(doc, courseTitleMap));
 }
 
 export async function getAllUsers(): Promise<AdminUser[]> {
@@ -78,7 +81,25 @@ export async function getAllUsers(): Promise<AdminUser[]> {
     courseSnapshot.docs.map((doc) => [doc.id, String(doc.data().title || doc.id)])
   );
 
-  return userSnapshot.docs
+  const normalizedUsers = userSnapshot.docs
+    .filter((doc) => isVisibleUserDoc(doc.data() ?? {}))
     .map((doc) => normalizeUser(doc, courseTitleMap))
     .filter((user) => user.tier === "free" || user.tier === "paid");
+
+  const deduped = new Map<string, AdminUser>();
+
+  normalizedUsers.forEach((user) => {
+    const key = normalizeEmail(user.email) || user.id;
+    const existing = deduped.get(key);
+    if (!existing) {
+      deduped.set(key, user);
+      return;
+    }
+
+    if (existing.tier !== "paid" && user.tier === "paid") {
+      deduped.set(key, user);
+    }
+  });
+
+  return Array.from(deduped.values());
 }

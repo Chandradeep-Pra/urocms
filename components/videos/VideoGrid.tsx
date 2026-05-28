@@ -26,7 +26,7 @@ import { syncVideoToStorage } from "@/lib/services/videoAdminClient";
 interface Props {
   activeSection: string;
   videos: VideoItem[];
-  sections: { id: string; title: string; accessTier?: "free" | "paid" }[];
+  sections: { id: string; title: string; accessTier?: "free" | "paid"; sortOrder?: number }[];
   onDelete: (id: string) => void;
   onPlay: (video: VideoItem) => void;
   onVideosUpdated: () => void | Promise<void>;
@@ -76,6 +76,7 @@ export default function VideoGrid({
       videoUrl: video.videoUrl,
       sectionId: video.sectionId || "",
       accessTier: video.accessTier || "free",
+      sortOrder: video.sortOrder,
       thumbnailUrl: video.thumbnailUrl || "",
     });
   };
@@ -105,6 +106,7 @@ export default function VideoGrid({
           videoUrl: form.videoUrl,
           sectionId: form.sectionId || "",
           accessTier: form.accessTier || "free",
+          sortOrder: typeof form.sortOrder === "number" ? form.sortOrder : undefined,
           thumbnailUrl: form.thumbnailUrl || "",
         }),
       });
@@ -160,6 +162,7 @@ export default function VideoGrid({
           videoUrl: form.videoUrl,
           sectionId: form.sectionId || "",
           accessTier: form.accessTier || "free",
+          sortOrder: typeof form.sortOrder === "number" ? form.sortOrder : undefined,
           thumbnailUrl: data.url,
         }),
       });
@@ -469,6 +472,18 @@ export default function VideoGrid({
                           <option value="paid">Paid</option>
                         </select>
                       </div>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={form.sortOrder ?? ""}
+                        onChange={(e) =>
+                          setForm((current) => ({
+                            ...current,
+                            sortOrder: e.target.value ? Number(e.target.value) : undefined,
+                          }))
+                        }
+                        placeholder="Video sort order"
+                      />
                     </div>
 
                     <div className="flex gap-2">
@@ -497,7 +512,10 @@ export default function VideoGrid({
                       <h3 className="line-clamp-2 text-base font-semibold text-slate-900">
                         {video.title}
                       </h3>
-                      {/* <ChevronBadge label={getSectionName(video.sectionId)} /> */}
+                      <div className="flex items-center gap-2">
+                        <ChevronBadge label={`#${video.sortOrder || "-"}`} />
+                        <ChevronBadge label={getSectionName(video.sectionId)} />
+                      </div>
                     </div>
 
                     <p className="line-clamp-2 text-sm leading-6 text-slate-500">

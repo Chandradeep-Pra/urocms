@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
   if (response) return response;
 
   try {
-    const { title, accessTier } = await req.json()
-    const result = await createVideoSection({ title, accessTier });
+    const { title, accessTier, sortOrder } = await req.json()
+    const result = await createVideoSection({ title, accessTier, sortOrder });
     return Response.json(result)
   } catch (error: any) {
     return Response.json(

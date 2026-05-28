@@ -1,35 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { adminDb } from "@/lib/firebaseAdmin";
 import {
   getConfiguredDriveResourceIds,
   grantDriveAccessToEmail,
 } from "@/lib/server/googleDrive";
+import { requireAppUser } from "@/lib/server/appSession";
+import { normalizeEmail } from "@/lib/server/userIdentity";
 
 export async function POST(req: NextRequest) {
   try {
-    const authHeader = req.headers.get("authorization");
-
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.split("Bearer ")[1];
-    const decoded = await adminAuth.verifyIdToken(token);
+    const auth = await requireAppUser(req);
+    if ("response" in auth) return auth.response;
 
     const { name, phone, country, googleAccessEmail } = await req.json();
-    const normalizedAccessEmail =
-      (googleAccessEmail || decoded.email || "").trim().toLowerCase();
+    const normalizedAccessEmail = normalizeEmail(
+      googleAccessEmail || auth.user.googleAccessEmail || auth.user.email || ""
+    );
 
-    await adminDb.collection("users").doc(decoded.uid).set({
+    await adminDb.collection("users").doc(auth.user.uid).set({
       name,
       phone,
       country,
       tier: "free",
       googleAccessEmail: normalizedAccessEmail || null,
-      upgradedAt: new Date(),
+      canonicalUserId: auth.user.uid,
+      isShadowDuplicate: false,
+      upgradedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }, { merge: true });
 
     const configuredResourceIds = getConfiguredDriveResourceIds();

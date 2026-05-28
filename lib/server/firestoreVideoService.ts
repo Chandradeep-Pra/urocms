@@ -30,6 +30,7 @@ export interface SaveVideoToFirestoreInput {
   videoUrl: string;
   sectionId?: string;
   accessTier?: VideoAccessTier;
+  sortOrder?: number;
   thumbnailUrl?: string;
   storagePath?: string;
   storageBucket?: string;
@@ -61,6 +62,21 @@ function getExtensionFromMetadata(name: string, mimeType: string) {
 
 function normalizeTier(value: unknown): VideoAccessTier {
   return value === "paid" ? "paid" : "free";
+}
+
+function normalizeSortOrder(value: unknown, fallback = 0) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
 }
 
 async function getSectionRecord(sectionId?: string) {
@@ -123,6 +139,16 @@ async function ensureVideoNotDuplicated(
   }
 }
 
+async function getNextVideoSortOrder(sectionId: string, excludingVideoId?: string) {
+  const snapshot = await adminDb.collection("videoItems").get();
+
+  return (
+    snapshot.docs
+      .filter((doc) => doc.id !== excludingVideoId && String(doc.data().sectionId || "") === sectionId)
+      .reduce((max, doc) => Math.max(max, normalizeSortOrder(doc.data().sortOrder, 0)), 0) + 1
+  );
+}
+
 export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
   const title = input.title?.trim();
   const videoUrl = input.videoUrl?.trim();
@@ -143,6 +169,7 @@ export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
     ? await adminDb.collection("videoItems").doc(input.videoId).get()
     : null;
   const existingData = existingDoc?.exists ? existingDoc.data() ?? {} : {};
+  const previousSectionId = String(existingData.sectionId || "");
   const sourceChanged =
     Boolean(input.videoId) &&
     (
@@ -158,6 +185,20 @@ export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
     input.videoId
   );
 
+  let resolvedSortOrder: number;
+  const requestedSortOrder = normalizeSortOrder(input.sortOrder, 0);
+  if (requestedSortOrder > 0) {
+    resolvedSortOrder = requestedSortOrder;
+  } else if (input.videoId) {
+    const existingSortOrder = normalizeSortOrder(existingData.sortOrder, 0);
+    resolvedSortOrder =
+      previousSectionId !== sectionId
+        ? await getNextVideoSortOrder(sectionId, input.videoId)
+        : existingSortOrder || (await getNextVideoSortOrder(sectionId, input.videoId));
+  } else {
+    resolvedSortOrder = await getNextVideoSortOrder(sectionId);
+  }
+
   const payload = {
     title,
     description: input.description?.trim() || "",
@@ -167,6 +208,7 @@ export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
     sectionId,
     accessTier,
     effectiveAccessTier,
+    sortOrder: resolvedSortOrder,
     sectionAccessTier: section?.accessTier || "free",
     sectionTitleSnapshot: section?.title || "",
     thumbnailUrl: input.thumbnailUrl?.trim() || "",
