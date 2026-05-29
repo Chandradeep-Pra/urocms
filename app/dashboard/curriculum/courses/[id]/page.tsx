@@ -397,7 +397,9 @@ export default function CourseDetailPage() {
           ...withoutCurrent,
           {
             ...existingGrant,
-            vivaMinutes: Math.max(0, Number(minutes || 0)),
+            vivaMinutes:
+              Math.max(0, Number(existingGrant.vivaMinutes || 0)) +
+              Math.max(0, Number(minutes || 0)),
           },
         ],
       };

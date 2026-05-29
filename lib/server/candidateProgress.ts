@@ -42,6 +42,10 @@ export function getMockAttemptsCollection(uid: string) {
   return adminDb.collection("mockAttempts").doc(uid).collection("items");
 }
 
+export function getQuizAttemptsCollection(uid: string) {
+  return adminDb.collection("quizAttempts").doc(uid).collection("items");
+}
+
 export function getVivaAttemptsCollection(uid: string) {
   return adminDb.collection("vivaAttempts").doc(uid).collection("items");
 }

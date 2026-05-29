@@ -1,36 +1,48 @@
-//ts-nocheck
-
 import { adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 
-/* ---------------------------------- */
-/* UPDATE QUIZ */
-/* ---------------------------------- */
+type QuizRouteContext = {
+  params: Promise<{ id: string }>;
+};
 
-export async function PUT(
-  req: NextRequest,
-  context: { params: Promise<{ verificationId: string }> }
-) {
+function mapQuestionForAdmin(data: any, index: number) {
+  const optionLabels = ["A", "B", "C", "D", "E"];
+
+  return {
+    id: data.id ?? `${index + 1}`,
+    question_number: index + 1,
+    question: data.questionText ?? "",
+    options: Array.isArray(data.options) ? data.options : [],
+    correct_answer:
+      typeof data.correctAnswer === "number"
+        ? optionLabels[data.correctAnswer] ?? null
+        : null,
+    image: data.questionImage || null,
+    solution: data.explanation
+      ? [
+          {
+            image: data.explanation.image || null,
+            explanation: data.explanation.text || "",
+          },
+        ]
+      : [],
+  };
+}
+
+export async function PUT(req: NextRequest, context: QuizRouteContext) {
   const { response } = await requireAdminSession(req);
   if (response) return response;
 
   try {
-    const { verificationId } = await context.params;
+    const { id } = await context.params;
     const body = await req.json();
-
-    const docRef = adminDb
-      .collection("quizzes")
-      .doc(verificationId);
-
+    const docRef = adminDb.collection("quizzes").doc(id);
     const doc = await docRef.get();
 
     if (!doc.exists) {
-      return NextResponse.json(
-        { error: "Quiz not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
     await docRef.update({
@@ -39,41 +51,23 @@ export async function PUT(
     });
 
     return NextResponse.json({ success: true });
-
-  } catch (err) {
-    console.error("Update quiz error:", err);
-    return NextResponse.json(
-      { error: "Failed to update quiz" },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("Update quiz error:", error);
+    return NextResponse.json({ error: "Failed to update quiz" }, { status: 500 });
   }
 }
 
-/* ---------------------------------- */
-/* SOFT DELETE QUIZ */
-/* ---------------------------------- */
-
-export async function DELETE(
-  req: NextRequest,
-  context: { params: Promise<{ verificationId: string }> }
-) {
+export async function DELETE(req: NextRequest, context: QuizRouteContext) {
   const { response } = await requireAdminSession(req);
   if (response) return response;
 
   try {
-    const { verificationId } = await context.params;
-
-    const docRef = adminDb
-      .collection("quizzes")
-      .doc(verificationId);
-
+    const { id } = await context.params;
+    const docRef = adminDb.collection("quizzes").doc(id);
     const doc = await docRef.get();
 
     if (!doc.exists) {
-      return NextResponse.json(
-        { error: "Quiz not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
     await docRef.update({
@@ -82,104 +76,52 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-
-  } catch (err) {
-    console.error("Delete quiz error:", err);
-    return NextResponse.json(
-      { error: "Failed to delete quiz" },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("Delete quiz error:", error);
+    return NextResponse.json({ error: "Failed to delete quiz" }, { status: 500 });
   }
 }
 
-/* ---------------------------------- */
-/* GET QUIZ BY VERIFICATION ID */
-/* ---------------------------------- */
-
-export async function GET(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: NextRequest, context: QuizRouteContext) {
   const { response } = await requireAdminSession(req);
   if (response) return response;
 
   try {
     const { id } = await context.params;
-    const verificationId = id;
-
-    console.log("Fetching quiz:", verificationId);
-
-    const doc = await adminDb
-      .collection("quizzes")
-      .doc(verificationId)
-      .get();
+    const doc = await adminDb.collection("quizzes").doc(id).get();
 
     if (!doc.exists) {
-      return NextResponse.json(
-        { error: "Quiz not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
-    const quizData = doc.data();
-    console.log("Quiz data:", quizData);
-
-    /* ------------------------------------ */
-    /* 🔥 Fetch & Format Questions */
-    /* ------------------------------------ */
-
+    const quizData = doc.data() ?? {};
     const questions: any[] = [];
 
-if (quizData?.bankIds?.length) {
-  for (const bankId of quizData.bankIds) {
-    const questionSnapshot = await adminDb
-      .collection("questions")
-      .where("bankId", "==", bankId)
-      .get();
+    if (Array.isArray(quizData.bankIds)) {
+      for (const bankId of quizData.bankIds) {
+        const questionSnapshot = await adminDb
+          .collection("questions")
+          .where("bankId", "==", bankId)
+          .get();
 
-    questionSnapshot.forEach((doc) => {
-      questions.push(doc.data());
-    });
-  }
-}
-
-// 🔥 Format exactly for RN
-const optionLabels = ["A", "B", "C", "D"];
-
-const formattedQuestions = questions.map((q, index) => ({
-  question_number: index + 1,
-  question: q.questionText, // 🔥 correct field
-  options: q.options,
-  correct_answer: optionLabels[q.correctAnswer], // 🔥 convert index → A/B/C/D
-  image: q.questionImage || null,
-  solution: q.explanation
-  ? [
-      {
-        image: q.explanation.image || null,
-        explanation: q.explanation.text || "",
-      },
-    ]
-  : [],
-
-}));
-    console.log("Formatted questions:", formattedQuestions);
-    /* ------------------------------------ */
+        questionSnapshot.forEach((questionDoc) => {
+          questions.push({
+            id: questionDoc.id,
+            ...questionDoc.data(),
+          });
+        });
+      }
+    }
 
     return NextResponse.json({
       quiz: {
         id: doc.id,
         ...quizData,
-        questions: formattedQuestions, // 🔥 Added
+        questions: questions.map(mapQuestionForAdmin),
       },
     });
-
-  } catch (err) {
-    console.error("Quiz fetch error:", err);
-
-    return NextResponse.json(
-      { error: "Failed to load quiz" },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("Quiz fetch error:", error);
+    return NextResponse.json({ error: "Failed to load quiz" }, { status: 500 });
   }
 }
-

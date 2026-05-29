@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, Clock, FileText } from "lucide-react";
+import { Edit, Trash2, Clock, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -16,12 +16,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import QuizBuilderPage from "@/components/dashboard/QuizBuilder";
+import { adminFetch } from "@/lib/client/adminApi";
 
 interface Quiz {
   id: string;
   title: string;
+  description?: string;
+  type?: string;
   durationMinutes: number;
   bankIds: string[];
+  questionIds?: string[];
   createdAt?: any;
 }
 
@@ -29,6 +33,7 @@ const MockTestsPage = () => {
   const [tests, setTests] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
 
   /* ───────── LOAD QUIZZES ───────── */
 
@@ -39,11 +44,16 @@ const MockTestsPage = () => {
   const loadQuizzes = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/quizzes");
+      const res = await adminFetch("/api/quizzes");
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to load quizzes");
+      }
+
       setTests(data.quizzes || []);
     } catch (err) {
-      toast.error("Failed to load quizzes");
+      toast.error(err instanceof Error ? err.message : "Failed to load quizzes");
     } finally {
       setLoading(false);
     }
@@ -55,11 +65,15 @@ const MockTestsPage = () => {
     if (!deleteId) return;
 
     try {
-      const res = await fetch(`/api/quizzes/${deleteId}`, {
+      const res = await adminFetch(`/api/quizzes/${deleteId}`, {
         method: "DELETE",
       });
 
-      if (!res.ok) throw new Error();
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to delete quiz");
+      }
 
       setTests((prev) =>
         prev.filter((quiz) => quiz.id !== deleteId)
@@ -67,7 +81,7 @@ const MockTestsPage = () => {
 
       toast.success("Quiz deleted");
     } catch (err) {
-      toast.error("Failed to delete quiz");
+      toast.error(err instanceof Error ? err.message : "Failed to delete quiz");
     } finally {
       setDeleteId(null);
     }
@@ -93,7 +107,14 @@ const MockTestsPage = () => {
     <div className="space-y-8">
 
       {/* QUIZ BUILDER */}
-      <QuizBuilderPage />
+      <QuizBuilderPage
+        initialQuiz={editingQuiz}
+        onSaved={async () => {
+          await loadQuizzes();
+          setEditingQuiz(null);
+        }}
+        onCancelEdit={() => setEditingQuiz(null)}
+      />
 
       {/* HEADER */}
       <div className="flex items-center justify-between">
@@ -143,6 +164,7 @@ const MockTestsPage = () => {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
+                      onClick={() => setEditingQuiz(test)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>

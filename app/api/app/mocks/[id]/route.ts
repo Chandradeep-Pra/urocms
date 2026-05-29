@@ -24,6 +24,27 @@ export async function GET(
       id: mockDoc.id,
       type: String(mockData?.type || "mock"),
     });
+
+    if (!mockAccess.allowed || mockAccess.mode === "locked") {
+      return NextResponse.json(
+        {
+          error:
+            mockAccess.reason ||
+            "This mock is locked until the matching course or section is unlocked.",
+          access: {
+            tier: auth.user.tier,
+            allowed: false,
+            mode: "locked",
+            previewLimit: null,
+            requiredTier: null,
+            reason: mockAccess.reason ?? null,
+            courseIds: mockAccess.courseIds,
+          },
+        },
+        { status: 403 }
+      );
+    }
+
     const quizDoc = await adminDb.collection("quizzes").doc(mockData?.quizId).get();
 
     if (!quizDoc.exists) {

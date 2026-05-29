@@ -193,9 +193,23 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
       .filter((course) => course.accessTier === "free" && isSignedIn(user))
       .map((course) => course.id)
   );
+  const userSectionGrantMap = new Map(
+    courses.map((course) => [
+      course.id,
+      course.memberAccessGrants.find((grant) => grant.userId === user.uid) ?? null,
+    ])
+  );
+  const sectionScopedCourseIds = new Set(
+    Array.from(userSectionGrantMap.entries())
+      .filter(([, grant]) => Boolean(grant))
+      .map(([courseId]) => courseId)
+  );
   const explicitlyGrantedCourseIds = new Set(
     courses
-      .filter((course) => course.memberUserIds.includes(user.uid))
+      .filter(
+        (course) =>
+          course.memberUserIds.includes(user.uid) && !sectionScopedCourseIds.has(course.id)
+      )
       .map((course) => course.id)
   );
   const fullCourseIds = new Set([
@@ -211,12 +225,6 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
     ...Array.from(planCourseIds),
     ...Array.from(freeCourseIds),
   ]);
-  const userSectionGrantMap = new Map(
-    courses.map((course) => [
-      course.id,
-      course.memberAccessGrants.find((grant) => grant.userId === user.uid) ?? null,
-    ])
-  );
   const vivaMinutesFromGrants = courses.reduce((total, course) => {
     const grant = userSectionGrantMap.get(course.id);
     if (!grant) return total;
@@ -529,12 +537,12 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
     }
 
     return {
-      allowed: true,
-      mode: "preview",
-      previewLimit: getPreviewLimit(type),
-      reason: `Preview mode: first ${getPreviewLimit(type)} questions only.`,
+      allowed: false,
+      mode: "locked",
+      previewLimit: null,
+      reason: "This mock is locked until the matching course or section is unlocked.",
       courseIds,
-      source: "preview",
+      source: "locked",
     };
   }
 

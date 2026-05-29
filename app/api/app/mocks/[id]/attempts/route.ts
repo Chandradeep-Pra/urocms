@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import {
   averageWithNext,
   getMockAttemptsCollection,
@@ -48,9 +49,25 @@ export async function POST(
     const mockData = mockDoc.data();
     const existingAttempts = Array.isArray(mockData?.attempts) ? mockData.attempts : [];
     const normalizedMarks = typeof marks === "number" ? marks : Number(marks);
+    const accessContext = await buildAppContentAccessContext(auth.user);
+    const mockAccess = accessContext.getMockAccess({
+      id,
+      type: String(mockData?.type || "mock"),
+    });
 
     if (Number.isNaN(normalizedMarks)) {
       return NextResponse.json({ error: "Invalid marks" }, { status: 400 });
+    }
+
+    if (!mockAccess.allowed || mockAccess.mode === "locked") {
+      return tierLockedResponse({
+        feature: mockData?.type === "grand-mock" ? "grand-mock" : "mock",
+        tier: auth.user.tier,
+        requiredTier: "paid",
+        reason:
+          mockAccess.reason ||
+          "This mock is locked until the matching course or section is unlocked.",
+      });
     }
 
     const attemptType =

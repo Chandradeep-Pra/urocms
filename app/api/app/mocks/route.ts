@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
           allowed: access.allowed,
           mode: access.mode,
           previewLimit: access.previewLimit ?? null,
-          requiredTier: access.mode === "locked" ? "paid" : null,
+          requiredTier: null,
           reason: access.reason ?? null,
           courseIds: access.courseIds,
         },

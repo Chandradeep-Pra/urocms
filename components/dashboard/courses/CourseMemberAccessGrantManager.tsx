@@ -76,23 +76,17 @@ export function CourseMemberAccessGrantManager({
     );
   });
 
+  const courseMemberIds = new Set(course.memberUserIds || []);
   const grantUserIds = new Set((course.memberAccessGrants || []).map((grant) => grant.userId));
-  const fullMemberIds = new Set(course.memberUserIds || []);
   const availableMembers = filteredMembers.filter(
-    (user) => !grantUserIds.has(user.id) && !fullMemberIds.has(user.id)
+    (user) => courseMemberIds.has(user.id) && !grantUserIds.has(user.id)
+  );
+  const visibleGrants = (course.memberAccessGrants || []).filter((grant) =>
+    courseMemberIds.has(grant.userId)
   );
 
   const draftSeed = useMemo(() => {
     const next: Record<string, string> = {};
-
-    (course.memberAccessGrants || []).forEach((grant) => {
-      (grant.sectionGrants || []).forEach((sectionGrant) => {
-        next[`${grant.userId}:${sectionGrant.sectionId}`] = String(
-          Math.max(0, Number(sectionGrant.vivaMinutes || 0))
-        );
-      });
-    });
-
     return next;
   }, [course.memberAccessGrants]);
 
@@ -127,7 +121,7 @@ export function CourseMemberAccessGrantManager({
           </p>
           {availableMembers.length === 0 ? (
             <p className="mt-3 text-sm text-slate-500">
-              No additional non-member users match the current search.
+              No checked course members are waiting to be added to section grants.
             </p>
           ) : (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -146,13 +140,13 @@ export function CourseMemberAccessGrantManager({
           )}
         </div>
 
-        {(course.memberAccessGrants || []).length === 0 ? (
+        {visibleGrants.length === 0 ? (
           <p className="text-sm text-slate-500">
-            No section-level learner grants configured yet.
+            No checked course members have section-level grants configured yet.
           </p>
         ) : (
           <div className="space-y-4">
-            {(course.memberAccessGrants || []).map((grant) => (
+            {visibleGrants.map((grant) => (
               <div
                 key={grant.userId}
                 className="rounded-3xl border border-slate-200 bg-slate-50 p-4"
@@ -289,13 +283,19 @@ export function CourseMemberAccessGrantManager({
                           {section.contentType === "ai-vivas" && mode !== "none" ? (
                             <div className="mt-4 max-w-[420px] space-y-2">
                               <Label>AI viva minutes for this learner</Label>
+                              <p className="text-xs text-slate-500">
+                                Currently allotted:{" "}
+                                <span className="font-semibold text-slate-700">
+                                  {Math.max(0, Number(sectionGrant?.vivaMinutes || 0))} minute(s)
+                                </span>
+                              </p>
                               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                                 <Input
                                   type="number"
                                   min={0}
                                   value={
                                     vivaMinuteDrafts[`${grant.userId}:${section.id}`] ??
-                                    String(sectionGrant?.vivaMinutes ?? 0)
+                                    ""
                                   }
                                   onChange={(event) =>
                                     setVivaMinuteDrafts((prev) => ({
@@ -307,27 +307,36 @@ export function CourseMemberAccessGrantManager({
                                 <Button
                                   type="button"
                                   className="bg-cyan-600 text-white hover:bg-cyan-700"
-                                  onClick={() =>
-                                    onSetVivaMinutes(
-                                      grant.userId,
-                                      section.id,
-                                      Math.max(
-                                        0,
-                                        Number(
-                                          vivaMinuteDrafts[`${grant.userId}:${section.id}`] ??
-                                            sectionGrant?.vivaMinutes ??
-                                            0
-                                        )
+                                  disabled={
+                                    Math.max(
+                                      0,
+                                      Number(
+                                        vivaMinuteDrafts[`${grant.userId}:${section.id}`] ?? 0
                                       )
-                                    )
+                                    ) <= 0
                                   }
+                                  onClick={() => {
+                                    const draftMinutes = Math.max(
+                                      0,
+                                      Number(
+                                        vivaMinuteDrafts[`${grant.userId}:${section.id}`] ?? 0
+                                      )
+                                    );
+
+                                    if (draftMinutes <= 0) return;
+
+                                    onSetVivaMinutes(grant.userId, section.id, draftMinutes);
+                                    setVivaMinuteDrafts((prev) => ({
+                                      ...prev,
+                                      [`${grant.userId}:${section.id}`]: "",
+                                    }));
+                                  }}
                                 >
                                   Allot{" "}
                                   {Math.max(
                                     0,
                                     Number(
                                       vivaMinuteDrafts[`${grant.userId}:${section.id}`] ??
-                                        sectionGrant?.vivaMinutes ??
                                         0
                                     )
                                   )}{" "}
@@ -335,8 +344,8 @@ export function CourseMemberAccessGrantManager({
                                 </Button>
                               </div>
                               <p className="text-xs text-slate-500">
-                                These minutes are consumed across the viva cases granted from this
-                                section.
+                                Each new allotment adds on top of the learner&apos;s existing viva
+                                credit for this section.
                               </p>
                             </div>
                           ) : null}

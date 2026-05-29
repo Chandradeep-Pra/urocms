@@ -1,14 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Crown, MoreHorizontal, Trash2, UserCheck, UserRoundPlus } from "lucide-react";
+import {
+  Crown,
+  MoreHorizontal,
+  Trash2,
+  UserCheck,
+  UserRound,
+  UserRoundPlus,
+} from "lucide-react";
 import { ConfirmDialog } from "@/components/dashboard/shared/ConfirmDialog";
 import type { AdminUser } from "@/lib/server/guestService";
 import { AssignedCoursesCell } from "./AssignedCoursesCell";
@@ -103,6 +112,13 @@ export function UserTable({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href={`/dashboard/users/${user.id}`}>
+                      <UserRound className="mr-2 h-4 w-4" />
+                      View Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => onSetTier(user.id, action.nextTier)}>
                     <ActionIcon className="mr-2 h-4 w-4" />
                     {action.label}

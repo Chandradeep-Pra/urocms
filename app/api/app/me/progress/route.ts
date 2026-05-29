@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   defaultUserStats,
   getMockAttemptsCollection,
+  getQuizAttemptsCollection,
   getVideoProgressCollection,
   getVivaAttemptsCollection,
   getUserStatsRef,
@@ -13,12 +14,16 @@ export async function GET(req: NextRequest) {
   if ("response" in auth) return auth.response;
 
   try {
-    const [statsDoc, continueWatchingSnap, recentMocksSnap, recentVivaSnap] =
+    const [statsDoc, continueWatchingSnap, recentQuizzesSnap, recentMocksSnap, recentVivaSnap] =
       await Promise.all([
         getUserStatsRef(auth.user.uid).get(),
         getVideoProgressCollection(auth.user.uid)
           .where("completed", "==", false)
           .orderBy("lastWatchedAt", "desc")
+          .limit(5)
+          .get(),
+        getQuizAttemptsCollection(auth.user.uid)
+          .orderBy("submittedAt", "desc")
           .limit(5)
           .get(),
         getMockAttemptsCollection(auth.user.uid)
@@ -43,6 +48,11 @@ export async function GET(req: NextRequest) {
       ...doc.data(),
     }));
 
+    const recentQuizzes = recentQuizzesSnap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
     const recentMocks = recentMocksSnap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -56,10 +66,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       stats,
       continueWatching,
+      recentQuizzes,
       recentMocks,
       recentVivaAttempts,
       summary: {
         continueWatchingCount: continueWatching.length,
+        recentQuizCount: recentQuizzes.length,
         recentMockCount: recentMocks.length,
         recentVivaCount: recentVivaAttempts.length,
       },

@@ -2,6 +2,7 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import {
   getBookmarksCollection,
   getMockAttemptsCollection,
+  getQuizAttemptsCollection,
   getUserStatsRef,
   getVideoProgressCollection,
   getVivaAttemptsCollection,
@@ -136,6 +137,10 @@ async function mergeUserScopedData(fromUid: string, toUid: string) {
     copySubcollectionById({
       from: getMockAttemptsCollection(fromUid),
       to: getMockAttemptsCollection(toUid),
+    }),
+    copySubcollectionById({
+      from: getQuizAttemptsCollection(fromUid),
+      to: getQuizAttemptsCollection(toUid),
     }),
     copySubcollectionById({
       from: getVivaAttemptsCollection(fromUid),
