@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const auth = await requireAppUser(req);
     if ("response" in auth) return auth.response;
 
-    const { name, phone, country, googleAccessEmail } = await req.json();
+    const { name, phone, country, googleAccessEmail, profileImageUrl } = await req.json();
     const normalizedAccessEmail = normalizeEmail(
       googleAccessEmail || auth.user.googleAccessEmail || auth.user.email || ""
     );
@@ -21,6 +21,9 @@ export async function POST(req: NextRequest) {
       name,
       phone,
       country,
+      ...(typeof profileImageUrl === "string"
+        ? { profileImageUrl: profileImageUrl.trim() || null }
+        : {}),
       tier: "free",
       googleAccessEmail: normalizedAccessEmail || null,
       canonicalUserId: auth.user.uid,

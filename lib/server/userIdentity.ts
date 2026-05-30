@@ -337,6 +337,11 @@ export async function resolveCanonicalUserRecord(params: {
         normalizedEmail
       ) ?? normalizedEmail,
     name: firstNonEmptyString(canonical.data.name, params.firebaseName, currentData.name),
+    profileImageUrl: firstNonEmptyString(
+      canonical.data.profileImageUrl,
+      currentData.profileImageUrl,
+      ...duplicates.map((doc) => doc.data.profileImageUrl)
+    ),
     phone: firstNonEmptyString(canonical.data.phone, currentData.phone),
     country: firstNonEmptyString(canonical.data.country, currentData.country),
     source:

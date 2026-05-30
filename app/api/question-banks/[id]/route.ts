@@ -17,15 +17,36 @@ export async function PATCH(
   try {
     const { id } = await context.params;
     const { title, section } = await req.json();
+    const normalizedTitle = typeof title === "string" ? title.trim() : "";
+    const normalizedSection = typeof section === "string" ? section.trim() : "";
+    const updates: Record<string, unknown> = {
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    if (title !== undefined) {
+      if (!normalizedTitle) {
+        return NextResponse.json(
+          { error: "Title cannot be empty" },
+          { status: 400 }
+        );
+      }
+      updates.title = normalizedTitle;
+    }
+
+    if (section !== undefined) {
+      if (!["section1", "section2"].includes(normalizedSection)) {
+        return NextResponse.json(
+          { error: "Invalid section selected" },
+          { status: 400 }
+        );
+      }
+      updates.section = normalizedSection;
+    }
 
     await adminDb
       .collection("questionBanks")
       .doc(id)
-      .update({
-        ...(title && { title }),
-        ...(section && { section }),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
+      .update(updates);
 
     return NextResponse.json({ success: true });
 

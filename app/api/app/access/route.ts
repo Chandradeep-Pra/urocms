@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       uid: auth.user.uid,
       email: auth.user.email,
       name: auth.user.name,
+      profileImageUrl: auth.user.profileImageUrl,
       googleAccessEmail: auth.user.googleAccessEmail,
       activeCourseIds: auth.user.activeCourseIds,
       activePlanId: planAccess.activePlanId,

@@ -256,6 +256,20 @@ export default function QuestionBankManager({banks, setBanks, fetchBanks}: Quest
                 </span>
               </div>
 
+              <div className="mt-4 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEdit(bank);
+                  }}
+                >
+                  <Pencil className="mr-1 h-4 w-4" />
+                  Rename / Edit
+                </Button>
+              </div>
+
               {/* EXPANDED AREA */}
               {expanded && (
                 <div className="mt-6 pt-6 border-t space-y-3">

@@ -8,6 +8,7 @@ export interface AppUserSession {
   uid: string;
   email: string | null;
   name: string | null;
+  profileImageUrl: string | null;
   tier: AppTier;
   googleAccessEmail: string | null;
   source: string | null;
@@ -75,6 +76,10 @@ export async function requireAppUser(req: NextRequest) {
         uid: resolved.uid,
         email: user.email ?? decoded.email ?? null,
         name: user.name ?? decoded.name ?? null,
+        profileImageUrl:
+          typeof user.profileImageUrl === "string" && user.profileImageUrl.trim()
+            ? user.profileImageUrl.trim()
+            : null,
         tier: normalizeTier(user.tier),
         googleAccessEmail: user.googleAccessEmail ?? user.email ?? decoded.email ?? null,
         source: user.source ?? decoded.firebase.sign_in_provider ?? null,

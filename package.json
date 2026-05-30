@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migrate:firestore": "node scripts/migrate-firestore.js"
+    "migrate:firestore": "node scripts/migrate-firestore.js",
+    "import:grand-mock-1": "node scripts/import-grand-mock-1.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
