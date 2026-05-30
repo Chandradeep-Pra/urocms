@@ -8,18 +8,44 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+function inferImageMimeType(file: File) {
+  const explicitType = typeof file.type === "string" ? file.type.trim().toLowerCase() : "";
+  if (explicitType.startsWith("image/")) {
+    return explicitType;
+  }
+
+  const name = typeof file.name === "string" ? file.name.trim().toLowerCase() : "";
+  if (name.endsWith(".png")) return "image/png";
+  if (name.endsWith(".webp")) return "image/webp";
+  if (name.endsWith(".gif")) return "image/gif";
+  if (name.endsWith(".heic")) return "image/heic";
+  if (name.endsWith(".heif")) return "image/heif";
+  if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+  return "";
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File;
+    const file = formData.get("file");
     const folder = (formData.get("folder") as string) || "urocms";
 
-    if (!file) {
+    if (!file || typeof file === "string") {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    if (typeof (file as File).arrayBuffer !== "function") {
+      return NextResponse.json(
+        { error: "Unsupported upload payload" },
+        { status: 400 }
+      );
+    }
+
+    const normalizedFile = file as File;
+    const mimeType = inferImageMimeType(normalizedFile);
+
     // Validate file type
-    if (!file.type.startsWith("image/")) {
+    if (!mimeType) {
       return NextResponse.json(
         { error: "Only image files are allowed" },
         { status: 400 }
@@ -27,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Convert file to buffer
-    const bytes = await file.arrayBuffer();
+    const bytes = await normalizedFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
     // Upload to Cloudinary using stream
@@ -62,7 +88,12 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
-      { error: "Upload failed" },
+      {
+        error:
+          error instanceof Error && error.message
+            ? error.message
+            : "Upload failed",
+      },
       { status: 500 }
     );
   }

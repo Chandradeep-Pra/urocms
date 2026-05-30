@@ -33,14 +33,33 @@ export async function PATCH(req: NextRequest) {
       updates.profileImageUrl = profileImageUrl || null;
     }
 
-    await adminDb.collection("users").doc(auth.user.uid).set(updates, { merge: true });
+    const canonicalRef = adminDb.collection("users").doc(auth.user.uid);
+    const authRef =
+      auth.user.authUid && auth.user.authUid !== auth.user.uid
+        ? adminDb.collection("users").doc(auth.user.authUid)
+        : null;
 
-    const updatedDoc = await adminDb.collection("users").doc(auth.user.uid).get();
+    
+
+    await canonicalRef.set(updates, { merge: true });
+
+    if (authRef) {
+      await authRef.set(
+        {
+          ...updates,
+          canonicalUserId: auth.user.uid,
+        },
+        { merge: true }
+      );
+    }
+
+    const updatedDoc = await canonicalRef.get();
     const updatedData = updatedDoc.data() ?? {};
 
     return NextResponse.json({
       success: true,
       profile: {
+        authUid: auth.user.authUid,
         uid: auth.user.uid,
         email: updatedData.email ?? auth.user.email,
         name: updatedData.name ?? auth.user.name,

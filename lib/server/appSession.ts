@@ -5,6 +5,7 @@ import { type AppPlanStatus } from "@/lib/server/appPlanAccess";
 import { normalizeEmail, resolveCanonicalUserRecord } from "@/lib/server/userIdentity";
 
 export interface AppUserSession {
+  authUid: string;
   uid: string;
   email: string | null;
   name: string | null;
@@ -73,6 +74,7 @@ export async function requireAppUser(req: NextRequest) {
 
     return {
       user: {
+        authUid: decoded.uid,
         uid: resolved.uid,
         email: user.email ?? decoded.email ?? null,
         name: user.name ?? decoded.name ?? null,
