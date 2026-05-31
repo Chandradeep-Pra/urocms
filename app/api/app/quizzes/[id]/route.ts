@@ -37,6 +37,15 @@ export async function GET(
       });
     }
 
+    if ((quizType === "mock" || quizType === "grand-mock") && access.mode !== "full") {
+      return tierLockedResponse({
+        feature: quizType,
+        tier: auth.user.tier,
+        requiredTier: "paid",
+        reason: "This mock is locked until it is included in your active plan.",
+      });
+    }
+
     const questions = await getQuestionsForQuiz(quizData);
     const totalQuestionCount = questions.length;
     const visibleQuestions =

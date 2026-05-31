@@ -29,6 +29,17 @@ export async function GET(req: NextRequest) {
         bankIds: Array.isArray(data.bankIds) ? data.bankIds : [],
         type: quizType,
       });
+      const mockPreviewBlocked =
+        (quizType === "mock" || quizType === "grand-mock") && access.mode !== "full";
+      const effectiveAccess = mockPreviewBlocked
+        ? {
+            ...access,
+            allowed: false,
+            mode: "locked" as const,
+            previewLimit: null,
+            reason: "This mock is locked until it is included in your active plan.",
+          }
+        : access;
 
       return {
         id: doc.id,
@@ -40,12 +51,12 @@ export async function GET(req: NextRequest) {
         questionIds: Array.isArray(data.questionIds) ? data.questionIds : [],
         access: {
           tier: auth.user.tier,
-          allowed: access.allowed,
-          mode: access.mode,
-          previewLimit: access.previewLimit,
-          requiredTier: access.mode === "locked" ? "paid" : null,
-          reason: access.reason ?? null,
-          courseIds: access.courseIds,
+          allowed: effectiveAccess.allowed,
+          mode: effectiveAccess.mode,
+          previewLimit: effectiveAccess.previewLimit,
+          requiredTier: effectiveAccess.mode === "locked" ? "paid" : null,
+          reason: effectiveAccess.reason ?? null,
+          courseIds: effectiveAccess.courseIds,
         },
       };
     });
