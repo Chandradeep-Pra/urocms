@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImageUp, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,12 @@ interface AnnouncementForm {
   mediaSrc: string;
 }
 
+interface ActiveAnnouncement {
+  id: string;
+  title: string;
+  subtitle?: string;
+}
+
 export default function AnnouncementManager() {
   const [form, setForm] = useState<AnnouncementForm>({
     title: "",
@@ -35,11 +41,29 @@ export default function AnnouncementManager() {
 
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [activeAnnouncements, setActiveAnnouncements] = useState<ActiveAnnouncement[]>([]);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const update = <K extends keyof AnnouncementForm>(key: K, value: AnnouncementForm[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  async function loadActiveAnnouncements() {
+    try {
+      const res = await adminFetch("/api/announcements", { cache: "no-store" });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok) {
+        setActiveAnnouncements(data?.announcements ?? []);
+      }
+    } catch {
+      setActiveAnnouncements([]);
+    }
+  }
+
+  useEffect(() => {
+    void loadActiveAnnouncements();
+  }, []);
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -96,6 +120,7 @@ export default function AnnouncementManager() {
       }
 
       toast.success("Announcement published");
+      await loadActiveAnnouncements();
 
       setForm({
         title: "",
@@ -113,14 +138,70 @@ export default function AnnouncementManager() {
     }
   }
 
+  async function unpublishAnnouncement(id: string) {
+    try {
+      const res = await adminFetch(`/api/announcements?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to unpublish");
+      }
+
+      toast.success("Announcement unpublished");
+      await loadActiveAnnouncements();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to unpublish");
+    }
+  }
+
   return (
     <Card className="rounded-3xl border shadow-xl">
       <CardContent className="space-y-6 p-6">
         <div>
           <h2 className="text-lg font-semibold">Create Announcement</h2>
           <p className="text-sm text-muted-foreground">
-            Push updates directly to the mobile app.
+            Push up to 3 active updates directly to the mobile app.
           </p>
+        </div>
+
+        <div className="rounded-2xl border bg-muted/30 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium">Active announcements</p>
+            <span className="rounded-full bg-background px-3 py-1 text-xs font-semibold">
+              {activeAnnouncements.length}/3
+            </span>
+          </div>
+          {activeAnnouncements.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              {activeAnnouncements.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-background px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{item.title}</p>
+                    {item.subtitle ? (
+                      <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+                    ) : null}
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => unpublishAnnouncement(item.id)}
+                  >
+                    Unpublish
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-muted-foreground">
+              No active announcements are currently published.
+            </p>
+          )}
         </div>
 
         <Input
@@ -244,7 +325,11 @@ export default function AnnouncementManager() {
           </div>
         ) : null}
 
-        <Button onClick={publishAnnouncement} disabled={loading} className="w-full">
+        <Button
+          onClick={publishAnnouncement}
+          disabled={loading || activeAnnouncements.length >= 3}
+          className="w-full"
+        >
           {loading ? "Publishing..." : "Publish Announcement"}
         </Button>
       </CardContent>
