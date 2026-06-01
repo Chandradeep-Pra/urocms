@@ -110,6 +110,9 @@ export function LandingFooter() {
               >
                 Dr. Ankit Goel
               </a>
+              <Link href="/privacy-policy" className="block hover:text-[#0f7896]">
+                Privacy Policy
+              </Link>
 
             </div>
           </div>
