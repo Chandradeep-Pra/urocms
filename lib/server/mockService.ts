@@ -282,6 +282,10 @@ export async function deleteMockSchedule(id: string) {
 }
 
 export async function addAdminMockAttempt(id: string, input: MockAttemptInput) {
+  return addMockAttempt(id, input);
+}
+
+async function addMockAttempt(id: string, input: MockAttemptInput) {
   const name = String(input.name || "").trim();
   const email = String(input.email || "").trim().toLowerCase();
   const marks = typeof input.marks === "number" ? input.marks : Number(input.marks);
@@ -319,4 +323,19 @@ export async function addAdminMockAttempt(id: string, input: MockAttemptInput) {
     attemptsCount: attempts.length,
     attempt: nextAttempt,
   };
+}
+
+export async function addPublicMockAttempt(id: string, input: MockAttemptInput) {
+  const mockDoc = await adminDb.collection("mocks").doc(id).get();
+
+  if (!mockDoc.exists) {
+    throw new Error("Mock not found");
+  }
+
+  const mockData = mockDoc.data() ?? {};
+  if (normalizeAccessType(mockData.accessType) !== "public") {
+    throw new Error("Mock is not publicly available");
+  }
+
+  return addMockAttempt(id, input);
 }
