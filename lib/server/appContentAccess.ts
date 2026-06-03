@@ -478,7 +478,19 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
   function getMockAccess(input: {
     id: string;
     type?: QuizType;
+    accessType?: string | null;
   }): ResolvedItemAccess {
+    if (normalizeString(input.accessType) === "public") {
+      return {
+        allowed: true,
+        mode: "full",
+        previewLimit: null,
+        reason: null,
+        courseIds: [],
+        source: "public",
+      };
+    }
+
     const type = input.type ?? "mock";
     const courseIds = getCourseIdsForMock(input.id);
     const fullViaCourse = hasFullCourseAccessIn(courseIds);

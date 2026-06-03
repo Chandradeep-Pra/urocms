@@ -7,11 +7,7 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAppUser(req);
-  if ("response" in auth) return auth.response;
-
   try {
-    const accessContext = await buildAppContentAccessContext(auth.user);
     const { id } = await context.params;
     const mockDoc = await adminDb.collection("mocks").doc(id).get();
 
@@ -19,11 +15,26 @@ export async function GET(
       return NextResponse.json({ error: "Mock not found" }, { status: 404 });
     }
 
-    const mockData = mockDoc.data();
-    const mockAccess = accessContext.getMockAccess({
-      id: mockDoc.id,
-      type: String(mockData?.type || "mock"),
-    });
+    const mockData = mockDoc.data() ?? {};
+    const isPublic = String(mockData.accessType || "restricted") === "public";
+    const appAuth = isPublic ? null : await requireAppUser(req);
+    if (appAuth && "response" in appAuth) return appAuth.response;
+    const authUser = appAuth?.user ?? null;
+
+    const accessContext = isPublic ? null : await buildAppContentAccessContext(authUser);
+    const mockAccess = isPublic
+      ? {
+          allowed: true,
+          mode: "public" as const,
+          previewLimit: null,
+          reason: null,
+          courseIds: [],
+        }
+      : accessContext.getMockAccess({
+          id: mockDoc.id,
+          type: String(mockData.type || "mock"),
+          accessType: String(mockData.accessType || "restricted"),
+        });
 
     if (!mockAccess.allowed || mockAccess.mode === "locked") {
       return NextResponse.json(
@@ -32,7 +43,7 @@ export async function GET(
             mockAccess.reason ||
             "This mock is locked until the matching course or section is unlocked.",
           access: {
-            tier: auth.user.tier,
+            tier: authUser?.tier ?? "guest",
             allowed: false,
             mode: "locked",
             previewLimit: null,
@@ -45,7 +56,7 @@ export async function GET(
       );
     }
 
-    const quizDoc = await adminDb.collection("quizzes").doc(mockData?.quizId).get();
+    const quizDoc = await adminDb.collection("quizzes").doc(String(mockData.quizId || "")).get();
 
     if (!quizDoc.exists) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
@@ -80,21 +91,22 @@ export async function GET(
 
     let visibleQuestions = questions;
     let accessPayload: Record<string, unknown> = {
-      tier: auth.user.tier,
+      tier: authUser?.tier ?? "guest",
       allowed: mockAccess.allowed,
-      mode: mockAccess.mode,
+      mode: isPublic ? "public" : mockAccess.mode,
       previewLimit: mockAccess.previewLimit ?? null,
       totalQuestionCount: questions.length,
       returnedQuestionCount: questions.length,
-      requiredTier: mockAccess.mode === "locked" ? "paid" : null,
+      requiredTier: isPublic ? null : mockAccess.mode === "locked" ? "paid" : null,
       reason: mockAccess.reason ?? null,
       courseIds: mockAccess.courseIds,
+      isPublic,
     };
 
-    if (mockAccess.mode === "preview" && mockAccess.previewLimit) {
+    if (!isPublic && mockAccess.mode === "preview" && mockAccess.previewLimit) {
       visibleQuestions = questions.slice(0, mockAccess.previewLimit);
       accessPayload = {
-        tier: auth.user.tier,
+        tier: authUser?.tier ?? "guest",
         allowed: mockAccess.allowed,
         mode: "preview",
         previewLimit: mockAccess.previewLimit,
@@ -103,6 +115,7 @@ export async function GET(
         requiredTier: null,
         reason: mockAccess.reason ?? null,
         courseIds: mockAccess.courseIds,
+        isPublic,
       };
     } else {
       accessPayload = {
@@ -111,10 +124,13 @@ export async function GET(
       };
     }
 
+    const { attempts, ...safeMockData } = mockData as Record<string, any>;
+
     return NextResponse.json({
       mock: {
         id: mockDoc.id,
-        ...mockData,
+        ...safeMockData,
+        accessType: isPublic ? "public" : String(mockData.accessType || "restricted"),
         startTime: mockData?.startTime?.toDate?.()?.toISOString?.() ?? mockData?.startTime ?? null,
         endTime: mockData?.endTime?.toDate?.()?.toISOString?.() ?? mockData?.endTime ?? null,
         attemptsCount: Array.isArray(mockData?.attempts)

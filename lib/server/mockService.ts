@@ -13,7 +13,10 @@ type MockScheduleInput = {
   endTime?: unknown;
   durationMinutes?: unknown;
   attempts?: unknown;
+  accessType?: unknown;
 };
+
+type MockAccessType = "public" | "restricted";
 
 function toIsoString(value: unknown) {
   return value && typeof (value as { toDate?: () => Date }).toDate === "function"
@@ -24,6 +27,10 @@ function toIsoString(value: unknown) {
 function normalizeDurationMinutes(value: unknown, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function normalizeAccessType(value: unknown): MockAccessType {
+  return value === "public" ? "public" : "restricted";
 }
 
 function normalizeAttempts(value: unknown) {
@@ -150,10 +157,11 @@ export async function listMocks() {
 
     return {
       id: doc.id,
+      ...data,
+      accessType: normalizeAccessType(data.accessType),
       attemptsCount: Array.isArray(data.attempts)
         ? data.attempts.length
         : data.attemptsCount ?? 0,
-      ...data,
     };
   });
 }
@@ -178,6 +186,7 @@ export async function createMockSchedule(input: MockScheduleInput) {
     quizId,
     title: quiz.data.title || "Untitled Mock",
     type: quiz.data.type,
+    accessType: normalizeAccessType(input.accessType),
     startTime: schedule.startTime,
     endTime: schedule.endTime,
     durationMinutes: schedule.durationMinutes,
@@ -190,6 +199,7 @@ export async function createMockSchedule(input: MockScheduleInput) {
     id: docRef.id,
     title: String(quiz.data.title || "Untitled Mock"),
     type: String(quiz.data.type || "mock"),
+    accessType: normalizeAccessType(input.accessType),
   };
 }
 
@@ -207,6 +217,7 @@ export async function getMockDetails(id: string) {
   return {
     id: mockDoc.id,
     ...mockData,
+    accessType: normalizeAccessType(mockData.accessType),
     startTime: toIsoString(mockData.startTime),
     endTime: toIsoString(mockData.endTime),
     attempts: Array.isArray(mockData.attempts) ? mockData.attempts : [],
@@ -232,6 +243,7 @@ export async function updateMockSchedule(id: string, input: MockScheduleInput) {
   const existingMock = existingMockDoc.data() ?? {};
   const nextQuizId = String(input.quizId || existingMock.quizId || "").trim();
   const quiz = await getMockQuizOrThrow(nextQuizId);
+  const nextAccessType = normalizeAccessType(input.accessType ?? existingMock.accessType);
   const normalizedAttempts =
     input.attempts !== undefined
       ? normalizeAttempts(input.attempts)
@@ -252,6 +264,7 @@ export async function updateMockSchedule(id: string, input: MockScheduleInput) {
     quizId: nextQuizId,
     title: quiz.data.title || existingMock.title || "Untitled Mock",
     type: quiz.data.type || existingMock.type || "mock",
+    accessType: nextAccessType,
     startTime: schedule.startTime,
     endTime: schedule.endTime,
     durationMinutes: schedule.durationMinutes,

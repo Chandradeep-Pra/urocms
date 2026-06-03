@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -60,6 +61,7 @@ interface MockDetails {
   id: string;
   title: string;
   quizId: string;
+  accessType?: "public" | "restricted";
   startTime: string;
   endTime?: string;
   durationMinutes: number;
@@ -95,6 +97,7 @@ export default function GrandMockDetailsPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     quizId: "",
+    accessType: "restricted" as "public" | "restricted",
     startTime: "",
     endTime: "",
     durationMinutes: "",
@@ -113,6 +116,7 @@ export default function GrandMockDetailsPage() {
       setMock(nextMock);
       setForm({
         quizId: nextMock.quizId,
+        accessType: nextMock.accessType === "public" ? "public" : "restricted",
         startTime: toDateTimeLocal(nextMock.startTime),
         endTime: toDateTimeLocal(nextMock.endTime),
         durationMinutes: String(nextMock.durationMinutes || ""),
@@ -170,6 +174,7 @@ export default function GrandMockDetailsPage() {
     try {
       const payload = {
         quizId: form.quizId,
+        accessType: form.accessType,
         startTime: form.startTime,
         endTime: form.endTime,
         durationMinutes: Number(form.durationMinutes),
@@ -238,21 +243,57 @@ export default function GrandMockDetailsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div
-              className={`rounded-full px-4 py-1 text-xs font-medium ${
-                status === "Live"
+            <div className="flex items-center gap-3">
+              <div
+                className={`rounded-full px-4 py-1 text-xs font-medium ${
+                  status === "Live"
                   ? "bg-emerald-100 text-emerald-700"
                   : status === "Scheduled"
                   ? "bg-indigo-100 text-indigo-700"
                   : "bg-zinc-200 text-zinc-700"
               }`}
-            >
-              {status}
-            </div>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : "Save Changes"}
-            </Button>
+              >
+                {status}
+              </div>
+              <div className="flex items-center gap-4 rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2">
+                <div className="text-right">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">
+                    Access
+                  </p>
+                  <p className="text-xs font-semibold text-zinc-900">
+                    {form.accessType === "public" ? "Allow anyone" : "Allow members"}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs font-medium ${
+                      form.accessType === "restricted" ? "text-zinc-900" : "text-zinc-400"
+                    }`}
+                  >
+                    Allow members
+                  </span>
+                  <Switch
+                    checked={form.accessType === "public"}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        accessType: checked ? "public" : "restricted",
+                      }))
+                    }
+                  />
+                  <span
+                    className={`text-xs font-medium ${
+                      form.accessType === "public" ? "text-zinc-900" : "text-zinc-400"
+                    }`}
+                  >
+                    Allow anyone
+                  </span>
+                </div>
+              </div>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
           </div>
         </div>
       </div>

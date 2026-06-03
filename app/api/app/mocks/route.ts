@@ -16,14 +16,16 @@ export async function GET(req: NextRequest) {
       const access = accessContext.getMockAccess({
         id: doc.id,
         type: String(data.type || "mock"),
+        accessType: String(data.accessType || "restricted"),
       });
 
       return {
         id: doc.id,
+        ...data,
+        accessType: String(data.accessType || "restricted"),
         attemptsCount: Array.isArray(data.attempts)
           ? data.attempts.length
           : data.attemptsCount ?? 0,
-        ...data,
         access: {
           tier: auth.user.tier,
           allowed: access.allowed,
