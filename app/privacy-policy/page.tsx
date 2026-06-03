@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail } from "lucide-react";
 import { absoluteUrl, siteConfig } from "@/lib/site";
 
-const contactEmail = "ankitgoel402@gmail.com";
+const contactEmail = "ankitgoel042@gmail.com";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
