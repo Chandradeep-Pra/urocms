@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  FREE_AI_VIVA_MINUTES,
   FREE_CHAPTER_PREVIEW_LIMIT,
-  FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
   getTierModules,
 } from "@/lib/appAccess";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
@@ -33,7 +33,8 @@ export async function GET(req: NextRequest) {
     },
     policy: {
       freeChapterPreviewLimit: FREE_CHAPTER_PREVIEW_LIMIT,
-      freeWeeklyMockPreviewLimit: FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
+      freeWeeklyMockPreviewLimit: 0,
+      freeAiVivaMinutes: FREE_AI_VIVA_MINUTES,
       modules: getTierModules(auth.user.tier),
     },
     plan: planAccess.plan,

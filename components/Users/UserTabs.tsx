@@ -28,6 +28,11 @@ function matchesSearch(user: AdminUser, search: string) {
 }
 
 export default function UserTabs({ users, search, onDelete, onSetTier }: Props) {
+  const guestUsers = useMemo(
+    () => users.filter((user) => user.tier === "guest" && matchesSearch(user, search)),
+    [users, search]
+  );
+
   const freeUsers = useMemo(
     () => users.filter((user) => user.tier === "free" && matchesSearch(user, search)),
     [users, search]
@@ -39,11 +44,16 @@ export default function UserTabs({ users, search, onDelete, onSetTier }: Props) 
   );
 
   return (
-    <Tabs defaultValue="free" className="w-full space-y-6">
-      <TabsList className="grid w-full max-w-xl grid-cols-2">
+    <Tabs defaultValue="guest" className="w-full space-y-6">
+      <TabsList className="grid w-full max-w-2xl grid-cols-3">
+        <TabsTrigger value="guest">Guest ({guestUsers.length})</TabsTrigger>
         <TabsTrigger value="free">Free ({freeUsers.length})</TabsTrigger>
         <TabsTrigger value="paid">Paid ({paidUsers.length})</TabsTrigger>
       </TabsList>
+
+      <TabsContent value="guest">
+        <UserTable data={guestUsers} onDelete={onDelete} onSetTier={onSetTier} />
+      </TabsContent>
 
       <TabsContent value="free">
         <UserTable data={freeUsers} onDelete={onDelete} onSetTier={onSetTier} />

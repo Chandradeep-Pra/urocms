@@ -85,8 +85,8 @@ function ensureAdmin() {
 function parseArgs(argv) {
   const args = {
     section: "section2",
-    title: "Grand Mock - 1",
-    file: path.join(process.cwd(), "jsonMockExamData", "grandMock.json"),
+    title: "Grand Mock - 2",
+    file: path.join(process.cwd(), "jsonMockExamData", "grandMock2.json"),
   };
 
   argv.forEach((arg) => {
@@ -212,7 +212,7 @@ async function importQuestions() {
         image: String(firstSolution?.image || "").trim(),
       },
       difficulty: "medium",
-      tags: ["grand-mock", "imported", "grand-mock-1"],
+      tags: ["grand-mock", "imported", "grand-mock-2"],
       sourceQuestionNumber: Number(item?.question_number || index + 1),
       isActive: true,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

@@ -1,0 +1,3044 @@
+[
+  {
+    "question_number": 1,
+    "question": "A 25-year lady underwent evaluation for persistent right flank pain. The CT and RGP images are shown. What is true about the condition except?",
+    "options": [
+      "Type 1 is at the level of L3 vertebra and is more severe form",
+      "Due to persistence of right subcardinal veins",
+      "More common in females",
+      "It always occurs on the right side",
+      "Uretero-ureterostomy is the preferred option in Type 1"
+    ],
+    "correct_answer": "C",
+    "image": "https://res.cloudinary.com/dvdt6jfo8/image/upload/v1765812255/2569699d-d3c2-42e3-839c-5389fccb97a6_wcuaoq.jpg",
+    "solution": [
+      {
+        "image": "https://res.cloudinary.com/dvdt6jfo8/image/upload/v1765812256/d899b4c2-f62e-487f-a496-e7e326278c4e_pj4x6i.jpg",
+        "explanation": "Answer C – https://tau.amegroups.org/article/view/142329/html Type 1 retrocaval ureter is the low loop condition at L3 managed by uretero-ureterostomy after anterior transposition. Tye 2 is the high loop condition at L2 (PUJ level) crossing behind the IVC. Retrocaval ureter is a rare congenital urologic anomaly. It occurs as a consequence of the persistence of the posterior cardinal veins during embryologic development and always affects the right ureter. It is more common in males, with a male-to-female ratio of 3:1. A) Normal development of the inferior vena cava. (B) Abnormal development of the inferior vena cava, leading to a retrocaval right ureter."
+      }
+    ]
+  },
+
+  {
+    "question_number": 2,
+    "question": "Which of the following statements about repeated botulinum toxin injections is TRUE?",
+    "options": [
+      "Repeated injections lead to rapid tachyphylaxis",
+      "Repeated injections show loss of efficacy after two cycles",
+      "Repeated injections remain effective even after initial low response",
+      "Repeat injections are contraindicated after augmentation cystoplasty",
+      "Switching toxin types has no effect on responsiveness"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer C – Botulinum toxin A causes a long-lasting but reversible chemical denervation that lasts for about nine months. In mid- to long-term follow-up, 50%-70% of the patients continue botulinum toxin treatment. Urodynamic studies might be necessary after treatment in order to monitor the effect of the injections on bladder pressure. Repeated injections seem to be possible without loss of efficacy, even after initial low response rates, based on years of follow-up. A switch between different toxin variations may improve responsiveness . The clinical efficacy of botulinum toxin A injection in patients with low morbidity after failure of augmentation enterocystoplasty has been demonstrated."
+      }
+    ]
+  },
+  {
+    "question_number": 3,
+    "question": "A patient with T4 SCI undergoes penile vibrostimulation for semen retrieval. Midway through the procedure he develops a pounding headache, flushing and bradycardia. The most likely diagnosis is:",
+    "options": [
+      "Vasovagal syncope",
+      "Panic attack",
+      "Autonomic dysreflexia",
+      "Seizure activity",
+      "Hypoglycaemia"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer C – Autonomic dysreflexia is a disordered autonomic response in spinal cord injury above T6."
+      }
+    ]
+  },
+  {
+    "question_number": 4,
+    "question": "A 28-year-old man with T12 SCI fails to produce semen with vibrostimulation. What is the next best method for ejaculation?",
+    "options": [
+      "PDE5 inhibitor therapy",
+      "Transrectal electroejaculation",
+      "Balloon catheter at bladder neck",
+      "Prostatic massage",
+      "MESA/TESE"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer C – Prostatic massage is safe and easy to use for obtaining semen in men with lesions above Th 10. In several patients, vibrostimulation or transrectal electroejaculation are needed for sperm retrieval .Semen retrieval is more likely with vibrostimulation in men with lesions above Th 10 . Surgical procedures, such as, microsurgical epididymal sperm aspiration or testicular sperm extraction, may be used if vibrostimulation and electroejaculation are not successful . EAU Page 29"
+      }
+    ]
+  },
+  {
+    "question_number": 5,
+    "question": "A patient with SCI on intradetrusor botulinum toxin A injections reports worsening urinary incontinence. What is the most appropriate follow-up investigation?",
+    "options": [
+      "Repeat ultrasound only",
+      "Renal scintigraphy",
+      "Urodynamic evaluation",
+      "Cystoscopy",
+      "CT abdomen"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer C – Post-treatment UDS is recommended when symptoms recur or pressures may have changed."
+      }
+    ]
+  },
+  {
+    "question_number": 6,
+    "question": "A 72-year-old man with Parkinson’s disease presents with hesitancy and weak stream. Urodynamics show detrusor overactivity with poor sphincter relaxation. What is the MOST appropriate first-line therapy?",
+    "options": [
+      "Beta-3 agonist",
+      "Alpha-blocker",
+      "Tizanidine",
+      "Botulinum toxin injection",
+      "Clean intermittent catheterisation (CIC)"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer B – Milder PD with voiding dysfunction responds well to alpha-blockers. Gomes, C.M., et al. Neurological status predicts response to alpha-blockers in men with voiding dysfunction and Parkinson’s disease. Clinics (Sao Paulo), 2014. 69: 817. https://pubmed.ncbi.nlm.nih.gov/25627993. Alpha-blockers help PD patients with preserved detrusor function and milder neurological disease. Patients with severe PD and poor detrusor contractility may need alternatives (e.g., CIC, botulinum toxin)."
+      }
+    ]
+  },
+  {
+    "question_number": 7,
+    "question": "A man with PFUI develops incontinence and ED months later. What percentage of PFUI patients develop ED independent of urethroplasty?",
+    "options": [
+      "5%",
+      "12%",
+      "20%",
+      "35%",
+      "50%"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer  D - Delayed morbidities of posterior urethral injuries include strictures, incontinence and erectile dysfunction, all of which may have a detrimental effect on the patient’s quality of life . The proportion of patients with erectile dysfunction following PIFU unrelated to urethroplasty, is 34% . EAU page – 23 ,Urological trauma"
+      }
+    ]
+  },
+  {
+    "question_number": 8,
+    "question": "A 62-year-old immunosuppressed woman presents with irritative LUTS and haematuria. Cystoscopy shows soft yellow-brown plaques on the bladder mucosa. What is the MOST likely diagnosis?",
+    "options": [
+      "Urothelial carcinoma",
+      "Bladder amyloidosis",
+      "Malakoplakia",
+      "Xanthogranulomatous cystitis",
+      "Tuberculosis"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Malakoplakia, from the Greek word meaning “soft plaque,” is an unusual inflammatory disease originally described to affect the bladder but has been found to affect the GU and GI tracts, skin, lungs, bones, and mesenteric lymph nodes. It is an inflammatory lesion described originally by Michaelis and Gutmann. It was characterized by von Hansemann as soft, yellow-brown plaques with granulomatous lesions in which the histiocytes contain distinct basophilic lysosomal inclusion bodies or Michaelis-Gutmann bodies."
+      }
+    ]
+  },
+  {
+    "question_number": 9,
+    "question": "A 28-year-old man is found to have a midline renal mass on imaging. Both kidneys appear fused into a single disc-like structure lying in the pelvis. What renal anomaly best explains this finding?",
+    "options": [
+      "Horseshoe kidney",
+      "Pancake kidney",
+      "Duplex kidney",
+      "Pelvic kidney",
+      "Renal hypoplasia"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Pancake kidney: The two kidneys may form one mass, lying in the midline or on one side . The two kidneys may lie on one side, one above the other, the adjacent poles being fused"
+      }
+    ]
+  },
+  {
+    "question_number": 10,
+    "question": "A 17-year-old boy presents requesting HPV vaccination. He has never been vaccinated. What is the correct vaccination regimen?",
+    "options": [
+      "Two-dose series",
+      "Single dose only",
+      "Three-dose series",
+      "Vaccination is not indicated in males",
+      "Only bivalent vaccine is recommended"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – First dose after age 15 → three-dose schedule. HPV vaccines were previously administered as a three-dose regimen. This has been updated and, currently, if the first dose of any HPV vaccine is given before the 15th birthday, vaccination should be completed according to a two-dose schedule. In this regimen, the second dose is recommended 6 to 12 months after the first dose, with a minimum of 5 months between the first and second dose. If the interval is shorter, the third vaccine dose is given at a minimum of 12 weeks after the second dose and a maximum of 5 months after the second dose. If the first dose of any HPV vaccine is given after the 15th birthday, a three-dose series schedule should be used. In this series, the second dose is recommended 1 to 2 months after the first dose, and the third dose is recommended 6 months after the first dose. All immunocompromised patients should receive the three-dose regimen . The HPV vaccine should not be used in pregnant patients. It can be given regardless of prior HPV exposure, but it is important to note that HPV vaccines work to prevent future infections and do not treat existing HPV infections or related diseases. As the nonavalent HPV vaccine is made from Saccharomyces cerevisiae (baker’s yeast), its use is contraindicated in those with an allergy to yeast"
+      }
+    ]
+  },
+  {
+    "question_number": 11,
+    "question": "A 26-year-old man asks about prevention of anogenital warts. Which HPV types are responsible for approximately 90% of cases?",
+    "options": [
+      "HPV 16 and 18",
+      "HPV 31 and 33",
+      "HPV 45 and 58",
+      "HPV 6 and 11",
+      "HPV 52 and 58"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – All vaccines offer coverage for HPV types 16 and 18, which account for 66% of all cervical cancers. The quadrivalent vaccine offers additional protection against HPV types 6 and 11, which accounts for 90% of anogenital warts. The nonavalent vaccine covers five additional HPV types (31, 33, 45, 52, and 58), which account for 15% of all cervical cancer cases"
+      }
+    ]
+  },
+  {
+    "question_number": 12,
+    "question": "During first stage of sacral neuromodulation, stimulation produces ipsilateral calf contraction with external rotation of the foot. Which sacral nerve root is most likely being stimulated?",
+    "options": [
+      "S2",
+      "S3",
+      "S4",
+      "S5",
+      "Coccygeal nerve"
+    ],
+    "correct_answer": "A",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer a – Stimulation at the S3 nerve is indicated by perineal, anal, and/or genital responses (“anal bellows”) together with foot and toe response (great toe flexion). Stimulation at the S4 nerve does not evoke foot and toe response, whereas stimulation at S2 will produce an ipsilateral calf and foot external rotation. Usually, the sensory responses precede possible motor responses at a stronger stimulus, like contraction of the external anal sphincter and flexion of the great toe The test phase usually lasts 5 to 7 days, during which a bladder diary is recorded. The test is assumed positive when 1 or more bladder diary parameters show more than 50% improvement."
+      }
+    ]
+  },
+  {
+    "question_number": 13,
+    "question": "A 66-year-old man undergoes radical nephroureterectomy for high-grade UTUC. You counsel him regarding bladder recurrence risk. What is the approximate risk of developing bladder cancer after RNU?",
+    "options": [
+      "5–10%",
+      "10–20%",
+      "20–30%",
+      "30–50%",
+      ">70%"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Patients with upper urinary tract tumors have a 30-50% risk for development of bladder cancer after nephroureterectomy and endoscopic tumor biopsy or treatment Most recurrences in the bladder are likely a result of seeding and occur within 2 years. O’Brien et al. (2011) in the ODMIT C trial first showed that a single intravesical dose of mitomycin-C given at the time of Foley catheter removal was able to reduce the risk of bladder tumor from 28% in the control arm to 16% in the mitomycin arm within the first year after nephroureterectomy. In that study (Odmit-C), mitomycin was given at a dose of 40 mg in 40 mL of saline, and biopsy confirmation of bladder recurrence was not required."
+      }
+    ]
+  },
+  {
+    "question_number": 14,
+    "question": "Which cystoscopic sequence best represents the progression of bladder decompensation due to chronic outlet obstruction?",
+    "options": [
+      "Diverticula → trabeculation → smooth mucosa",
+      "Smooth mucosa → trabeculation → cellules/diverticula → detrusor failure",
+      "Smooth mucosa → cellules → trabeculation → failure",
+      "Trabeculation → smooth mucosa → diverticula",
+      "Immediate detrusor failure"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Urologists search for a progression from a normal mucosa to advancing trabeculation, development of cellules and diverticula with ultimate detrusor muscle failure in mind, when evaluating the bladder in patients with BPH endoscopically. However, when the process starts, whether it really is related to BPH and obstruction, and when an intervention is necessary to prevent decompensation with resultant inability to void, is unclear"
+      }
+    ]
+  },
+  {
+    "question_number": 15,
+    "question": "A 66-year-old man on long-term statin therapy is undergoing PSA screening. How might statin use affect PSA interpretation?",
+    "options": [
+      "Statins raise PSA",
+      "Statins have no effect on PSA",
+      "Statins may slightly reduce PSA levels",
+      "Statins invalidate PSA testing",
+      "Statins cause PSA variability only in cancer"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Serum PSA becomes detectable at puberty with increasing levels of luteinizing hormone and testosterone. In hypogonadal individuals with low testosterone levels, serum PSA level may be low because of decreased expression and may not reflect the presence of prostate disease such as cancer. Metabolic factors can influence serum PSA levels. Obese people have slightly lower PSA levels than nonobese people, possibly because of hemodilution. Statin use may reduce PSA levels."
+      }
+    ]
+  },
+  {
+    "question_number": 16,
+    "question": "In patients who underwent initial bilateral penoscrotal decompression, what was the recurrence rate and erectile dysfunction rate ?",
+    "options": [
+      "60%, 40%",
+      "40%, 30%",
+      "20%, 20%",
+      "10%, 25%",
+      "<5% , 40 %"
+    ],
+    "correct_answer": "E",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer e – A novel approach for priapism decompression was described by Morey (Fuchs et al., 2018). The technique involves a penoscrotal incision followed by a proximal corporotomy to facilitate drainage of the ischemic blood from the corpus cavernosum. After initial bilateral penoscrotal decompression, no patient had a return of priapism with this approach up front. Subsequently, nine (60%) reported a return of spontaneous erectile function adequate for penetration, and six (40%) reported ED"
+      }
+    ]
+  },
+  {
+    "question_number": 17,
+    "question": "A 31-year-old woman delivered a 4.3-kg baby vaginally. She has no current UI. According to ICI guidance, what is the BEST next step?",
+    "options": [
+      "Watchful waiting",
+      "Start oral anticholinergics",
+      "Individually taught PFMT program",
+      "Sling surgery as first line if she develops UI",
+      "No role for PFMT in this case"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – ICI (Dumoulin et al., 2023) recommends (1) an intervention composed of a daily home PFMT and weekly health professional–led exercise classes for 12 weeks, starting at 16 to 24 weeks’ gestation for those who are pregnant, and (2) an individually taught strengthening PFMT program that incorporates adherence strategies for postpartum females who have had a forceps delivery or a vaginal delivery of a large baby (>4000 g). The ICI also recommended providing education to older females to prevent UI"
+      }
+    ]
+  },
+  {
+    "question_number": 18,
+    "question": "The decline in SCC incidence among spinal cord–injured patients is MOST likely due to:",
+    "options": [
+      "Improved antibiotics",
+      "Earlier cancer screening",
+      "Increased use of intermittent catheterization",
+      "Reduced smoking rates",
+      "Increased use of chemotherapy"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The incidence rate of SCC has decline to 0.39% in contemporary series, likely because of the trend toward intermittent self-catheterization. This supports the concept that chronic infection and foreign bodies can lead to bladder cancer formation. Radical cystectomy is mainstay treatment for SCC, and there is no clear consensus regarding the use of neoadjuvant chemotherapy before surgery."
+      }
+    ]
+  },
+  {
+    "question_number": 19,
+    "question": "A 54-year-old woman develops bilateral groin pain on day 1 after sling surgery for stress urinary incontinence. Which surgical approach is MOST commonly associated with this complication?",
+    "options": [
+      "Retropubic MUS",
+      "Single-incision mini-sling",
+      "Transobturator MUS",
+      "Autologous pubovaginal sling",
+      "Burch colposuspension"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Groin and suprapubic pain are potential sequelae after MUS. Thigh and groin pain appear to be more commonly associated with the transobturator approach. An RCT from Finland revealed that 16% of patients in the transobturator (in-to-out) group had groin pain compared with only 1.5% of those who underwent retropubic MUS. Fortunately, the majority of groin pain is temporary, with De Leval (2003) noting that this symptom (seen in 16% of their cohort) resolved after the second postoperative day. Similarly, Krauth et al.(2005) observed that the majority of the 2% of their patients with this symptom responded to nonsteroidal anti-inflammatory medications. The authors hypothesized that the cause of the pain was either subclinical hematoma or a transient neuropathic phenomenon."
+      }
+    ]
+  },
+  {
+    "question_number": 20,
+    "question": "A 67-year-old man undergoes radical cystectomy for muscle-invasive bladder cancer. The operative note documents removal of 8 pelvic lymph nodes. Which statement BEST reflects the adequacy of this lymph node dissection?",
+    "options": [
+      "Adequate for staging",
+      "Adequate only in node-negative disease",
+      "Likely inadequate for accurate staging",
+      "Excessive dissection",
+      "Adequate if neoadjuvant chemotherapy was given"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – In addition to diagnostic benefit, lymph node count has been reported to improve therapeutic efficacy; however, prospective data to substantiate such a benefit are currently lacking. Leissner et al. reported that there were improvements in cancer-specific and disease-free survival among patients with 16 or more lymph nodes removed compared with those who had fewer nodes removed. Similarly, upon reanalysis of the Southwest Oncology Group (SWOG) 8710 data, Herr (2004) found that patients who had fewer than 10 lymph nodes removed at time of cystectomy had an increased risk of death, with a hazard ratio (HR) of 2.0. There is no general consensus in the literature regarding the exact threshold of nodes at which a survival benefit can be predicted, with most studies reporting numbers in the 9 to 16 range"
+      }
+    ]
+  },
+  {
+    "question_number": 21,
+    "question": "A patient with orthotopic neobladder develops local pelvic recurrence. Which of this is most commonly affected by the recurrence?",
+    "options": [
+      "Neobladder",
+      "Urethra",
+      "Upper urinary tract",
+      "Pubic bone",
+      "Rectum"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – If local tumor recurrence does develop in patients with an orthotopic diversion, only a minority will have problems arise related to the urinary diversion itself. Hautmann and Simon (1999) evaluated this issue in 43 of 357 male patients who underwent radical cystectomy and orthotopic ileal neobladder and developed local recurrence. Most of them (84%) had advanced disease (stage pT3a or higher) on final pathology at the time of cystectomy. A total of 17 patients (43%) had concomitant distant metastasis at the time of diagnosis of the local recurrence. Local recurrence interfered with the upper urinary tract in 24 patients (56%), the neobladder in 10 (23%), and the intestinal tract in 7 (16%); only 1 patient required removal of the neobladder because of an intestinal fistula"
+      }
+    ]
+  },
+  {
+    "question_number": 22,
+    "question": "A 52-year-old woman has a long distal ureteric stricture following pelvic surgery. A psoas hitch does not provide sufficient length for tension-free ureteroneocystostomy. What is the MOST appropriate reconstructive option?",
+    "options": [
+      "End-to-end ureteroureterostomy",
+      "Ileal ureter substitution",
+      "Boari flap",
+      "Transureteroureterostomy",
+      "Cutaneous ureterostomy"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The laparoscopic Boari flap was first described in humans by Fugita and Kavoussi (2001) in a series of three patients with distal ureteral obstruction  an anterior bladder flap is created beginning approximately 2 cm from the bladder neck and extending to the ipsilateral bladder dome; the apex of the flap is approximately 3 cm, and the base of the flap is approximately 4 cm (Fugita and Kavoussi, 2001). Care should be taken to confirm that the base of the flap is wide enough to ensure adequate vascularity."
+      }
+    ]
+  },
+  {
+    "question_number": 23,
+    "question": "A 63-year-old man with muscle-invasive bladder cancer has a solitary, small tumor with no concomitant CIS. Which surgical option can provide outcomes comparable to radical cystectomy in this setting?",
+    "options": [
+      "Radical TURBT ",
+      "Partial cystectomy",
+      "Intravesical BCG",
+      "Radiotherapy alone",
+      "Urinary diversions"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – The 5-year overall and the disease-specific survival rates were 67% and 87%, respectively (Kassouf et al., 2006). In a population-based matched cohort study examining partial versus radical cystectomy when matched for surgical quality (number of lymph nodes removed) and clinicopathological features, partial cystectomy was equivalent in terms of overall and cancer-specific survival (Capitanio et al., 2009). Patients initially treated with partial cystectomy who develop a non–muscle-invasive recurrence can be initially managed with intravesical therapy. Salvage radical cystectomy can be performed in those who recur with muscle-invasive disease; however, survival is significantly worse for those with locally advanced or node-positive disease at the time of salvage. In patients with organ-confined disease, 5-year survival is 60%, whereas it is only 7% for extravesical disease"
+      }
+    ]
+  },
+  {
+    "question_number": 24,
+    "question": "Retroperitoneal hematomas are divided into zones. Which zone includes the kidneys and lateral retroperitoneum?",
+    "options": [
+      "Zone I",
+      "Zone II",
+      "Zone III",
+      "Zone IV",
+      "Zone V"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Retroperitoneal hematomas are divided into three zones: zone I is the central zone extending from the diaphragmatic hiatus to the bifurcation of the great vessels and kidneys laterally; zone II is located laterally from kidneys to paracolic gutters; and zone III includes the pelvis . An incision is made medial to the inferior mesenteric vein, this will lead to the anterior surface of the aorta and following this cephalad the left renal vein crosses anterior to the aorta in most patients"
+      }
+    ]
+  },
+  {
+    "question_number": 25,
+    "question": "Blaivas classification of DSD describes type 1 DSD as:",
+    "options": [
+      "Continuous sphincter contraction throughout detrusor contraction",
+      "Sporadic sphincter contractions during detrusor contraction",
+      "Concomitant increase in detrusor pressure and EMG activity with sphincter relaxation at peak contraction",
+      "Complete absence of sphincter relaxation",
+      "Absent detrusor contraction"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Blaivas et al. (1981) have described 3 categories of DSD. In type 1 there is a concomitant increase in detrusor pressure and EMG activity; at the peak of the detrusor contraction, the sphincter suddenly relaxes and unobstructed voiding occurs. In type 2 there are sporadic contractions of the striated sphincter throughout the detrusor contraction. In type 3 there is a crescendo-decrescendo pattern of sphincter contraction that results in outlet obstruction throughout the entire detrusor contraction."
+      }
+    ]
+  },
+  {
+    "question_number": 26,
+    "question": "Which type of DSD is depicted in the image below ",
+    "options": [
+      "Type 1",
+      "Type 2",
+      "Type 3",
+      "Type 2 and Type 3",
+      "No DSD"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Blaivas et al. (1981) have described 3 categories of DSD. In type 1 there is a concomitant increase in detrusor pressure and EMG activity; at the peak of the detrusor contraction, the sphincter suddenly relaxes and unobstructed voiding occurs. In type 2 there are sporadic contractions of the striated sphincter throughout the detrusor contraction. In type 3 there is a crescendo-decrescendo pattern of sphincter contraction that results in outlet obstruction throughout the entire detrusor contraction."
+      }
+    ]
+  },
+  {
+    "question_number": 27,
+    "question": "What proportion of patients with bladder neck dysfunction have concomitant involuntary bladder contractions or reduced compliance?",
+    "options": [
+      "<10%",
+      "15–20%",
+      "25%",
+      "30–50%",
+      ">75%"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Noble et al. (1994) cited the incidence of concomitant involuntary bladder contractions or decreased compliance as 50%, and Trockman et al. (1996) quoted it as 34%. When prostatic enlargement develops in individuals with this problem, a double obstruction results, and Turner-Warwick (1984) has coined the term trapped prostate to describe these patients. Because the lobes of the prostate cannot expand the bladder neck, they expand into the urethra."
+      }
+    ]
+  },
+  {
+    "question_number": 28,
+    "question": "Management of deep penile electrical burns should be",
+    "options": [
+      "Early aggressive excision",
+      "Immediate skin grafting",
+      "Conservative due to high risk of autopenectomy and mortality",
+      "Treated as superficial burns",
+      "Managed with vacuum therapy only"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Genital burns are largely treated similarly to other burns, with early resection of burn eschar and coverage with split-thickness skin grafts when possible. Partial-thickness skin loss or genital burns may be treated with silver sulfadiazine cream. For deep penile electrical burns, a conservative approach is warranted because the ultimate outcome usually is autopenectomy and/or death as a result of extensive concurrent injuries (Medendorp et al., 2007)"
+      }
+    ]
+  },
+  {
+    "question_number": 29,
+    "question": "Which type of skin graft is preferred for penile shaft reconstruction?",
+    "options": [
+      "Full-thickness skin graft",
+      "Thin meshed split-thickness graft",
+      "Thick (0.012–0.015 inch), non-meshed split-thickness graft",
+      "Dermal substitute",
+      "Composite graft"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Thick (0.012- to 0.015-inch), nonmeshed, split-thickness skin grafts are preferred for penile reconstruction (Black et al., 2004). Meshed grafts can be used but have a tendency to contract and are cosmetically inferior to unmeshed grafts. Grafts are usually harvested from the anterior thigh with a pneumatic dermatome. If grafts are to be used, care must be taken to remove any subcoronal skin remaining after debridement. Lymphatic obstruction of this distal foreskin, if it is not excised, results in circumferential lymphedema. Skin grafts placed on the penile shaft never regain normal sensation (Horton and Dean, 1990), although sexual function is often preserved because of intact sensation in the glans and maintenance of corporal anatomy without alteration of blood flow."
+      }
+    ]
+  },
+  {
+    "question_number": 30,
+    "question": "Standard partial nephrectomy typically preserves approximately what proportion of global renal function?",
+    "options": [
+      "50%",
+      "65%",
+      "75%",
+      "90%",
+      "100%"
+    ],
+    "correct_answer": "d",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Tumor enucleation (TE) is well-established for patients with familial kidney cancer, although its role for sporadic RCC remains controversial (Chung et al., 2022; Gupta et al., 2015). TE entails blunt dissection along the pseudocapsule, thereby reducing the amount of normal parenchyma removed with the tumor. In contrast, standard PN is performed by strategic sharp dissection, intentionally leaving a 2- to 3-mm rim of normal parenchymal adjacent to the tumor. By minimizing dissection into the main substance of the kidney, TE may reduce blood loss, preclude entry into the collecting system, facilitate zero ischemia approaches to PN, and obviate the need for capsular closure. Thus, it may improve functional outcomes, although the bar is set high by standard PN, which typically saves about 90% of the global renal function."
+      }
+    ]
+  },
+  {
+    "question_number": 31,
+    "question": "The primary physiological purpose of glomerular hyperfiltration is to:",
+    "options": [
+      "Reduce proteinuria",
+      "Prevent hypertension",
+      "Maintain overall GFR despite nephron loss",
+      "Reduce intraglomerular pressure",
+      "Prevent tubular injury"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Glomerular scarring can arise because of ongoing damage from the primary disease process (glomerulonephritis and diabetes being the main culprits here).However, it also occurs because of maladaptive responses, which attempt to compensate for the loss of functioning renal mass. In the remnant kidney, hemodynamic changes were noted, specifically preferential vasodilatation of afferent glomerular arterioles, together with increases in glomerular transcapillary hydraulic pressure and filtration fraction. This functional change—so-called hyperfiltration—is an attempt by the remaining nephrons to maintain GFR. Scientific Basis- Page 214"
+      }
+    ]
+  },
+  {
+    "question_number": 32,
+    "question": "The key initiating event linking hyperfiltration to glomerular scarring is:",
+    "options": [
+      "Reduced oxygen delivery",
+      "Capillary stretch due to increased intraglomerular pressure",
+      "Immune complex deposition",
+      "Tubular back-leak of filtrate",
+      "Reduced nitric oxide production"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – The mechanism by which hyperfiltration causes renal scarring is thought to relate to increased glomerular capillary pressure, which in turn causes stretch of these capillaries and initiates endothelial cell damage. As a result of this, an inflammatory response ensues with release of proinflammatory and profibrotic cytokines, as well as growth factors (such as PDGF). This leads to mesangial cell proliferation and extracellular matrix deposition. Scientific Basis- Page 214"
+      }
+    ]
+  },
+  {
+    "question_number": 33,
+    "question": "Somatic fibers supplying the external urethral (rhabdo)sphincter arise from:",
+    "options": [
+      "Intermediolateral column",
+      "Hypogastric ganglia",
+      "Pelvic plexus",
+      "Onuf’s nucleus",
+      "Dorsal root ganglia"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – The somatic nerve fibers that arise from Onuf’s nucleus and that travel with the otherwise autonomic parasympathetic nerve fibers of the nervi-erigentes and pass ultimately to the intrinsic rhabdosphincter. Scientific Basis- Page 229"
+      }
+    ]
+  },
+  {
+    "question_number": 34,
+    "question": "The majority of afferent sensory fibers from the bladder travel via which nerve?",
+    "options": [
+      "Pudendal nerve",
+      "Hypogastric nerve",
+      "Pelvic nerve",
+      "Obturator nerve",
+      "Vagus nerve"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Afferent impulses arise from the nerve plexus in the lamina propria associated with the myofibroblasts immediately deep to the urothelium, from within the muscle layer itself, and, presumably, from the adventitia. Afferent nerve endings have been identified, but their nature is poorly understood. Substance P and ATP are thought to be sensory neurotransmitters. The majority of the afferents from the bladder run in the pelvic nerves. Only a small, albeit important, percent run in the sympathetic and somatic nerves. Pelvic nerve afferents consist of myelinated A-d and unmyelinated C axons. The A-d myelinated axons arise from tension receptors in the smooth muscle of the bladder and respond to increasing muscle wall tension during bladder filling. These are the afferent neurons responsible for eliciting the so- called micturition reflex in normal healthy individuals. Most of the C-fiber unmyelinated axons arise from receptors in the suburothelial layer, although some nociceptors sensitive to overdistension may also be found in the muscle and adventitia. Scientific Basis- Page 235"
+      }
+    ]
+  },
+  {
+    "question_number": 35,
+    "question": "A 29-year-old woman presents with multiple painful cutaneous nodules and a history of early-onset uterine fibroids requiring myomectomy. Screening CT shows a 2.1-cm solitary renal mass. Which is the MOST appropriate management strategy?",
+    "options": [
+      "Active surveillance until 4 cm",
+      "Percutaneous ablation",
+      "Early partial nephrectomy",
+      "Observation with annual MRI",
+      "Systemic therapy first"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Hereditary leiomyomatosis renal cell carcinoma (HLRCC) is an autosomal dominant hereditary form of type 2 PRCC accompanied by uterine fibroids and cutaneous leiomyomatosis lesions. HLRCC patients in contrast to VHL and HPRC1 patients may have soli- tary tumors, although bilaterality and multifocality has recently been reported (105). The renal tumors in HLRCC are significantly more aggressive than other hereditary forms of kidney cancer, with even small tumors being associated with nodal and metastatic disease.HLRCC is caused by mutations in the gene that codes for the Krebs’ cycle enzyme, fumarate hydratase (FH) (106). The FH gene has been mapped to chromo- some 1q42.3-q43 and mutations are thought to be inactivating and include both deletions and missense mutations. Scientific Basis- Page 368"
+      }
+    ]
+  },
+  {
+    "question_number": 36,
+    "question": "A 24-year-old man with metastatic non-seminomatous germ cell tumor receives cisplatin-based chemotherapy and achieves complete remission. Which molecular feature BEST explains the high cure rate seen in such tumors?",
+    "options": [
+      "High frequency of p53 mutations",
+      "Predominant G1 cell-cycle arrest after DNA damage",
+      "Strong apoptotic response to genotoxic injury",
+      "Enhanced DNA repair capacity",
+      "High expression of anti-apoptotic proteins"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – When GCT lines are exposed to etoposide, p53 protein is increased, but Waf-1 only modestly so, and apoptosis ensues (151). This is different to many other cancers, where either the p53 protein remains at low level, possibly because of the presence of a p53 mutation, or p53 induction takes place and the associated Waf-1 induction causes G1 arrest. The sensitivity of GCT to cytotoxic agents is therefore associated with the apoptotic response to genotoxic damage. This, in turn, is in part attributed to the high levels of wild-type p53, the absence of p53 mutations and only a modest level of Waf-1 induction. Scientific Basis- Page 409-410"
+      }
+    ]
+  },
+  {
+    "question_number": 37,
+    "question": "In a patient undergoing skin grafting for a perineal defect, which process is MOST critical for long-term graft survival and fixation?",
+    "options": [
+      "Imbibition",
+      "Hemostasis",
+      "Inosculation",
+      "Seroma formation",
+      "Epithelial migration"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The open wound, which is secreting collagen and actively generating small new vessels, is covered by a nutrient-rich layer of serum, from which the thin split-skin graft gains its nutrition by a process known as ‘‘imbibition.’’ This is sufficient to nourish a split-skin graft for a day or two, but to nourish it beyond that time, as well as to fix it and incorporate it into the healing wound, there must be a link-up between the capillary bed on the undersurface of the graft and the developing capillaries in the open wound, together with interlinking of collagen, and this process is known as ‘‘inosculation.’’ During the 48 hours of imbibition and the 48 hours of inosculation, the graft must be immobilized and if the host bed is well vascularized, then the graft will ‘‘take.’’ At the end of 96 hours, blood flow into the graft should be established. (Scientific Basis)"
+      }
+    ]
+  },
+  {
+    "question_number": 38,
+    "question": "A 33 year woman develops recurrent cystitis, particularly after sexual intercourse. Which bacterial adherence factor is MOST likely responsible for bladder colonization?",
+    "options": [
+      "P fimbriae",
+      "Type 1 fimbriae",
+      "Hemolysin",
+      "Aerobactin",
+      "Colicin V"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Type I Fimbriae - These structures are the most common adhesion organelles found on pathogenic coliforms isolated from the urinary tract. They are of variable length (1–2 mm) and approximately 7 nm thick, being of helical construction . The FimH terminal adhesin is a two-domain protein approximately 3 nm in width to which mannose-containing glycoprotein receptors can attach. Uroplakin (UP1a) is a complex glycoprotein that covers the internal surface of the bladder in a form of membrane or plaque. (Scientific Basis- Page 137)"
+      }
+    ]
+  },
+  {
+    "question_number": 39,
+    "question": "A trauma patient’s creatinine rises from 1.2 mg/dL to 3.8 mg/dL over 48 hours. Urine output is 0.4 mL/kg/hr. What is the most severe RIFLE category applicable?",
+    "options": [
+      "Risk",
+      "Injury",
+      "Failure",
+      "Loss",
+      "ESKD"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Failure (Scientific Basis- Page 204)"
+      }
+    ]
+  },
+  {
+    "question_number": 40,
+    "question": "A 68-year-old man with long-standing bladder outlet obstruction undergoes urodynamic testing, which shows reduced bladder compliance. Histology reveals increased collagen deposition in the detrusor muscle. Which collagen change is MOST likely responsible?",
+    "options": [
+      "Increased collagen type I only",
+      "Increased collagen type III only",
+      "Increased collagen III:I ratio",
+      "Reduced elastin content only",
+      "Increased smooth muscle actin"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Increased collagen III:I ratio. Obstructed bladders show increased collagen content with an increased collagen III:I ratio, reflecting remodelling in hypertrophied bladders. The most significant extracellular components in determining the passive properties of LUT tissues are collagen (especially types I and III) and elastin. In obstructed bladders collagen content is raised, particularly in the detrusor muscle layer, with an increased ratio of type III to type I reported in some . Collagen-I forms large fibers and predominates in tissues with high tensile strength, while collagen III, forming smaller fibers, imparts increased tissue flexibility and an ability to rearrange during bladder filling, which may be of importance to bladders undergoing hypertrophy. (Scientific Basis- Page 248)"
+      }
+    ]
+  },
+  {
+    "question_number": 41,
+    "question": "A 42-year-old man undergoes urodynamic testing that shows normal detrusor contraction with synchronous bladder neck opening. Which neurotransmitter is now believed to play a key role in bladder neck relaxation during voiding?",
+    "options": [
+      "Norepinephrine",
+      "Dopamine",
+      "Nitric oxide",
+      "GABA",
+      "Serotonin"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Nitric oxide. Modern understanding supports nitric oxide (NO) as a mediator of bladder neck and urethral smooth muscle relaxation, often co-released with acetylcholine. HOW DOES THE BLADDER NECK OPEN? There have been several theories to account for this. It used to be thought that there was a reciprocal innervation of the bladder by the parasympathetic system and of the bladder neck by the sympathetic system and that when the one caused contraction the other caused relaxation, but that was dis- counted when the role of the sympathetic system in the lower urinary tract was effectively ruled out, as discussed above. With the recent discovery of the role of nitric oxide, however, this reciprocal innervation theory has been resuscitated, although not in so many words. Nitric oxide may be cotransmitted with acetylcholine and it may be that the acetylcholine component causes contraction of the detrusor smooth muscle, whereas at the bladder neck and in the urethra there is a dominant nitric oxide effect released from the same type of neurons, which causes bladder neck and urethral relaxation. (Scientific Basis- Page 240)"
+      }
+    ]
+  },
+  {
+    "question_number": 42,
+    "question": "Which immunohistochemical marker is MOST commonly used in routine practice to diagnose ITGCN?",
+    "options": [
+      "AFP",
+      "β-hCG",
+      "PLAP",
+      "LDH",
+      "Cytokeratin"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Placental alkaline phosphatase (PLAP) and CD117 (c-kit) are used in diagnostic histopathology. Positive staining is seen in a paranuclear and cyto- plasmic membrane distribution. ITGCN as a preinvasive malignancy was first suggested by Skakkebaek in 1972 (96). It is present in up to 4% of cryptorchid patients, in up to 5% of contralateral gonads in patients with unilateral GCT and in up to 1% of patients biopsied for oligospermic infertility. Its association with TGCT arising in prepubertal patients is still a source of controversy (97,98). Microscopically, ITGCN is composed of atypical germ cells situated at the periphery of seminiferous tubules. It is rarely demonstrated immunocytochemically in tubules showing spermatogenesis, presumably reflecting pagetoid spread (i.e., along the basement membrane). (Scientific Basis- Page 408)"
+      }
+    ]
+  },
+  {
+    "question_number": 43,
+    "question": "A 55-year-old chronic smoker develops bladder cancer despite a relatively modest smoking history. Which mechanism BEST explains individual susceptibility to carcinogens?",
+    "options": [
+      "Increased DNA repair capacity",
+      "Genetic polymorphisms in detoxification enzymes",
+      "Reduced immune surveillance",
+      "Increased urine concentration",
+      "Altered bladder pH"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Many genotoxic carcinogens are inactive and require to be converted into active agents by acetylation or hydroxylation. Mammalian cells have developed a complex system for detoxifying external bio- logically active chemicals known as xenobiotics. N-acetyltransferase pathway (NAT-1 and NAT-2) Some individuals are more at risk than others after exposure to a carcinogen because of genetic poly- morphisms. Individuals who have high levels of NAT-2 or GSTM1 may be less likely to develop cancer after exposure to smoking because they can detoxify the mutagen, whereas those with high levels of CYP2D6 may be more likely to develop cancer because they convert inactive to active forms of the mutagen. (Scientific Basis- Page 344)"
+      }
+    ]
+  },
+  {
+    "question_number": 44,
+    "question": "Which enzyme system is primarily responsible for hydroxylation of xenobiotics, including carcinogens?",
+    "options": [
+      "N-acetyltransferase",
+      "Glutathione transferase",
+      "Cytochrome P450",
+      "Sulfotransferase",
+      "Epoxide hydrolase"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The enzymes which detoxify drugs and carcinogens, include the following: 1.Hydroxylation by means of the cytochrome P450 system (CYP), which is found on the microsomal fraction of cells (particularly in the liver) 2. Glutathione transferases, which couple glutathione to water-insoluble chemicals and which are classified into families (a, u, m, p) 3. N-acetyltransferase pathway (NAT-1 and NAT-2). (Scientific Basis- Page 344)"
+      }
+    ]
+  },
+  {
+    "question_number": 45,
+    "question": "Approximately what proportion of circulating testosterone is bound to sex hormone–binding globulin (SHBG)?",
+    "options": [
+      "2%",
+      "20%",
+      "38%",
+      "60%",
+      "85%"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – 60% Testosterone is the most important circulating andro- gen in men and is bound to sex hormone–binding globulin (SHBG) and albumin. Usually around 2% of testosterone is free, 60% is bound to SHBG and 38% to albumin. Albumin binds with low affinity to all steroids whereas SHBG has a high affinity for testosterone. Because of the low affinity for steroids, all the testosterone bound to albumin is available for tissue uptake, and therefore, the bioavailable testosterone in plasma approximates the sum of free and albumin bound hormone. (Scientific Basis- Page 303)"
+      }
+    ]
+  },
+  {
+    "question_number": 46,
+    "question": "A 58-year-old man develops loss of penile rigidity shortly after intracavernosal phenylephrine injection for priapism. Which neurotransmitter primarily mediates detumescence?",
+    "options": [
+      "Acetylcholine",
+      "Nitric oxide",
+      "Norepinephrine",
+      "Dopamine",
+      "Prostaglandin E1"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Norepinephrine. Detumescence and flaccidity are mainly mediated by the release of norepinephrine by the adrenergic nerve endings in the corporeal tissue. The vasoconstrictive effect of noradrenaline is mediated by its interaction with adrenergic receptors that are well represented in the cavernosal artery wall as well as in the cavernous trabeculae. In particular, among the adrenergic receptor subtypes, the a-adrenoreceptors seem to be the main responsible of the smooth muscle contraction, since they are represented ten-fold more than their b-receptor counterpart in the corpora cavernosa. (Scientific Basis- Page 307)"
+      }
+    ]
+  },
+  {
+    "question_number": 47,
+    "question": "A new PDE-5 inhibitor shows an IC₅₀ of 0.5 nM for PDE-5, compared with sildenafil’s IC₅₀ of 3.5 nM. Which statement is MOST correct?",
+    "options": [
+      "The new drug is less effective clinically",
+      "The new drug is more selective",
+      "The new drug is more potent in vitro",
+      "The new drug has fewer side effects",
+      "The new drug has higher bioavailability"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The new drug is more potent in vitro. Potency under these conditions is expressed as the IC50 of the drug; that is, the concentration of the drug in vitro required to inhibit 50% of a measured response, such as enzyme activity. Thus, in the case of PDE 5 inhibitors, the lower the IC50 value, the more potent the drug is in vitro. This is purely a pharmaco- logical concept meaning that less of the drug is required to produce a desired effect in vitro. In other words, the lower IC50 value of a PDE inhibitor, the more potent, theoretically, the drug is. However, a low IC50 does not always indicate that a drug is more potent and thus has greater efficacy. (Scientific Basis- Page 310)"
+      }
+    ]
+  },
+  {
+    "question_number": 48,
+    "question": "Which protein mediates the sliding movement of microtubules necessary for sperm motility?",
+    "options": [
+      "Actin",
+      "Nexin",
+      "Tubulin",
+      "Dynein",
+      "Kinesin"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Nexin The flagellum has a complex structure that consists of nine outer microtubules, disposed in a circular fashion, and two inner microtubules. This protein core is surrounded by mitochondria, which provide the energy necessary for movement, in the middle section, and only by a cell membrane in the tail. Sperm motility is consequence of the sliding action of the microtubules in the axial structure of the tail thanks to the action of the protein nexin that forms bridges between the tubules via its dynein arms. (Scientific Basis- Page 312)"
+      }
+    ]
+  },
+  {
+    "question_number": 49,
+    "question": "A 68-year-old man presents with LUTS and acute urinary retention. TRUS shows enlargement predominantly around the urethra. Which prostatic zone is MOST likely involved?",
+    "options": [
+      "Peripheral zone",
+      "Central zone",
+      "Transition zone",
+      "Anterior fibromuscular stroma",
+      "Periprostatic capsule"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Transition zone McNeal noted that the nodules of BPH began in the periurethral glandular area within the collar of the preprostatic sphincter in the supramontanal part of the prostate. Subsequently, he noted that these microscopic nodules were principally concentrated just below the distal margin of the preprostatic sphincter, and he named that area the transition zone. The transition zone only accounted for about 2% of the glandular tissue of the normal prostate but accounted for much more as the hyperplastic nodules coalesced, became macroscopic, and tended to displace the normal prostate away from the urethra. (Scientific Basis- Page 317)"
+      }
+    ]
+  },
+  {
+    "question_number": 50,
+    "question": "The daily production of testosterone by the adult testis is approximately:",
+    "options": [
+      "1–2 mg",
+      "3–4 mg",
+      "6–7 mg",
+      "10–12 mg",
+      "15–20 mg"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – 6–7 mg Circulating testosterone is derived principally from testicular Leydig cell secretion; the testis produces 6 to 7 mg a day under the influence of luteinizing hormone, which in turn is produced by the pituitary in response to the pulsatile release of luteinizing hormone–releasing hormone from the hypothalamus. (Scientific Basis- Page 317)"
+      }
+    ]
+  },
+  {
+    "question_number": 51,
+    "question": "A 64-year-old man underwent radical prostatectomy for pT2c Gleason 4+3 disease. His PSA is now 0.18 ng/mL and rising. PSMA PET-CT is negative. What is the MOST appropriate next management?",
+    "options": [
+      "Observe until PSA reaches 1.0 ng/mL",
+      "Immediate androgen deprivation therapy",
+      "Early salvage radiotherapy",
+      "Whole-pelvis radiotherapy with ADT",
+      "Chemotherapy"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Denonvilliers’ fascia or posterior bladder wall. Posterior reconstruction from rhabdosphincter is described to either Denonvilliers fascia posterior to bladder or to posterior bladder wall itself. Two trials assessing posterior reconstruction in RARP found no significant improvement in return to continence . A third trial using posterior bladder wall for reconstruction showed only an earlier return to 1 pad per day. EAU- Page 70"
+      }
+    ]
+  },
+  {
+    "question_number": 52,
+    "question": "Which of the following is an exclusion criterion for AS?",
+    "options": [
+      "High PSA density",
+      "Intraductal carcinoma",
+      "PI-RADS 3 lesion",
+      "> 2 positive cores",
+      "African ancestry"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Intraductal carcinoma A SR and meta-analysis found three clinico-pathological variables which were significantly associated with reclassification, high PSA-D, > 2 positive cores (on systematic biopsies), and African-American descent. A review on the risk of progression for African-American men on AS also indicated a potential increased risk of progression, but the association was not strong enough to discourage African-American men from undergoing AS, but thorough confirmatory testing is important. In addition, a previous pathology consensus group suggested excluding men from AS when any of the following features were present: cribriform histology, predominant ductal carcinoma (including pure IDC), sarcomatoid carcinoma, small cell carcinoma, EPE or LVI in needle biopsy, or PNI. EAU- Page 59"
+      }
+    ]
+  },
+  {
+    "question_number": 53,
+    "question": "In biopsy-naïve patients, adding MRI-targeted biopsy to systematic biopsy increases detection of ISUP Grade Group ≥ 2prostate cancer by approximately:",
+    "options": [
+      "5%",
+      "10%",
+      "15%",
+      "20%",
+      "40%"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – 20% Adding MRI-targeted biopsy to systematic biopsy in biopsy-naive patients increases the number of detected ISUP grade ≥ 2 and grade ≥ 3 PCa by approximately 20% and 30%, respectively. In the repeat-biopsy setting, adding MRI-targeted biopsy increases detection of ISUP GG ≥ 2 and GG ≥ 3 PCa by approximately 40% and 50%, respectively.EAU -Page 38"
+      }
+    ]
+  },
+  {
+    "question_number": 54,
+    "question": "Which statement regarding PSA-density (PSA-D) in patients on 5-α-reductase inhibitors is MOST accurate?",
+    "options": [
+      "PSA-D increases significantly",
+      "PSA-D becomes invalid",
+      "PSA-D is less affected",
+      "PSA-D must be doubled",
+      "PSA-D should not be used"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – PSA-D is less affected than PSA alone. Prostate-specific antigen production is androgen dependent and 5a-reductase inhibitors (e.g., finasteride, dutasteride), used for benign prostatic enlargement of the prostate, reduce PSA levels by 50%. In such cases, PSA level should be corrected to decide about further investigation, although PSA-density is less impacted as prostate volume decreases concomitantly. EAU page- 27"
+      }
+    ]
+  },
+  {
+    "question_number": 55,
+    "question": "n population screening, using a PSA threshold of ≥ 3.0 ng/mL, approximately what proportion of men will have a positive test?",
+    "options": [
+      "5%",
+      "10%",
+      "12%",
+      "16%",
+      "25%"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – 16–17% In a screening situation, the most frequently applied threshold for PSA is ≥ 3.0 ng/ml, resulting in 16.5% of invited men returning a positive test. EAU page- 27"
+      }
+    ]
+  },
+  {
+    "question_number": 56,
+    "question": "A 68-year-old man with locally advanced prostate cancer (cT3aN0M0, Gleason 8) undergoes definitive external-beam radiotherapy. Androgen deprivation therapy (ADT) is planned. What is the optimal duration of ADT?",
+    "options": [
+      "No ADT is required",
+      "3 months",
+      "6 months",
+      "12 months",
+      "3 years"
+    ],
+    "correct_answer": "E",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer e – The EORTC 22961 trial demonstrated superior overall survival with long-term ADT (~3 years) compared with 6 months in locally advanced disease. After a median follow-up of ~6.4 years, long-term androgen suppression (≈3 years) combined with radiotherapy showed better survival compared with short-term suppression (6 months).The 5-year overall mortality was: Short-term group: 19.0% and Long-term group: 15.2%. Bolla et al. Duration of androgen suppression in the treatment of prostate cancer.N Engl J Med. 2009"
+      }
+    ]
+  },
+  {
+    "question_number": 57,
+    "question": "What was the median overall survival benefit of adding docetaxel to ADT in men with metastatic disease?",
+    "options": [
+      "3 months",
+      "6 months",
+      "10 months",
+      "15 months",
+      "24 months"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – 10 months. Median OS improved from 43 months → 53 months in metastatic patients. Stampede trial, James, N.D., et al. Addition of docetaxel, zoledronic acid, or both to first-line long-term hormone therapy in prostate cancer (STAMPEDE): survival results from an adaptive, multiarm, multistage, platform randomised controlled trial. Lancet, 2016. 387: 1163."
+      }
+    ]
+  },
+  {
+    "question_number": 58,
+    "question": "A 62-year-old man undergoes radical prostatectomy for prostate cancer (pT3a, GG 3, negative margins). PSA is undetectable post-operatively. Decipher® testing is performed. What is the primary outcome that Decipher® is designed to predict?",
+    "options": [
+      "Biochemical recurrence",
+      "Local recurrence",
+      "Systemic progression / metastasis",
+      "Cancer-specific mortality only",
+      "Overall survival only"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Decipher® was specifically developed to predict risk of metastatic (systemic) progression after definitive treatment. The Decipher® gene signature consists of a 22-gene panel representing multiple biological pathways and was developed to predict systemic progression after definitive treatment. A meta-analysis of five studies analysed the performance of the Decipher® Genomic Classifier (GC) test on men post-RP. The authors showed in multivariable analysis that Decipher® GC remained a statistically significant predictor of metastasis EAU Page- 89"
+      }
+    ]
+  },
+  {
+    "question_number": 59,
+    "question": "PSMA PET/CT led to management change more frequently than conventional imaging. What proportion of patients had a management change?",
+    "options": [
+      "10%",
+      "15%",
+      "20%",
+      "28%",
+      "40%"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Accuracy of 68Ga-PSMA PET/CT was 27% higher than that of CT and bone scintigraphy (92% vs. 65%). Conventional imaging had a lower sensitivity (38% vs. 85%) and specificity (91% vs. 98%) than PSMA PET/CT. Furthermore, 68Ga-PSMA PET/CT scan prompted management change more frequently as compared to conventional imaging (28% vs. 15% men), with less equivocal findings and lower radiation exposure (8.4 mSv vs. 19.2 mSv).ProPSMA trial. EAU page – 50"
+      }
+    ]
+  },
+  {
+    "question_number": 60,
+    "question": "A 55-year-old patient has an AML composed of >80% epithelioid cells. Which statement is TRUE?",
+    "options": [
+      "Always benign",
+      "Occurs only in females",
+      "Mean age <30 years",
+      "Potentially malignant with aggressive behaviour",
+      "All are true"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Epithelioid AML, a very rare variant of AML, consists of at least 80% epithelioid cells and with mean age of onset of 50 years (range 30-80 years), without gender predilection. Epithelioid AMLs are potentially malignant with a variable proportion of cases with aggressive behaviour. Criteria to predict the biological behaviour in epithelioid AML were proposed by the WHO 2022. EAU page 14"
+      }
+    ]
+  },
+  {
+    "question_number": 61,
+    "question": "A renal cyst shows enhancing thick (≥4 mm) irregular septa but no enhancing nodules. What is the Bosniak category?",
+    "options": [
+      "Bosniak II",
+      "Bosniak IIF",
+      "Bosniak III",
+      "Bosniak IV",
+      "Simple cyst"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Silverman et al 2019 Bosniak classification for renal cyst."
+      }
+    ]
+  },
+  {
+    "question_number": 62,
+    "question": "A renal cyst has thin (≤2 mm) walls, 1–3 thin septa, and septal enhancement. Calcification is present. What is the MOST appropriate Bosniak category?",
+    "options": [
+      "Bosniak I",
+      "Bosniak II",
+      "Bosniak IIF",
+      "Bosniak III",
+      "Bosniak IV"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "-",
+        "explanation": "Answer b – "
+      }
+    ]
+  },
+  {
+    "question_number": 63,
+    "question": "A 58-year-old man undergoes partial nephrectomy for a 3.5 cm renal mass (cT1a). Final histopathology reveals a positive surgical margin (PSM).What is the approximate incidence of PSM in T1 partial nephrectomies?",
+    "options": [
+      "< 1%",
+      "1–2%",
+      "2–8%",
+      "10–15%",
+      "> 20%"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – A PSM is encountered in about 2-8% of T1 PNs. Studies comparing surgical margins with different surgical approaches (open, laparoscopic, robotic) are inconclusive. Most trials showed that intra- operative frozen section analysis had no influence on the risk of definite PSMs. A PSM status occurs more frequently in cases in which surgery is imperative (solitary kidneys and bilateral tumours) and in patients with adverse pathological features (pT2a, pT3a, grade III-IV).EAU RCC- Page- 35"
+      }
+    ]
+  },
+  {
+    "question_number": 64,
+    "question": "Which histological subtype shows faster growth during AS?",
+    "options": [
+      "Papillary type 1 RCC",
+      "Chromophobe RCC",
+      "Oncocytoma",
+      "Clear-cell RCC",
+      "Collecting duct carcinoma"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Clear-cell RCC grow faster than papillary type 1 SRMs (0.25 and 0.02 cm/year on average, respectively. EAU RCC- Page- 36-37"
+      }
+    ]
+  },
+  {
+    "question_number": 65,
+    "question": "For small renal masses (SRMs) managed with AS, the pooled metastasis rate is approximately:",
+    "options": [
+      "0.2%",
+      "10%",
+      "1.8%",
+      "4%",
+      "8%"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – A SR of eighteen AS cohorts comprising 2,066 patients (cT1-2 N0M0) with a pooled mean follow-up of 53 months, showed that 2.1% of patients developed metastatic disease during follow-up . For patients with SRMs, the pooled metastasis rate was 1.8% . EAU Page – 36-37"
+      }
+    ]
+  },
+  {
+    "question_number": 66,
+    "question": "A 58-year-old man is diagnosed with treatment-naïve clear-cell metastatic RCC. He has IMDC intermediate-risk disease and good performance status. What is the most appropriate first-line treatment?",
+    "options": [
+      "Sunitinib ",
+      "Pazopanib ",
+      "Pembrolizumab + axitinib",
+      "Everolimus + Pembrolizumab",
+      "Axitinib + Nivolumab"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Pembrolizumab + axitinib . The combination of pembrolizumab plus axitinib as well as nivolumab plus cabozantinib and lenvatinib plus pembrolizumab is the standard of care in all IMDC-risk patients and ipilimumab plus nivolumab in IMDC intermediate- and poor-risk patients (Figure 7.2). Therefore, the role of VEGFR-TKIs alone in front-line mRCC has been superseded in IMDC intermidiate and poor risk. In IMDC Favorable group, in the absence of OS benefit both options are acceptable. Sunitinib, pazopanib, and cabozantinib (IMDC intermediate- and poor-risk disease), remain alternative treatment options for patients who cannot receive or tolerate immune checkpoint inhibition in this setting. EAU Page – 60"
+      }
+    ]
+  },
+  {
+    "question_number": 67,
+    "question": "Which is an appropriate alternative first-line option for a patient with cc-mRCC who cannot tolerate immune checkpoint inhibitors?",
+    "options": [
+      "Everolimus",
+      "Sorafenib",
+      "Sunitinib",
+      "Temsirolimus",
+      "Belzutifan"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Sunitinib, pazopanib, or cabozantinib remain valid alternatives when IO is contraindicated. EAU Page – 60"
+      }
+    ]
+  },
+  {
+    "question_number": 68,
+    "question": "According to the WHO 2022 classification, which of the following corresponds to the former type I papillary RCC?",
+    "options": [
+      "Papillary neoplasm with reverse nuclear polarity",
+      "Warthin-like papillary RCC",
+      "Biphasic alveolo-squamoid papillary RCC",
+      "Papillary RCC of classic pattern",
+      "Collecting duct carcinoma"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Papillary RCC of classic pattern. Papillary RCC has traditionally been subdivided into two types; Type I and II pRCC [33]. However, in the new 2022 WHO classification, the former pRCC type I is now referred to as “pRCC of classic pattern”. Three additional morphologic patterns of pRCC have been introduced including: a) bi-phasic (alveolo-squamoid) pattern exhibiting mostly solid growth; b) papillary neoplasm with reverse nuclear polarity, previously described as “oncocytic low-grade pRCC”; and c) Warthin-like pRCC that exhibits brisk inflammation mimicking Warthin tumour of the salivary gland. EAU RCC Page – 11"
+      }
+    ]
+  },
+  {
+    "question_number": 69,
+    "question": "Which growth pattern is most typical of classical pattern papillary RCC?",
+    "options": [
+      "Infiltrative intrarenal growth",
+      "Central hilar extension",
+      "Exophytic, extra-renal growth",
+      "Pelvicalyceal invasion",
+      "Diffuse renal involvement"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Exophytic, extra-renal growth. Classical pattern pRCC can imitate a pathologically changed cyst (Bosniak IIF or III). The typical signs of classical pattern pRCC are an ochre colour, frequently exophytic, extra-renal growth and low grade. A risk of renal tumour biopsy tract seeding exists, probably due to the fragility of the tumour papillae. EAU RCC Page – 11"
+      }
+    ]
+  },
+  {
+    "question_number": 70,
+    "question": "A 28-year-old man presents after a road traffic accident. He is haemodynamically stable. CT shows a Grade 4 renal injury with active contrast extravasation and a large perirenal haematoma measuring 30 mm in depth. What is the most appropriate next step?",
+    "options": [
+      "Immediate nephrectomy",
+      "Observation only",
+      "Selective angioembolisation",
+      "Exploratory laparotomy",
+      "Percutaneous nephrostomy"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Selective angioembolisation. In haemodynamically stable patients, active contrast extravasation + large perirenal haematoma (>25 mm) strongly predicts the need for SAE. Selective angioembolisation has a key role in the non-operative management of blunt renal trauma in haemodynamically stable patients. Currently there are no validated criteria to identify patients who require SAE and its use in renal trauma remains variable. Accepted CT findings indicating the need for SAE are active extravasation of contrast, arteriovenous fistula (AVF) and pseudo-aneurysm. The presence of both active contrast extravasation and a large perirenal haematoma (> 25 mm depth) predict, with good accuracy, the need for SAE. Selective angioembolisation has been utilised in the non-operative management of all grades of renal injury; however, it is likely to be most beneficial in the setting of high-grade renal trauma (AAST > 3).EAU trauma page- 10-11."
+      }
+    ]
+  },
+  {
+    "question_number": 71,
+    "question": "A 35-year-old man sustains a pelvic fracture after a road traffic accident. CT cystography shows an extraperitoneal bladder rupture without bladder neck involvement. He is haemodynamically stable. What is the most appropriate management?",
+    "options": [
+      "Immediate surgical repair",
+      "Suprapubic cystostomy",
+      "Indwelling urethral catheter drainage",
+      "Laparoscopic bladder repair",
+      "Delayed repair"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Indwelling urethral catheter drainage. Most extraperitoneal bladder ruptures following blunt trauma can be managed conservatively with catheter drainage. EAU Trauma Page - 20"
+      }
+    ]
+  },
+  {
+    "question_number": 72,
+    "question": "The optimal timing for repair of penile fracture is:",
+    "options": [
+      "Within 6 hours only",
+      "Within 12 hours",
+      "Within 24 hours",
+      "Within 72 hours",
+      "Anytime within 1 week"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Within 24 hours. Systematic reviews recommend repair within 24 hours. Delayed presentation, however, should not preclude exploration. Further localisation may be gained with a flexible cystoscopy performed prior to incision, if urethral trauma is suspected and eventually proven. Surgical closure of the tunica should be carried out using absorbable sutures. EAU Trauma Page - 31"
+      }
+    ]
+  },
+  {
+    "question_number": 73,
+    "question": "Which part of the ureter is most commonly injured in external trauma?",
+    "options": [
+      "Vesicoureteric junction",
+      "Distal ureter",
+      "Mid-ureter",
+      "Upper ureter",
+      "Intramural ureter"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Upper ureter. External trauma most frequently affects the upper ureter. Ureteral injury should be suspected in all cases of penetrating abdominal injury, although it occurs in just 2-3% of cases. It should also be suspected in blunt trauma with significant deceleration as pelvi-ureteral disruption can result . The distribution of external ureteral injuries along the ureter varies between series, but it is commonest in the upper ureter . EAU Trauma Page - 15"
+      }
+    ]
+  },
+  {
+    "question_number": 74,
+    "question": "Approximately what proportion of penile fractures are complicated by a urethral injury?",
+    "options": [
+      "< 5%",
+      "5–10%",
+      "~15%",
+      "25–30%",
+      "> 50%"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – ~15%. Urethral injury complicates penile fracture in ~15% of cases, with wide variation depending on mechanism. A penile fracture can be complicated by a urethral injury in approximately 15% of cases, ranging between 1-38% depending on the aetiology. EAU Trauma Page - 22"
+      }
+    ]
+  },
+  {
+    "question_number": 75,
+    "question": "A 76-year-old woman with a long-term catheter is clinically well. Urine culture grows Klebsiella pneumoniae 10⁴ CFU/mL. She has no fever, pain, or systemic symptoms. What is the correct diagnosis?",
+    "options": [
+      "CA-UTI",
+      "CA-UTI requiring treatment",
+      "Catheter-associated asymptomatic bacteriuria (CA-ABU)",
+      "Contaminated urine sample",
+      "Early urosepsis"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Microbiologically, CA-UTI is defined by microbial growth of ≥ 103 cfu/mL of one or more bacterial species in a single catheter urine specimen or in a mid-stream voided urine specimen from a patient whose urethral, suprapubic, or condom catheter has been removed within the previous 48 hours [28]. In catheterised patients, pyuria is not diagnostic for CA-UTI. The presence, absence, or degree of pyuria should not be used to differentiate CA-ABU from CA-UTI. Pyuria accompanying CA-ABU should not be interpreted as an indication for antimicrobial treatment. The absence of pyuria in a symptomatic patient suggests a diagnosis other than CA-UTI. EAU infection Page 32"
+      }
+    ]
+  },
+  {
+    "question_number": 76,
+    "question": "A patient with ABP fails to improve after 72 hours of antibiotics and remains febrile. What is the most appropriate investigation?",
+    "options": [
+      "PSA",
+      "Meares–Stamey test",
+      "Transrectal ultrasound",
+      "Prostate biopsy",
+      "Semen culture"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Transrectal US may reveal endoprostatic abscesses, calcification in the prostate, and dilatation of the seminal vesicles; however, it is unreliable as a diagnostic tool for prostatitis . EAU page - 45"
+      }
+    ]
+  },
+  {
+    "question_number": 77,
+    "question": "Which is the preferred sample for diagnosing Chlamydia trachomatis infection in men?",
+    "options": [
+      "Mid-stream urine",
+      "Expressed prostatic secretion",
+      "Semen culture",
+      "First-void urine for NAAT",
+      "Blood serology"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – First-void urine is the preferred specimen for the diagnosis of urogenital C. trachomatis infection in men by NAATs, since it is non-invasive and yet allows the detection of infected epithelial cells and associated C. trachomatis particles. EAU page - 45"
+      }
+    ]
+  },
+  {
+    "question_number": 78,
+    "question": "A 34-year-old woman has ≥4 uncomplicated UTIs per year. She wishes to avoid long-term antibiotics due to concerns about resistance. Which non-antibiotic strategy has the strongest evidence of efficacy in reducing recurrence?",
+    "options": [
+      "Cranberry products",
+      "Probiotics (oral Lactobacillus)",
+      "Methenamine hippurate",
+      "Vaginal oestrogen",
+      "Vitamin C"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Beerepoot et al. demonstrated that methenamine hippurate significantly reduced UTI recurrence compared with placebo. Beerepoot, M.A., et al. Nonantibiotic prophylaxis for recurrent urinary tract infections: a systematic review and meta-analysis of randomized controlled trials. J Urol, 2013. 190: 1981. <a href=\"https://www.ncbi.nlm.nih.gov/pubmed/23867306\" rel=\"newwindow\">https://www.ncbi.nlm.nih.gov/pubmed/23867306</a>. EAU infection Page 24"
+      }
+    ]
+  },
+  {
+    "question_number": 79,
+    "question": "Methenamine hippurate reduces recurrent UTIs primarily by:",
+    "options": [
+      "Inhibiting bacterial adhesion",
+      "Enhancing mucosal immunity",
+      "Acidifying urine to produce formaldehyde",
+      "Suppressing gut bacterial flora",
+      "Increasing urinary flow"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – EAU infection Page 24. 70-90% renally excreted and are converted to ammonia and formaldehyde in an acidic environment (pH ,6). Formaldehyde is either bactericidal or bacteriostatic in urine, depending on its concentration. To achieve acidification of the urine when these oral tablets are taken, high doses of ascorbic acid (vitamin C) (1–4 g) can be ingested in conjunction with the methenamine (recommended dose is 1 g twice daily). otherwise healthy females demonstrated a 56-75% reduction in rUTIs."
+      }
+    ]
+  },
+  {
+    "question_number": 80,
+    "question": "A 10-month-old boy is planned for proximal hypospadias repair. On examination, the glans width is 13 mm. The surgeon is considering pre-operative androgen stimulation. What is the most appropriate indication for pre-operative androgen use in this patient?",
+    "options": [
+      "All proximal hypospadias",
+      "Cosmetic improvement",
+      "Small glans size ",
+      "Prevention of chordee recurrence",
+      "Reduction of postoperative pain"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – A small glans (<14–15 mm) has been associated with higher complication rates, and androgen stimulation is commonly used to increase glans size and reduce tension on glansplasty."
+      }
+    ]
+  },
+  {
+    "question_number": 81,
+    "question": "A commonly reported IM testosterone regimen for pre-operative androgen stimulation in hypospadias is:",
+    "options": [
+      "0.5 mg/kg weekly for 6 weeks",
+      "1 mg/kg single dose 1 week before surgery",
+      "2 mg/kg per injection, 5 and 2 weeks pre-operatively",
+      "Daily oral testosterone for 3 months",
+      "Continuous topical application until surgery"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The IM route of administration achieves a more consistent increase in glans width and is tolerated well by children, with an average increase of 4 mm in glans width with two doses and 2 mm with one dose (Mittal et al., 2022)."
+      }
+    ]
+  },
+  {
+    "question_number": 82,
+    "question": "A Boari flap is most suitable for bridging a ureteric defect of up to:",
+    "options": [
+      "4–5 cm",
+      "6–8 cm",
+      "8–10 cm",
+      "10–15 cm",
+      "12–18 cm"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "-",
+        "explanation": "Answer d – Boari first described the use of this technique in the canine model in 1894. A Boari flap can be constructed to bridge a 10- to 15-cm ureteral defect, and a spiraled bladder flap can reach the renal pelvis in some circumstances, especially on the right side."
+      }
+    ]
+  },
+  {
+    "question_number": 83,
+    "question": "A 56-year-old woman undergoes a pubovaginal sling (PVS) for stress urinary incontinence. She is counselled about postoperative voiding dysfunction. Which statement is most accurate?",
+    "options": [
+      "Voiding dysfunction after PVS is rare (<1%)",
+      "Voiding dysfunction rates are lower than after Burch colposuspension",
+      "Voiding dysfunction occurs in up to one-third of patients",
+      "Permanent urinary retention exceeds 15%",
+      "UTIs are less common after PVS than Burch colposuspension"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Voiding dysfunction after PVS ranges widely from 2.5–35%, and is more common than after Burch colposuspension. The randomized SISTEr trial (Albo et al., 2007) likewise confirmed that patients undergoing PVS experienced significantly more postoperative voiding dysfunction, UTIs, and postoperative UUI. The Stress Incontinence Surgical Treatment Efficacy Trial (SISTEr) is a multicenter, randomized study that was conducted to compare the efficacy and safety of the sling and Burch procedures. The primary objective of the SISTEr study was to compare the efficacy and safety of the Burch colposuspension and the autologous rectus fascial sling procedures as treatment for stress urinary incontinence in women. The pubovaginal fascial sling had significantly higher rates of success for both overall and stress-specific incontinence than did the Burch colposuspension in women with predominant SI at 24 months. However, these higher success rates were offset by greater morbidity, such as urinary tract infection, urge incontinence, and voiding dysfunction. The frequency of surgical retreatment for SI was greater in the Burch group than in the sling group."
+      }
+    ]
+  },
+  {
+    "question_number": 84,
+    "question": "Which statement regarding serum cystatin C is most accurate?",
+    "options": [
+      "It is inferior to creatinine in estimating GFR",
+      "It is validated for urinary diversion selection",
+      "It reflects GFR more accurately than creatinine",
+      "It measures tubular acidification",
+      "It replaces inulin clearance"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Serum cystatin C is a promising serum protein that reflects GFR more accurately than creatinine; however, its usefulness in urinary intestinal diversion has not yet been determined. Methods for measuring glomerular filtration rate (GFR) have used either creatinine, inulin, iothalamate, 51Cr-EDTA, or iohexol as markers. Because these methods are all lengthy and expensive, the MDRD estimated GFR (eGFR) calculation based on the creatinine concentration was introduced in 1999 as a more convenient parameter to assess kidney function, with the equation updated in 2009 (CKD-EPI eGFR). A possible advantage of cystatin C with minor glomerular damage is that, being a large molecule, blood levels of cystatin C might rise sooner than creatinine."
+      }
+    ]
+  },
+  {
+    "question_number": 85,
+    "question": "Which statement about the 51Cr-EDTA GFR measurement is correct?",
+    "options": [
+      "It requires subcutaneous injection",
+      "Plasma concentrations are measured using ELISA",
+      "Blood samples are taken at 2, 3, and 4 hours",
+      "It requires urine collection",
+      "It cannot be used in CKD"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Iohexol clearance. Iohexol solution is injected and allowed to distribute in the extracellular fluid, then blood samples are collected at timed intervals. The iohexol is measured and the GFR is calculated.Iothalamate clearance. Iothalamate is injected subcutaneously and allowed to equilibrate for 45 minutes. Then a 7-mL blood sample is collected along with the patient emptying their bladder. After 45-60 min (accurately timed), another blood sample and a urine sample are collected. Then the urine and blood samples are analyzed for iothalamate. Cr-EDTA method. Subjects are injected intravenously with 51Cr-EDTA solution, then 6-mL blood samples are drawn from the opposite arm at 2, 3, and 4 h. The plasma concentrations of 51Cr-EDTA are then measured in a gamma counter, with the log [51Cr-EDTA] against time used to determine the GFR"
+      }
+    ]
+  },
+  {
+    "question_number": 86,
+    "question": "Which of the following is a known limitation of the MDRD equation?",
+    "options": [
+      "Overestimates GFR in advanced CKD",
+      "Underestimates GFR at near-normal kidney function",
+      "Requires urine collection",
+      "Not validated in CKD patients",
+      "Uses body weight"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – "
+      }
+    ]
+  },
+  {
+    "question_number": 87,
+    "question": "A 54-year-old man with stable CKD stage 3 is being followed up in clinic. His serum creatinine is 1.6 mg/dL. Which eGFR equation is currently preferred for routine clinical reporting?",
+    "options": [
+      "Cockcroft–Gault",
+      "MDRD",
+      "CKD-EPI",
+      "Inulin clearance",
+      "24-hour creatinine clearance"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "-",
+        "explanation": "Answer c – CKD-EPI is more accurate, particularly at higher GFR values, and is now preferred over MDRD for routine use."
+      }
+    ]
+  },
+  {
+    "question_number": 88,
+    "question": "A 68-year-old man undergoes percutaneous renal cryoablation for small renal mass using an argon-based system. The extreme cooling of -160 C at the probe tip occurs primarily due to which physical principle?",
+    "options": [
+      "Bernoulli effect",
+      "Venturi effect",
+      "Joule–Thomson effect",
+      "Bohr effect",
+      "Latent heat of fusion"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Argon-based cryoprobes rely on rapid expansion of high-pressure inert gas, producing cooling via the Joule–Thomson effect."
+      }
+    ]
+  },
+  {
+    "question_number": 89,
+    "question": "Compared with liquid nitrogen systems, argon-based cryotherapy systems offer:",
+    "options": [
+      "Lower minimum temperature",
+      "Slower freezing rate",
+      "Less precise temperature control",
+      "Faster achievement of target temperature",
+      "Reduced thermal gradient"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "-",
+        "explanation": "Answer d – Over the course of the ensuing decades, multiple investigators described the use of cooled gases for treatment of various skin conditions, beginning with liquefied air (–190°C), followed by solidified carbon dioxide (–78.5°C), liquid oxygen (–182.9°C), and then eventually liquid nitrogen (–196°C). A significant breakthrough in the use of CA came with the development of argon gas–based probes, which rely on the Joule-Thomson principle (low temperatures are achieved by the rapid expansion of high-pressure, inert gas) to generate temperatures of –185.7°C within the target tissues. In addition to providing a reliable target tempera- ture, argon-based systems are more efficient, with target temperatures reached faster and with a steeper internal thermal gradient"
+      }
+    ]
+  },
+  {
+    "question_number": 90,
+    "question": "A 58-year-old man has a bulbar urethral mass. Which histology is relatively more common at this site compared to other urethral segments?",
+    "options": [
+      "Urothelial carcinoma",
+      "Squamous cell carcinoma",
+      "Adenocarcinoma",
+      "Sarcoma",
+      "Melanoma"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "-",
+        "explanation": "Answer c – Carcinoma of the male urethra is categorized according to loca- tion and histology. Among male urethral cancers described in population-level studies, 50-80% are urothelial carcinomas, 10-30% are squamous cell carcinomas (SCCs), and 5-10% are adenocarcinomas. The majority of posterior urethral cancers are urothelial carcinomas, whereas upward of 80% of anterior urethral cancers are SCCs. Adenocarcinoma tends to be more common in the bulbar urethra"
+      }
+    ]
+  },
+  {
+    "question_number": 91,
+    "question": "A 35-year-old man is incidentally found to have a horseshoe kidney on CT. Which statement regarding epidemiology is most accurate?",
+    "options": [
+      "Occurs in 1 in 100 individuals",
+      "More common in females",
+      "Occurs in approximately 0.25% of the population",
+      "Usually inherited in an autosomal dominant pattern",
+      "Almost always associated with a single renal artery"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Horseshoe kidney occurs in ~1 in 400 individuals and is twice as common in males. Horseshoe kidney is found more commonly in males, with a ratio slightly greater than 2:1. It is doubtful that this anomaly represents a particular genetic predisposition. The pelves and ureters of the horseshoe kidney are usually anteriorly placed, crossing ventrally to the isthmus. The isthmus is located adjacent to the L3 or L4 vertebra just below the origin of the inferior mesenteric artery from the aorta. The blood supply to the horseshoe kidney can be variable, and a single artery and vein to each moiety is the exception rather than the norm. Only 5% of the patients had the simple situ- ation of only one artery on each side, whereas others have reported between 20% and 30% of cases with one renal artery to each kidney."
+      }
+    ]
+  },
+  {
+    "question_number": 92,
+    "question": "The glans penis is formed by:",
+    "options": [
+      "Distal expansion of the corpora cavernosa",
+      "Distal expansion of the corpus spongiosum",
+      "Fusion of all three erectile bodies",
+      "Thickened tunica albuginea",
+      "Buck’s fascia"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – At its distal end, the corpus spongiosum expands to form the glans penis. The urethra opens on the ventral aspect of the tip of the glans in a slitlike, vertical meatus. At its base, the penis is sup- ported by two ligaments composed primarily of elastic fibers that are continuous with the fascia of the penis."
+      }
+    ]
+  },
+  {
+    "question_number": 93,
+    "question": "During penile degloving for surgery, which structure is found within Buck’s fascia on the dorsal aspect?",
+    "options": [
+      "Superficial dorsal vein",
+      "Corpus spongiosum",
+      "Deep dorsal vein ",
+      "Dartos fascia",
+      "Preputial vessels"
+    ],
+    "correct_answer": "",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – In the penis, the erectile bodies are surrounded by tunica albuginea, Buck’s fascia, dartos fascia, and skin. Buck’s fascia is the tough, elastic layer immediately adjacent to the tunica albuginea. On the superior aspect of the corpora cavernosa, the deep dorsal vein, paired dorsal arteries, and multiple branches of the dorsal nerves are contained within the envelope of Buck’s fascia."
+      }
+    ]
+  },
+  {
+    "question_number": 94,
+    "question": "The primary proposed mechanism of PTNS in treating OAB is:",
+    "options": [
+      "Direct detrusor muscle relaxation",
+      "Inhibition of pelvic floor motor neurons",
+      "Cross-signaling between sympathetic and parasympathetic postganglionic neurons",
+      "Increased acetylcholine release at the bladder",
+      "Denervation of bladder afferents"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Neuromodulation of the LUT is extensively applied in patients with OAB, and the most documented technique is SNS. PTNS has also been extensively documented as an alternative means of nerve stimulation. Neuromodulation is postulated to be the effect of cross signaling between sympa- thetic and parasympathetic postganglionic nerve terminals and synapses causing alteration of efferent nerve signals from the spinal cord to the bladder."
+      }
+    ]
+  },
+  {
+    "question_number": 95,
+    "question": "During PTNS, the needle insertion site is best described as:",
+    "options": [
+      "Immediately posterior to the medial malleolus",
+      "1–2 cm cephalad to the medial malleolus over the tibialis posterior tendon",
+      "3–4 cm cephalad to the medial malleolus between the posterior tibial margin and soleus muscle",
+      "At the level of the ankle joint anterior to the tibia",
+      "Directly over the tibial nerve in the tarsal tunnel"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – "
+      }
+    ]
+  },
+  {
+    "question_number": 96,
+    "question": "A 45-year-old woman is undergoing percutaneous tibial nerve stimulation (PTNS) for refractory overactive bladder. In which position should the patient be placed during the procedure?",
+    "options": [
+      "Prone with the foot dorsiflexed",
+      "Supine with the medial malleolus pointing upward",
+      "Lateral decubitus with the affected leg dependent",
+      "Supine with knee flexed and foot plantar-flexed",
+      "Sitting position with leg dangling"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – PTNS is applied in the supine position with the medial malleolus pointing upward. A 34-gauge stainless steel needle is inserted ,3 to 4 cm, or three fingerbreadths, cephalad to the medial malleolus, between the posterior margin of the tibia and soleus muscle with an angulation of 60 to 90 degrees. The tip of the needle must be close to the tibial nerve without actually touching it. Stimulation of the posterior tibial nerve leads to effects in both efferent and afferent nerve fibers. Flexion of the great toe, or fanning, is a result of an efferent effect, whereas the sensory efferent effect is a radiating tickling sensation of the sole."
+      }
+    ]
+  },
+  {
+    "question_number": 97,
+    "question": "Approximately what proportion of patients with non–muscle-invasive bladder cancer progress to muscle-invasive disease during initial management?",
+    "options": [
+      "5%",
+      "10%",
+      "20%",
+      "35%",
+      "50%"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The majority of patients with muscle-invasive bladder cancer have muscle-invasive disease at the time of diagnosis, whereas approximately 20% progress from non–muscle-invasive bladder cancer to invasive disease while undergoing initial management."
+      }
+    ]
+  },
+  {
+    "question_number": 98,
+    "question": "A 68-year-old patient presents with distant metastatic bladder cancer. What is the expected 5-year overall survival?",
+    "options": [
+      "<5%",
+      "8%",
+      "20%",
+      "39%",
+      "70%"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – For patients with localized bladder cancer, the 5-year survival rate is 70%; however, that includes those with non–muscle-invasive disease. For those presenting with regional and distant disease, the 5-year overall survival (OS) is only 39% and 8%, respectively (American Cancer Society, 2023)."
+      }
+    ]
+  },
+  {
+    "question_number": 99,
+    "question": "A 42-year-old recurrent calcium stone former is found to have low urinary citrate. What is the primary mechanism by which oral citrate therapy increases urinary citrate levels?",
+    "options": [
+      "Direct filtration of citrate through the glomerulus",
+      "Inhibition of distal tubular citrate secretion",
+      "Metabolism of citrate to bicarbonate ",
+      "Increased hepatic production of citrate",
+      "Reduced urinary calcium excretion"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Orally ingested citrate salts are metabolized to bicarbonate in the liver. The resulting alkali load in turn inhibits proximal tubular citrate reabsorption, which leads to increased levels of citrate in the urine"
+      }
+    ]
+  },
+  {
+    "question_number": 100,
+    "question": "Why does sodium citrate fail to lower urinary calcium excretion compared to potassium citrate",
+    "options": [
+      "It is poorly absorbed",
+      "It does not alkalinize urine",
+      "It increases sodium load",
+      "It inhibits citrate metabolism",
+      "It increases oxalate excretion"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Sodium citrate does not lower urinary calcium excretion, perhaps as a result of the increased sodium load associated with this therapy. Citrates are generally well tolerated, though several common side effects exist. The most common side effect is GI upset."
+      }
+    ]
+  },
+  {
+    "question_number": 101,
+    "question": "Why is the region near the tip of the 12th rib considered favorable for retroperitoneal access?",
+    "options": [
+      "It avoids major vascular structures",
+      "It overlies the renal hilum",
+      "All layers of lumbodorsal fascia have merged into one",
+      "It is free of muscle",
+      "It avoids pleural reflection"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The lumbodorsal (thoracolumbar) fascia is composed of three distinct layers that invest the posterior abdominal wall musculature. These three layers merge into one as they travel later- ally. A common access point to the retroperitoneum is near the tip of the 12th rib, where all layers have merged into one. This single layer of lumbodorsal fascia merges with the aponeurosis of the transversus abdominis muscle anterolaterally."
+      }
+    ]
+  },
+  {
+    "question_number": 102,
+    "question": "Which viral infection is listed as a potential cause of haematospermia in younger men?",
+    "options": [
+      "Human papillomavirus",
+      "Cytomegalovirus",
+      "Herpes simplex virus",
+      "Epstein–Barr virus",
+      "HIV"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Usually intermittent, benign, self- limiting, and no cause identified. Causes in age <40y: usually inflammatory (e.g. prostatitis, epididymo- orchitis, urethritis); infective, including sexually transmitted diseases (STDs) (e.g. gonococcus), non- STD infection (e.g. Enterococcus faecalis, Chlamydia trachomatis, Ureaplasma urealyticum), or viral infection (e.g. herpes simplex), urethral warts, or idiopathic (though, to an extent, this reflects the limited investigation that is usually carried out in this age group). Rarely, testicular tumour; perineal or testicular trauma. Tumours are found in 2.4%. Oxford handbook of Urology Page-14"
+      }
+    ]
+  },
+  {
+    "question_number": 103,
+    "question": "What proportion of patients forming uric acid stones have a history of gout?",
+    "options": [
+      "25%",
+      "40%",
+      "50%",
+      "65%",
+      "75%"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Urine is frequently supersaturated with uric acid (derived from a purine- rich diet, i.e. animal protein). Fifty per cent of patients who form uric acid stones have gout. The other 50% do so because of a high protein and low fluid in- take (‘western’ lifestyle). In patients with gout, the risk of developing stones is 71% per year after the first attack of gout. Uric acid stones form in concentrated acid urine. Dissolution therapy is based on hydration, urine alkalinization, allopurinol, and dietary manipulation. The target urine to pH is 6.5– 7 (potassium citrate 30– 60mEq day, equivalent to 15– 30mL of a potassium citrate solution tds or qds). In those with hyperuricaemia or urinary uric acid excretion of >1200mg/ day, add allopurinol 300– 600mg/ day (inhibits the conversion of hypoxanthine and xanthine to uric acid). Dissolution of large stones (even staghorn calculi) is possible with this regimen. Oxford handbook of Urology Page-474"
+      }
+    ]
+  },
+  {
+    "question_number": 104,
+    "question": "Posterior urethral injury occurs in approximately what proportion of patients sustaining a pelvic fracture?",
+    "options": [
+      "<1%",
+      "2–4%",
+      "5–15%",
+      "20–30%",
+      ">30%"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The posterior urethra (essentially the membranous urethra) is injured, with roughly the same frequency as the bladder, in subjects who sustain a pelvic fracture, occurring in 5– 15% of such cases. Most posterior urethral injuries occur in association with pelvic fractures. Oxford handbook of Urology Page-535"
+      }
+    ]
+  },
+  {
+    "question_number": 105,
+    "question": "In which clinical scenario is PCA3 most commonly used?",
+    "options": [
+      "Primary screening in the general population",
+      "Diagnosis of metastatic prostate cancer",
+      "Men with elevated PSA before first biopsy",
+      "Men with prior negative biopsy considering repeat biopsy",
+      "Monitoring response to prostate cancer treatment"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Prostate cancer antigen 3 (PCA3): this gene is overexpressed in 95% of PCs, though its function is unclear. Commercially known as Progensa® , RNA transcripts are amplified and detected from urine sediment. Specificity for PC diagnosis is improved, compared with serum PSA alone (around 70%), in men who have already undergone one negative biopsy, though a sensitivity of 50– 60% (i.e. at least 40% of false- negative results) remains an issue when advising patients whether or not to undergo repeat biopsy, regardless of PSA changes. Oxford handbook of Urology Page- 338"
+      }
+    ]
+  },
+  {
+    "question_number": 106,
+    "question": "According to the National Council on Radiation Protection (USA), fetal risk is considered negligible at radiation doses:",
+    "options": [
+      "<25 mGy",
+      "<50 mGy",
+      "<75 mGy",
+      "<100 mGy",
+      "<150 mGy"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – The fetus is most at risk during organogenesis (weeks 4– 10 of gestation). Radiation doses of <100mGy are reported as unlikely to have an adverse effect on the fetus. In USA, the National Council on Radiation Protection has stated that ‘fetal risk is considered to be negligible at <50mGy when compared to the other risks of pregnancy and the risk of malformations is significantly increased above control levels at doses >150mGy’. The American College of Obstetricians and Gynecologists has stated that ‘X- ray exposure to <50mGy has not been associated with an increase in fetal anomalies or pregnancy loss’. However, every effort should be made to limit exposure of the fetus to radiation. Oxford handbook of Urology Page- 498"
+      }
+    ]
+  },
+  {
+    "question_number": 107,
+    "question": "What are the approximate stone-free rates for stones <1 cm when comparing ESWL and F-URS?",
+    "options": [
+      "50% vs 35%",
+      "35% vs 50%",
+      "71% vs 37%",
+      "37% vs 71%",
+      "90% vs 90%"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – For 1cm or smaller stones, ESWL or flexible ureterorenoscopy are rea- sonable first- line approaches, but warn the patient that stone clearance is relatively low for both (35% vs 50%). For 1cm or smaller stones, ESWL or flexible ureterorenoscopy are rea- sonable first- line approaches, but warn the patient that stone clearance is relatively low for both (35% vs 50%). Oxford handbook of Urology Page- 470"
+      }
+    ]
+  },
+  {
+    "question_number": 108,
+    "question": "Which urodynamic finding supports the diagnosis of interstitial cystitis under the NIDDK criteria?",
+    "options": [
+      "Involuntary bladder contractions",
+      "Increased bladder capacity",
+      "Decreased bladder compliance",
+      "Normal sensation with filling",
+      "Detrusor overactivity"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "-",
+        "explanation": "Answer c – Involuntary bladder contractions are exclusion criteria and reduced compliance are inclusion criteria. Oxford handbook of Urology Page- 233"
+      }
+    ]
+  },
+  {
+    "question_number": 109,
+    "question": "Which primary malignancy is the most common source of metastatic deposits to the testis?",
+    "options": [
+      "Lung",
+      "Colon",
+      "Kidney",
+      "Prostate",
+      "Bladder"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Metastases within the testis constitute 1% of all testicular tumours, notably spreading haematogenously from the prostate (35%), lung (19%), colon (9%), and kidney (7%). The right testis is affected slightly more commonly than the left; synchronous bilateral TC occurs in 1– 2% of cases. Oxford handbook of Urology Page- 394"
+      }
+    ]
+  },
+  {
+    "question_number": 110,
+    "question": "What is the minimum Johnsen score at which spermatozoa can be used for fertility treatment?",
+    "options": [
+      "≥6",
+      "≥7",
+      "≥8",
+      "≥9",
+      "10 only"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The Johnsen score ranges from 1 (neither germ cells nor Sertoli cells present in the sample) to 10 (complete spermatogenesis, many spermatozoa). Only mature sperm- atozoa (score 8 or above) can be used for fertility treatment. Oxford handbook of Urology Page- 564"
+      }
+    ]
+  },
+  {
+    "question_number": 111,
+    "question": "What is the pregnancy rate following vasectomy reversal performed within 3 years?",
+    "options": [
+      "30%",
+      "44%",
+      "53%",
+      "76%",
+      "89%"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "-",
+        "explanation": "Answer d – Oxford handbook of Urology Page- 579"
+      }
+    ]
+  },
+  {
+    "question_number": 112,
+    "question": "A patient wants a PDE5 inhibitor with the fastest onset of action. Which drug is most suitable?",
+    "options": [
+      "Sildenafil",
+      "Vardenafil",
+      "Tadalafil",
+      "Avanafil",
+      "Papaverine"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Oxford handbook of Urology Page- 591"
+      }
+    ]
+  },
+  {
+    "question_number": 113,
+    "question": "Which PDE5 inhibitor has an overall lower risk of side effects, including penile pain and priapism?",
+    "options": [
+      "Sildenafil",
+      "Vardenafil",
+      "Tadalafil",
+      "Avanafil",
+      "Papaverine"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "-",
+        "explanation": "Answer d – Oxford handbook of Urology Page- 591"
+      }
+    ]
+  },
+  {
+    "question_number": 114,
+    "question": "Posterior urethral valves are more common in children with which condition?",
+    "options": [
+      "Turner syndrome",
+      "Klinefelter syndrome",
+      "Down’s syndrome",
+      "Noonan syndrome",
+      "Prader–Willi syndrome"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Incidence is One in >5000 ♂ (higher in Down’s syndrome). Pathology - PUV may arise through an abnormal insertion of the Wolffian ducts into the urogenital sinus around week 7 of fetal development. Presentation-Prenatal USS: 80% are diagnosed prenatally, with 60% identified on USS at 20wk. Immediate referral to specialist centres after birth is recommended. PUV account for 1% of cases of antenatal hydronephrosis. Oxford handbook of Urology Page- 704"
+      }
+    ]
+  },
+  {
+    "question_number": 115,
+    "question": "VURD syndrome in the context of PUV refers to:",
+    "options": [
+      "Bilateral reflux with normal renal function",
+      "Unilateral reflux into a non-functioning dysplastic kidney",
+      "Distal ureteric obstruction",
+      "Reflux with bladder diverticula only",
+      "Renal vein thrombosis"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – pop- off valve syndrome’ is seen in 20% of PUV. It describes mechanisms by which high urinary tract pressure is dissipated to allow normal renal development. It includes leaking of urine from a small bladder or renal pelvis rupture (urinary ascites), unilateral reflux into a non- functioning kidney (VUR with renal dysplasia or VURD), and formation of bladder diverticuli. Oxford handbook of Urology Page- 704"
+      }
+    ]
+  },
+  {
+    "question_number": 116,
+    "question": "Spontaneous resolution of hydronephrosis in PUJO occurs in approximately:?",
+    "options": [
+      "10%",
+      "17%",
+      "27%",
+      "50%",
+      "56%"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Long- term studies in patients with good renal function have demonstrated that function frequently remains stable (56%) or spontaneous resolution occurs (27%), with only 17% requiring pyeloplasty for loss of function.1 The likelihood of requiring surgery is higher with greater TAPD: <20mm, 3% re- quire surgery; 20– 29mm, 20% surgery; 30– 39mm, 50% surgery; 40– 49mm, 80% surgery; and >50mm, up to 100% surgery.2 Overall, 90% of patients with a TAPD of >30mm will require surgery.  Oxford handbook of Urology Page- 703"
+      }
+    ]
+  },
+  {
+    "question_number": 117,
+    "question": "Which of the following is a key pathophysiological factor in nocturnal enuresis?",
+    "options": [
+      "Increased nocturnal ADH secretion",
+      "Reduced daytime bladder capacity",
+      "Increased nocturnal urine production",
+      "Increased arousal from sleep",
+      "Reduced daytime urine output"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Pathophysiology -Three main factors that interact to produce NE are: Altered ADH secretion: an abnormal decrease in ADH levels at night causes i urine production (NP). Altered sleep/ arousal mechanism: impaired ‘arousal from sleep’ response to a full bladder. Reduced nocturnal functional bladder capacity (± nocturnal detrusor overactivity). Oxford handbook of Urology Page- 724"
+      }
+    ]
+  },
+  {
+    "question_number": 118,
+    "question": "Which antimuscarinic agent has a mixed mechanism of action, including antimuscarinic, local anaesthetic, and direct smooth muscle relaxation effects?",
+    "options": [
+      "Tolterodine",
+      "Solifenacin",
+      "Darifenacin",
+      "Fesoterodine",
+      "Oxybutynin"
+    ],
+    "correct_answer": "E",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer e – Oxybutynin: mixed action (antimuscarinic, LA, and direct muscle relaxation). It is available as immediate- or extended- release (er) tablets, transdermal patch and gel preparations, and can be given intravesically. It is effective but has a high rate of side effects, reducing patient compliance. NICE recommends this as a first- line drug treatment. Oxford handbook of Urology Page- 162"
+      }
+    ]
+  },
+  {
+    "question_number": 119,
+    "question": "Which antimuscarinic is highly selective for M3 receptors?",
+    "options": [
+      "Tolterodine",
+      "Fesoterodine",
+      "Solifenacin",
+      "Darifenacin",
+      "Oxybutynin"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Darifenacin: highly selective M3 antagonist. Achieves significant reduction in urinary frequency, urgency, incontinence episodes (77% with 15mg dose).It is well tolerated (2.1% discontinued 15mg treatment due to side effects). NICE recommends this as a first- line drug treatment. Oxford handbook of Urology Page- 162"
+      }
+    ]
+  },
+  {
+    "question_number": 120,
+    "question": "Sipuleucel-T showed benefit specifically in men with:",
+    "options": [
+      "Symptomatic metastatic CRPC",
+      "Minimally symptomatic CRPC",
+      "Hormone-sensitive prostate cancer",
+      "Localized prostate cancer",
+      "Castration-naïve disease"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Provenge® (sipuleucel- T) vaccine: this is the first patient- derived US Food and Drug Administration (FDA)- approved CRPC immunotherapy against prostatic acid phosphatase. A 4- month survival advantage has been demonstrated over placebo in a randomized trial of men with minimally symptomatic CRPC (IMPACT, 2010). Oxford handbook of Urology Page- 377"
+      }
+    ]
+  },
+  {
+    "question_number": 121,
+    "question": "Sipuleucel-T targets which prostate cancer antigen?",
+    "options": [
+      "PSA",
+      "PSMA",
+      "Prostatic acid phosphatase",
+      "Androgen receptor",
+      "BRCA2"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Provenge® (sipuleucel- T) vaccine: this is the first patient- derived US Food and Drug Administration (FDA)- approved CRPC immunotherapy against prostatic acid phosphatase. A 4- month survival advantage has been demonstrated over placebo in a randomized trial of men with minimally symptomatic CRPC (IMPACT, 2010). Oxford handbook of Urology Page- 377"
+      }
+    ]
+  },
+  {
+    "question_number": 122,
+    "question": "Radium-223 (Alpharadin) primarily benefits patients with CRPC by:",
+    "options": [
+      "Reducing visceral metastases",
+      "Improving urinary symptoms",
+      "Reducing bone skeletal-related events and pain",
+      "Preventing androgen resistance",
+      "Eradicating primary prostate tumour"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Radium- 223 (Alpharadin): reduced bone SREs, bone pain, and prolonged survival by 3.6 months in a UK placebo- controlled RCT of 922 CRPC patients (ALSYMPCA, 2013). It is approved for use by UK NICE, either post- docetaxel or in CRPC patients unsuitable to receive docetaxel. Oxford handbook of Urology Page- 377"
+      }
+    ]
+  },
+  {
+    "question_number": 123,
+    "question": "A patient with suspected CIS undergoes enhanced cystoscopy using blue light after intravesical instillation of hexaminolevulinic acid. The abnormal areas fluoresce red. What is the underlying mechanism?",
+    "options": [
+      "Increased haemoglobin absorption",
+      "Accumulation of porphyrin IX in cancer cells",
+      "Increased depth of light penetration",
+      "Increased smooth muscle vascularity",
+      "Enhanced urothelial thickness"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – PDD (fluorescence cystoscopy): uses blue light (400nm) in combination with an intravesical porphyrin- based photosensitizer hexaminolevulinic acid (HAL). In bladder cancer cells, this leads to red fluorescence (640nm) due to high levels of the heme intermediate protoporphyrin IX. Oxford handbook of Urology Page- 293"
+      }
+    ]
+  },
+  {
+    "question_number": 124,
+    "question": "A 64-year-old man undergoes TURBT for a solitary G1 Ta TCC. Histology confirms complete resection. What is the most appropriate next step in management?",
+    "options": [
+      "Intravesical BCG × 6 weeks",
+      "Intravesical MMC × 6 weeks",
+      "Immediate single-dose intravesical chemotherapy",
+      "Six-monthly intravesical chemotherapy",
+      "Observation only"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – "
+      }
+    ]
+  },
+  {
+    "question_number": 125,
+    "question": "A 71-year-old man is diagnosed with G3 Ta T1 TCC following TURBT. What is the most appropriate management strategy?",
+    "options": [
+      "Observation and cystoscopy at 12 months",
+      "Immediate cystectomy",
+      "Second resection and intravesical BCG",
+      "Intravesical chemotherapy only",
+      "Radiotherapy"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "-",
+        "explanation": "Answer c – Oxford handbook of Urology"
+      }
+    ]
+  },
+  {
+    "question_number": 126,
+    "question": "Which extrarenal cystic manifestation is most common in ADPKD?",
+    "options": [
+      "Pancreatic cysts",
+      "Splenic cysts",
+      "Seminal vesicle cysts",
+      "Hepatic cysts",
+      "Ovarian cysts"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – The kidneys reach an enormous size due to multiple fluid- filled cysts and can easily be palpated on abdominal examination. Expansion of the cysts results in ischaemic atrophy of the surrounding renal parenchyma and obstruction of normal renal tubules. End- stage renal failure occurs at around age 50y. Associated disorders Ten to 30% incidence of circle of Willis berry aneurysms (associated with subarachnoid haemorrhage), cysts of the liver (33%), pancreas (10%), spleen (<5%), and seminal vesicles, mitral valve prolapse, aortic root dila- tation, aortic aneurysms, and diverticular disease. Oxford handbook of Urology Page- 416"
+      }
+    ]
+  },
+  {
+    "question_number": 127,
+    "question": "Regarding malignancy risk in ADPKD, which statement is correct?",
+    "options": [
+      "RCC risk is markedly increased",
+      "RCC risk is lower than the general population",
+      "RCC risk is the same as the general population",
+      "RCC is the leading cause of death",
+      "RCC develops only after transplantation"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Of note, the incidence of renal adenoma is 720%; however, the risk of RCC is the same as the general population. Oxford handbook of Urology Page- 416"
+      }
+    ]
+  },
+  {
+    "question_number": 128,
+    "question": "A woman with non-obstructive urinary retention undergoes SNS implantation. What proportion of such patients no longer require intermittent self-catheterisation (ISC) at 18 months?",
+    "options": [
+      "20%",
+      "30%",
+      "40%",
+      "60%",
+      "80%"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – For non- obstructive urinary retention in those responding to PNE and who were subsequently implanted, 58% no longer re- quired ISC at 18 months of follow- up,7 results mirrored by others (50– 55% stopping ISC) at a mean of 41– 43 months (70% with Fowler’s syndrome) Oxford handbook of Urology Page- 655"
+      }
+    ]
+  },
+  {
+    "question_number": 129,
+    "question": "Which subgroup of patients with urinary retention has the highest response rate to Sacral neuromodulation, with around 70% stopping ISC?",
+    "options": [
+      "Diabetic neuropathy",
+      "Multiple sclerosis",
+      "Spinal cord injury",
+      "Fowler’s syndrome",
+      "Parkinson’s disease"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Oxford handbook of Urology Page- 655"
+      }
+    ]
+  },
+  {
+    "question_number": 130,
+    "question": "A 29-year-old primigravida is reviewed at 16 weeks’ gestation. She is asymptomatic and has normal blood pressure and urine analysis. Which of the following best describes the change in renal plasma flow (RPF) during normal pregnancy?",
+    "options": [
+      "It decreases progressively from the first trimester",
+      "It increases by approximately 25% by 16 weeks and returns to normal by term",
+      "It increases early, rising by about 75% by 16 weeks and is maintained until late pregnancy",
+      "It remains unchanged until the third trimester",
+      "It peaks in the third trimester and remains elevated postpartum"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Renal plasma flow (RPF) rate: goes up early in the first trimester, reaching an increase of 75% by 16wk gestation. This is maintained until 34wk gestation, followed by a decline of 25% towards term. The question can be asked on GFR as well – in that case remember this from Oxford - The GFR: increases by 50% by the end of the first trimester, which is maintained until term. GFR has returned to normal levels by 3 months after delivery. Oxford handbook of Urology Page- 658"
+      }
+    ]
+  },
+  {
+    "question_number": 131,
+    "question": "What is the approximate radiation dose of a standard CT-KUB ?",
+    "options": [
+      "1.5 mSv",
+      "3 mSv",
+      "7.5 mSv",
+      "4.7 mSv",
+      "15 mSv"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – CT- KUB radiation dose: 74.7mSv, compared to 1.5mSv for IVU (fatal cancer risk is estimated at 1 in 2000 for a 10mSv radiation exposure). ULDCT lowers radiation exposure (0.6– 2mSv), but at the expense of a lower sensitivity (68– 86%) for small (<3mm) ureteric stones. CEULDCT uses contrast which increases sensitivity (97%) and specificity (100%) for detecting small ureteric stone disease, while limiting radiation dose to levels comparable with IVU (1.7mSv vs 1.4mSv). Oxford handbook of Urology Page- 478"
+      }
+    ]
+  },
+  {
+    "question_number": 132,
+    "question": "A 32-year-old man presents with acute flank pain suggestive of ureteric colic. Which statement best compares standard CT-KUB and ultra-low-dose CT (ULDCT) ?",
+    "options": [
+      "Standard CT-KUB has a radiation dose similar to IVU but lower sensitivity",
+      "ULDCT has higher sensitivity than standard CT-KUB for small stones",
+      "Standard CT-KUB has a higher radiation dose but has greater sensitivity than ULDCT",
+      "ULDCT delivers higher radiation than standard CT-KUB but avoids contrast use",
+      "Both have equivalent radiation dose and sensitivity"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – CT- KUB radiation dose: 4.7mSv, compared to 1.5mSv for IVU (fatal cancer risk is estimated at 1 in 2000 for a 10mSv radiation exposure). ULDCT lowers radiation exposure (0.6– 2mSv), but at the expense of a lower sensitivity (68– 86%) for small (<3mm) ureteric stones. CEULDCT uses contrast which increases sensitivity (97%) and specificity (100%) for detecting small ureteric stone disease, while limiting radiation dose to levels comparable with IVU (1.7mSv vs 1.4mSv). Oxford handbook of Urology Page- 478"
+      }
+    ]
+  },
+  {
+    "question_number": 133,
+    "question": "A 45-year-old man undergoes renal transplantation and is commenced on tacrolimus. What is its primary mechanism of action?",
+    "options": [
+      "IL-2 receptor blockade",
+      "Cyclophilin binding",
+      "Calcineurin inhibition",
+      "TNF-α suppression",
+      "B-cell inhibition"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Tacrolimus inhibits T lymphocyte activation by binding to FKBP-12, an intracellular protein. A complex is then formed of tacrolimus–FKBP-12, calcium, calmodulin, and calcineurin, which inhibits the phosphatase activity of calcineurin. Peter Morris Page - 243"
+      }
+    ]
+  },
+  {
+    "question_number": 134,
+    "question": "Which histological finding is characteristic of AMR on renal transplant biopsy?",
+    "options": [
+      "Tubulitis ",
+      "Interstitial fibrosis",
+      "Glomerulitis and peritubular capillaritis",
+      "Arteritis",
+      "Papillary necrosis"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The diagnosis of AMR is based on the presence of DSA in recipient serum and biopsy of the transplanted kidney demonstrating microvascular inflammation (glomerulitis or peritubular capillaritis), immune cell infiltration, and usually evidence of complement activation by C4d staining of peritubular capillaries. Peter Morris Page - 204"
+      }
+    ]
+  },
+  {
+    "question_number": 135,
+    "question": "Most common location of post-transplant lymphoceles are :",
+    "options": [
+      "Anterior to the bladder",
+      "Adjacent to the upper pole of the kidney",
+      "Adjacent to the lower pole of the kidney",
+      "Within the renal sinus",
+      "Retrocrural"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Larger collections may become apparent clinically and usually do so at 1 week to 6 months after transplantation, with a peak incidence after hospital dis- charge toward the end of the first month. Most are situated adjacent to the lower pole of the kidney and posterolateral to the transplant ureter. Although intralymphocele fluid pressure measurements have not been reported, they must be considerable. The most common presentation is sleep disturbance owing to urinary frequency as a result of compression of the bladder. Peter Morris Page - 480"
+      }
+    ]
+  },
+  {
+    "question_number": 136,
+    "question": "Which statement best describes universal CMV prophylaxis after transplantation?",
+    "options": [
+      "Antivirals only after positive CMV PCR",
+      "Antivirals given to all at-risk patients for a defined period",
+      "Weekly monitoring without treatment",
+      "Treatment only for symptomatic patients",
+      "Reserved for CMV Reactive− recipients only"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Two strategies are commonly used for CMV prevention—universal prophylaxis and preemptive therapy. Universal prophylaxis involves giving antiviral therapy to all at-risk patients after transplantation for a defined period. In preemptive therapy, QNAT assays are used to monitor patients at predefined intervals (generally weekly for weeks 1–12) to detect early disease. Prophylaxis has the possible advantage of not only preventing CMV infection during the period of greatest risk but also diminishing infections secondary to HHV-6, HHV-7, and EBV. In practice, neither universal prophylaxis nor preemptive therapy is perfect. Many centers use a combination of both approaches: universal prophylaxis for the highest-risk recipients (Donor+/Recipient− and Recipient+ with T cell depletion) and preemptive therapy for others. Peter Morris Page – 528"
+      }
+    ]
+  },
+  {
+    "question_number": 137,
+    "question": "According to UK standards, permanent vascular access for dialysis should ideally be constructed how long before the anticipated need for dialysis?",
+    "options": [
+      "4 weeks",
+      "8 weeks",
+      "12 weeks",
+      "16 weeks",
+      "At the time of dialysis initiation"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – In the UK the Renal Association and the joint working party of the Renal Association, the Vascular Society of Great Britain and Ireland, and the British Society of Interventional Radiology have produced the following standards:  65% of all patients presenting within 3 months of dialysis should start hemodialysis on a useable AVF. • 85% of all prevalent hemodialysis patients should be dialyzed using a native AVF. □ No patient requiring dialysis should wait more than 4 weeks for fistula construction. □ Permanent access should be constructed 16 weeks and preferably 6 months before anticipated need for dialysis. □ Preservation of arm veins is critical and unnecessary venipuncture must be avoided. Peter Morris Page – 73"
+      }
+    ]
+  },
+  {
+    "question_number": 138,
+    "question": "Which virus can cause ureteral stenosis due to ureteritis in transplant patients?",
+    "options": [
+      "CMV",
+      "EBV",
+      "BK virus",
+      "HSV",
+      "Adenovirus"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – C Polyomavirus (BK virus) can also lead to ureteral stenosis due to ureteritis. Peter Morris Page – 490"
+      }
+    ]
+  },
+  {
+    "question_number": 139,
+    "question": "Which urologic malignancy shows the largest increase in risk after renal transplantation?",
+    "options": [
+      "Bladder cancer",
+      "Prostate cancer",
+      "Testicular cancer",
+      "Renal cell carcinoma of graft",
+      "Renal cell carcinoma of native kidney"
+    ],
+    "correct_answer": "E",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer e – The largest increase is seen with renal cell carcinoma (RCC), which more commonly arises in the native kidneys, in part because of the increased risk conferred by acquired renal cystic disease on prolonged dialysis. Radical nephrectomy is performed for tumors of the native kidneys, and nephron-sparing surgery should be attempted for masses in the allograft. Although the risk of RCC is increased most significantly, with up to 15-fold risk over non-ESRD/transplanted individuals, prostate cancer remains the most common malignancy. Peter Morris Page – 493"
+      }
+    ]
+  },
+  {
+    "question_number": 140,
+    "question": "A 24-French (Fr) Foley balloon catheter:",
+    "options": [
+      "measures 24 cm long.",
+      "measures 8 mm in outer diameter.",
+      "measures 8 mm in inner diameter.",
+      "measures 1 cm in outer diameter.",
+      "can hold 24 mL of fluid in the retainment balloon."
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Measures 8 mm in outer diameter. The French or Charrière scale was introduced by Joseph E. B. Charrière as a measurement unit for the circumference of a catheter. One unit on the scale equals 0.33 mm in external diameter. A 24-Fr catheter is therefore 8 mm in outer diameter."
+      }
+    ]
+  },
+  {
+    "question_number": 141,
+    "question": "Which of the following statements about the healthy adult male urethra is TRUE?",
+    "options": [
+      "The external meatus is the narrowest and should allow a 24-Fr catheter to pass.",
+      "The bladder neck is the narrowest and should allow for a 24-Fr catheter to pass.",
+      "The prostatic urethra is the narrowest and should allow for a 24-Fr catheter to pass.",
+      "The prostatic urethra is the widest and should allow for a 24-Fr catheter to pass.",
+      "The external meatus is the widest and should allow for a 32-Fr catheter to pass."
+    ],
+    "correct_answer": "A",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer a – The external meatus is the narrowest and should allow a 24-Fr catheter to pass. The caliber of the urethra varies through-out its course. The normal healthy external meatus should allow for a 24-Fr catheter to pass. Subsequent portions of the adult urethra have a larger caliber, the largest being the prostatic urethra with a caliber of approximately 32 Fr. The bladder neck should be large enough to allow for passage of a 28-Fr catheter"
+      }
+    ]
+  },
+  {
+    "question_number": 142,
+    "question": "Following percutaneous renal surgery, loss of renal function is:",
+    "options": [
+      "approximately 5% of ipsilateral function per access site.",
+      "minimal in the absence of vascular injury.",
+      "greater than after shock wave lithotripsy.",
+      "less in pelvic compared to orthotopic kidneys.",
+      "greater in solitary compared to non-solitary kidneys."
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Minimal in the absence of vascular injury. The kidney suffers little permanent damage after uncomplicated percutaneous renal surgery. If there is significant loss of function, it is usually owing to disastrous vascular injury or the angioembolization used to treat hemorrhage. Loss of renal function associated with percutaneous renal surgery is less than or equal to the loss associated with shock wave lithotripsy. There is no evidence that damage to the kidney is any more or less in pelvic, orthotopic, solitary, or nonsolitary kidneys."
+      }
+    ]
+  },
+  {
+    "question_number": 143,
+    "question": "What is the embryologic origin of the seminal vesicles?",
+    "options": [
+      "Mullerian duct",
+      "Ectodermal ridge",
+      "Distal mesonephric duct",
+      "Swelling of the distal paramesonephric duct",
+      "Neural crest cells"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Distal mesonephric duct. The seminal vesicle develops as a dorsolateral bulbous swelling of the distal mesonephric duct at approximately 12 fetal weeks."
+      }
+    ]
+  },
+  {
+    "question_number": 144,
+    "question": "Which of the following statements regarding renal tubular acidosis (RTA) is FALSE?",
+    "options": [
+      "The hallmark of RTA type I is a hyperchloremic metabolic acidosis with a high urinary pH (>5.5) in the presence of persistently low serum HCO 3.",
+      "Type I RTA is also called distal RTA.",
+      "Type II RTA is more common in children.",
+      "The hallmark of type IV RTA is hypokalemia.",
+      "The form of RTA most commonly associated with renal calculi is type I."
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – The hallmark of type IV RTA is hypokalemia. RTA type IV is most commonly associated with hyperkalemia. Aldosterone deficiency or resistance leads to decreased secretion of potassium in the distal tubule."
+      }
+    ]
+  },
+  {
+    "question_number": 145,
+    "question": "The serum urine prostate cancer biomarker PCA-3 represents a:",
+    "options": [
+      "gene on chromosome 20q13.4.",
+      "noncoding gene in the TP53 cluster.",
+      "noncoding mRNA with no known protein product.",
+      "glycosylated protein of molecular weight 60 kD.",
+      "high-molecular-weight nuclear matrix protein."
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Noncoding mRNA with no known protein product. Using differential display and Northern blot analysis to compare normal and prostate cancer tissue, investigators identified the PCA3 prostate-specific gene on chromosome 9q21-22. Study of this gene has determined that it may function as noncoding mRNA, because it has been found to be alternatively spliced, contains a high density of stop codons, and lacks an open reading frame."
+      }
+    ]
+  },
+  {
+    "question_number": 146,
+    "question": "A 34-week-old female fetus has evidence of normal amniotic fluid and unilateral upper pole hydroureteronephrosis with no evidence of an intravesical ureterocele. What does this most likely represent?",
+    "options": [
+      "Vesicoureteral reflux (VUR)",
+      "Ureteropelvic junction obstruction",
+      "Obstructed ectopic ureter",
+      "Cloacal malformation",
+      "None of the above"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Obstructed ectopic ureter. A duplication anomaly with upper pole hydroureteronephrosis is typically associated with a ureterocele, an ectopic ureterocele, or an ectopic ureter causing obstruction. A dilated ureter is typically identified."
+      }
+    ]
+  },
+  {
+    "question_number": 147,
+    "question": "Bilateral renal agenesis (BRA) is associated with mutations of:",
+    "options": [
+      "GFRα1.",
+      "GFDNF.",
+      "RET.",
+      "WNT.",
+      "Pax2."
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – RET. The association between abnormal kidney development and mutations of RET, GDNF, and GFRα1 in 29 stillborn fetuses with BRA or unilateral renal agenesis. Mutations in RET were found in 7 of 19 fetuses with BRA and 2 of 10 fetuses with URA. A mutation in GDNF was found in only 1 fetus with URA who also had mutations in RET. No GFRa1 mutations were observed. These data suggest that congenital renal agenesis results from RET mutations that prevent or impede the embryonic development of RET-dependent structures."
+      }
+    ]
+  },
+  {
+    "question_number": 148,
+    "question": "A 5-year-old boy is seen in the office with complaints of intermittent right flank pain. There have been no episodes of nausea, vomiting, or fevers. He has 3 + blood on a urine dip. His physical exam reveals some mild right costovertebral angle (CVA) tenderness. Which imaging modality should be used first?",
+    "options": [
+      "Magnetic resonance imaging (MRI)",
+      "Plain radiograph, kidney-ureter-bladder (KUB)",
+      "Ultrasound",
+      "Computed tomography (CT) scan",
+      "Retrograde pyelogram"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Ultrasound has a more limited role in the assessment of urolithiasis compared with CT but has the distinct advantage of no associated ionizing radiation. Therefore, ultrasound should be considered as a screening tool in the workup for nonemergent abdominal or flank pain."
+      }
+    ]
+  },
+  {
+    "question_number": 149,
+    "question": "During male reproductive tract development, androgens mediate the differentiation of all of the following structures EXCEPT:",
+    "options": [
+      "seminal vesicles.",
+      "ureter.",
+      "epididymis.",
+      "vas deferens.",
+      "ejaculatory ducts."
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – Ureter. Androgens (testosterone, dihydrotestosterone) mediate the differentiation of the paired wolffian ducts into the seminal vesicles, epididymis, vas deferens, and ejaculatory ducts."
+      }
+    ]
+  },
+  {
+    "question_number": 150,
+    "question": "Bleeding confined by the tunica vaginalis is termed:",
+    "options": [
+      "Scrotal haematoma",
+      "Intratesticular haemorrhage",
+      "Haematocele",
+      "Hydrocele",
+      "Varicocele"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Where bleeding is confined by the tunica vaginalis, a haematocele is said to exist. Intraparenchymal (intratesticular) haemorrhage and bleeding be- neath the parietal layer of the tunica vaginalis will cause the testis to enlarge slightly. The force is usually sufficient to rupture the tunica albuginea and tunica vaginalis, and the seminiferous tubules and blood extrude into the layers of the scrotum. This is a scrotal haematoma. Oxford Handbook of Urology Page 545"
+      }
+    ]
+  },
+  {
+    "question_number": 151,
+    "question": "A 32-year-old man undergoes retroperitoneal lymph node dissection for metastatic testicular cancer. Postoperatively, he develops retrograde ejaculation but no urinary incontinence. What structure was most likely damaged?",
+    "options": [
+      "Pudendal nerve",
+      "Pelvic splanchnic nerves",
+      "Hypogastric plexus",
+      "External urethral sphincter",
+      "Detrusor muscle"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Division of the hypogastric plexus of nerves during a retroperitoneal lymph node dissection for metastatic testis tumours results in paralysis of the bladder neck. This is of significance during ejaculation where nor- mally sympathetic activity results in closure of the bladder neck so that the ejaculate is directed distally into the posterior, and then the anterior, urethra. Oxford Handbook of Urology Page 624"
+      }
+    ]
+  },
+  {
+    "question_number": 152,
+    "question": "A man with a history of pelvic fracture has remained continent for years. He later undergoes TURP for LUTS and becomes incontinent. What best explains this outcome?",
+    "options": [
+      "TURP causes detrusor instability",
+      "External sphincter was weakened",
+      "The bladder neck was his only functioning sphincter",
+      "Pelvic floor muscles were damaged",
+      "Urethral length was reduced"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – During pelvic fracture, the external sphincter and/ or its somatic motor innervation may be damaged, such that it is incompetent and unable to maintain continence of urine. Preservation of bladder neck function (the sympathetic innervation of the bladder neck usually remains intact) can preserve continence. However, if in later life, the patient undergoes TurP or BNI for symptomatic prostatic obstruction, they may well be rendered incontinent because their one remaining sphincter mechanism (the bladder neck) will be divided during these operations. Oxford Handbook of Urology Page 624"
+      }
+    ]
+  },
+  {
+    "question_number": 153,
+    "question": "During bladder filling, which stimulus is primarily detected by bladder wall receptors?",
+    "options": [
+      "Volume",
+      "Stretch",
+      "Pressure",
+      "Tension",
+      "Flow"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – Receptors located in the bladder wall sense increasing tension as the bladder fills (rather than stretch). This information is relayed by afferent neurons to the dorsal horn of the sacral cord. Neurons project from here to the periaqueductal grey matter (PAG) in the pons. The PAG is thus informed about the state of bladder filling. The PAG and other areas of the brain (limbic system orbitofrontal cortex) input into the pon- tine micturition centre (PMC) and determine whether it is appropriate to start micturition. Oxford Handbook of Urology Page 626"
+      }
+    ]
+  },
+  {
+    "question_number": 154,
+    "question": "Relaxation of the external urethral sphincter during micturition occurs because the PMC:",
+    "options": [
+      "Stimulates somatic motoneurons",
+      "Inhibits parasympathetic neurons",
+      "Activates GABAergic and glycinergic interneurons",
+      "Activates sympathetic outflow",
+      "Suppresses bladder afferents"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – The PMC inhibits the somatic motoneurons located in Onuf ’s nucleus (the activation of which causes external sphincter contraction) by exciting gamma- aminobutyric acid (GABA) and glycine- containing inhibitory neurons in the intermediolateral cell column of the sacral cord, which, in turn, project to the motoneurons in Onuf ’s nucleus. In this way, the PMC relaxes the external sphincter. Oxford Handbook of Urology Page 626"
+      }
+    ]
+  },
+  {
+    "question_number": 155,
+    "question": "A 26-year-old primigravida at 12 weeks’ gestation attends for routine antenatal care. She is asymptomatic. Midstream urine culture grows E. coli 10⁵ CFU/mL. What is the most appropriate management?",
+    "options": [
+      "Repeat urine culture to confirm",
+      "No treatment required",
+      "Start antibiotics now",
+      "Wait until symptoms develop",
+      "Ultrasound kidneys"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Asymptomatic bacteriuria Describes an asymptomatic UTI which affects 5– 10% of pregnant women. In the non-pregnant patient, it is defined as two consecutive voided cultures with ≥105 CFUs of the same bacteria, or a single catheterized urine specimen with ≥102 CFUs of one bacterium. However, in pregnant women, treat the infection at the time of the first positive urine culture [rather than wait for a second to confirm asymptomatic bacteriuria (ASB)]. If untreated, there is a 20– 40% risk of developing pyelonephritis. NICE guidance recommends routine screening by MSU culture; treatment of ASB reduces the risk of pyelonephritis. Oxford Handbook of Urology Page 660"
+      }
+    ]
+  },
+  {
+    "question_number": 156,
+    "question": "A patient with acute tubular injury has impaired sensing at the macula densa. Which autoregulatory mechanism is most directly affected?",
+    "options": [
+      "Myogenic response",
+      "Sympathetic vasoconstriction",
+      "Tubuloglomerular feedback",
+      "Efferent arteriolar tone",
+      "Renal venous pressure"
+    ],
+    "correct_answer": "C",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer c – Tubuloglomerular feedback: the flow rate of tubular fluid is sensed at the macula densa of the juxtaglomerular apparatus (Jga), and, in some way, this controls flow through the glomerulus to which the Jga is opposed. Oxford Handbook of Urology Page 835"
+      }
+    ]
+  },
+  {
+    "question_number": 157,
+    "question": "A 58-year-old man with chronic kidney disease develops hyperkalaemia after starting a high-potassium diet. Which nephron segment is primarily responsible for potassium secretion in K⁺ excess?",
+    "options": [
+      "Proximal convoluted tubule",
+      "Thick ascending limb",
+      "Distal convoluted tubule – intercalated cells",
+      "Distal convoluted tubule – principal cells",
+      "Loop of Henle"
+    ],
+    "correct_answer": "D",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer d – The majority of K+ is reabsorbed in the PCT. The DCT can both re- absorb K+ in cases of K+ depletion- hypokalemia- (intercalated cells) and secrete it when there is K+ excess (principal cells). It is also secreted by the CD. Overall, the kidney excretes up to 95% of K+ ingested in the diet. Oxford Handbook of Urology Page 837"
+      }
+    ]
+  },
+  {
+    "question_number": 158,
+    "question": "A 62-year-old man with LUTS due to BPH is started on finasteride. Which enzyme is primarily inhibited to reduce prostatic DHT levels?",
+    "options": [
+      "Type I 5-α reductase",
+      "Type II 5-α reductase",
+      "Aromatase",
+      "Androgen receptor",
+      "Testosterone dehydrogenase"
+    ],
+    "correct_answer": "B",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer b – There are two isoforms of 5AR— type I or ‘extraprostatic’ 5AR (which is absent in prostatic tissue and present in, for example, the skin and liver) and type II or ‘prostatic’ 5AR (which is found exclusively on the nuclear membrane of stromal cells, but not within prostatic epithelial cells). Type I 5AR is not inhibited by finasteride, whereas type II 5AR is. Dutasteride inhibits both type I and II 5AR. Finasteride reduces serum DHT by about 70%, and dutasteride by about 95%. Finasteride re- duces prostatic DHT (type II) by about 80%, and dutasteride by about 94%. We do not know whether these differences translate into differences in clinical efficacy, since neither drug has been compared against the other. Oxford Handbook of Urology Page 72"
+      }
+    ]
+  },
+  {
+    "question_number": 159,
+    "question": "A 70-year-old man stopped his α-blocker after 2 years, stating “it didn’t work.” Approximately what proportion of men discontinue α-blockers within 3 years due to perceived lack of effect?",
+    "options": [
+      "10%",
+      "25%",
+      "40%",
+      "50%",
+      "75%"
+    ],
+    "correct_answer": "E",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer e – A substantial proportion of men stop taking their medication either because of side effects (15– 30% report some constellation of side effects) or because of a perceived lack of effectiveness (75% of men stop taking an α- blocker within 3y because of a perception that it has not worked)"
+      }
+    ]
+  },
+  {
+    "question_number": 160,
+    "question": "",
+    "options": [
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "correct_answer": "",
+    "image": "",
+    "solution": [
+      {
+        "image": "",
+        "explanation": "Answer  – "
+      }
+    ]
+  }
+]
+ 

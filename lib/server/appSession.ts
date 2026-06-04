@@ -21,8 +21,8 @@ export interface AppUserSession {
   vivaMinutesUsed: number;
 }
 
-function getDefaultTier(signInProvider?: string): AppTier {
-  return signInProvider === "anonymous" ? "guest" : "free";
+function getDefaultTier(_signInProvider?: string): AppTier {
+  return "guest";
 }
 
 function normalizeTier(value: unknown): AppTier {

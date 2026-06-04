@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
-import { normalizeEmail } from "@/lib/server/userIdentity";
+import { adminAuth } from "@/lib/firebaseAdmin";
+import { ensureGuestAppUser } from "@/lib/server/appOnboardingService";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,90 +15,29 @@ export async function POST(req: NextRequest) {
 
     const uid = decoded.uid;
     const { email } = await req.json();
-    const normalizedEmail = normalizeEmail(email);
-
-    if (!normalizedEmail) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
-    }
-
-    const existingUserSnapshot = await adminDb
-      .collection("users")
-      .where("email", "==", normalizedEmail)
-      .limit(1)
-      .get();
-
-    if (!existingUserSnapshot.empty) {
-      const existingUserDoc = existingUserSnapshot.docs[0];
-      const existingUser = existingUserDoc.data();
-      const resolvedTier = existingUser.tier === "paid" ? "paid" : "free";
-
-      if (resolvedTier !== existingUser.tier) {
-        await existingUserDoc.ref.set(
-          {
-            tier: resolvedTier,
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-      }
-
-      await adminDb.collection("users").doc(uid).set(
-        {
-          name: existingUser.name ?? "Guest User",
-          email: normalizedEmail,
-          tier: resolvedTier,
-          googleAccessEmail: existingUser.googleAccessEmail ?? normalizedEmail,
-          source: "mobile-app",
-          linkedExistingUserId: existingUserDoc.id,
-          canonicalUserId: existingUserDoc.id,
-          isShadowDuplicate: true,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true }
-      );
-
-      return NextResponse.json({
-        success: true,
-        existing: true,
-        user: {
-          id: uid,
-          name: existingUser.name ?? "Guest User",
-          email: existingUser.email ?? normalizedEmail,
-          tier: resolvedTier,
-          source: existingUser.source ?? "mobile-app",
-          linkedExistingUserId: existingUserDoc.id,
-        },
-      });
-    }
-
-    await adminDb.collection("users").doc(uid).set({
-      name: "Guest User",
-      email: normalizedEmail,
-      tier: "free",
-      googleAccessEmail: normalizedEmail,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      source: "mobile-app",
-      canonicalUserId: uid,
-      isShadowDuplicate: false,
-    }, { merge: true });
+    const user = await ensureGuestAppUser({
+      uid,
+      authEmail: decoded.email ?? null,
+      requestedEmail: typeof email === "string" ? email : null,
+      source: decoded.firebase.sign_in_provider ?? "mobile-app",
+      firebaseName: decoded.name ?? null,
+    });
 
     return NextResponse.json({
       success: true,
-      existing: false,
+      existing: user.existing,
+      reusedExistingGuest: user.reusedExistingGuest ?? false,
+      canonicalUserId: user.canonicalUserId ?? user.id,
       user: {
-        id: uid,
-        name: "Guest User",
-        email: normalizedEmail,
-        tier: "free",
-        source: "mobile-app",
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        tier: user.tier,
+        source: user.source,
       },
     });
   } catch (err) {
-  console.error("Guest API error:", err);
-  return NextResponse.json(
-    { error: "Failed" },
-    { status: 500 }
-  );
-}
+    console.error("Guest API error:", err);
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  }
 }

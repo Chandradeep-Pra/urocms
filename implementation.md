@@ -11,7 +11,7 @@ Support this user journey consistently across backend and React Native:
 Rules:
 
 - `guest`: profile not completed yet, chapter quiz access locked
-- `free`: chapter quiz preview limited to `4` questions, plus hosted mock and grand-mock preview limited to `3` questions per week total
+- `free`: chapter quiz preview limited to `4` questions, no mock or grand-mock preview, and `10` AI viva starter minutes
 - `paid`: full access to chapter quizzes, mocks, grand mocks, AI viva, and paid videos
 
 ## Existing Identity Routes
@@ -185,12 +185,16 @@ Backend note:
 If you still support anonymous guest entry:
 
 - sign in anonymously with Firebase Auth
+- call `POST /api/guest` after Firebase anonymous sign-in
+- keep using the same anonymous Firebase account if it already exists on device
 - collect email/profile later
 - call `POST /api/validate-user`
 
 Expected result:
 
 - anonymous users are `guest`
+- repeated guest login should keep the same account in `guest`
+- guest users should be routed into the complete-profile flow, not the free shell
 
 Example:
 
@@ -246,6 +250,7 @@ Response now includes:
 - `email`
 - `googleAccessEmail`
 - `policy.freeChapterPreviewLimit`
+- `policy.freeAiVivaMinutes`
 - `policy.freeWeeklyMockPreviewLimit`
 - `policy.modules`
 
@@ -298,6 +303,27 @@ Authorization: Bearer <firebase_id_token>
 
 ## Recommended RN Flow
 
+### Guest and Free user flow
+
+Use this as the canonical onboarding sequence:
+
+1. user signs in anonymously
+2. RN calls `POST /api/guest`
+3. RN calls `POST /api/validate-user`
+4. backend returns `tier: "guest"`
+5. RN sends the user into the complete-profile flow
+6. user submits profile details
+7. RN calls `POST /api/upgrade-user`
+8. RN calls `POST /api/validate-user` again
+9. backend returns `tier: "free"`
+10. RN switches the user into the free shell
+
+Important:
+
+- guest should stay guest until profile completion succeeds
+- free access begins only after the profile completion call succeeds
+- if the same guest comes back on the same anonymous account, keep them in the same guest account instead of silently promoting them
+
 ### 1. App startup
 
 Call:
@@ -308,6 +334,7 @@ Store:
 
 - `tier`
 - `policy.freeChapterPreviewLimit`
+- `policy.freeAiVivaMinutes`
 - `policy.freeWeeklyMockPreviewLimit`
 - `policy.modules`
 
@@ -316,8 +343,10 @@ Store:
 If `tier === "guest"`:
 
 - show locked chapter quiz CTA
+- do not allow preview of chapter quizzes, mocks, grand mocks, or AI viva
 - prompt the user to complete profile
-- after profile completion, call your profile completion flow so the user becomes `free`
+- call `POST /api/upgrade-user` when the profile form is completed
+- after profile completion, call `POST /api/validate-user` again so the user becomes `free`
 
 ### 3. Free flow
 
@@ -325,13 +354,12 @@ If `tier === "free"`:
 
 - fetch quiz list from `GET /api/app/quizzes`
 - show chapter quizzes as preview-enabled
-- show hosted mocks / grand mocks as weekly preview-enabled
-- show AI viva as locked
+- show mocks / grand mocks as locked
+- show AI viva as available with `10` starter minutes
 - when opening a chapter quiz, use `GET /api/app/quizzes/:id`
 - read `access.mode === "preview"`
 - use `access.returnedQuestionCount` and `access.totalQuestionCount` to show preview messaging
-- when opening a hosted mock, use `GET /api/app/mocks/:id`
-- use `access.weeklyRemainingQuestions` to show remaining weekly allowance
+- do not allow preview of mock and grand mock
 
 ### 4. Paid flow
 
@@ -353,7 +381,8 @@ Returns:
 - profile info
 - policy modules
 - free preview limit
-- free weekly mock preview limit
+- free AI viva starter minutes
+- free weekly mock preview limit, currently `0`
 
 Use this as a convenience route if you want one app-wide access payload after login.
 
@@ -389,14 +418,13 @@ For locked content:
 ### `GET /api/app/mocks`
 
 - `guest` returns `403`
-- `free` gets hosted mock cards with weekly preview metadata
+- `free` gets locked mock cards only
 - `paid` gets full access
 
 ### `GET /api/app/mocks/:id`
 
 - `guest` returns `403`
-- `free` can preview up to `3` hosted mock questions per week total across mocks and grand mocks
-- reopening the same mock in the same week does not consume the budget again
+- `free` returns `403`
 - `paid` gets full mock detail and questions
 
 ### `POST /api/app/mocks/:id/attempts`
@@ -414,7 +442,9 @@ User identity is derived from the verified token, not from body fields.
 
 ### `GET /api/app/viva-cases`
 
-- `paid` only
+- `guest` returns locked access
+- `free` is allowed and receives `10` starter viva minutes
+- `paid` gets full access according to plan/course access
 
 ### `POST /api/app/viva-attempts`
 
@@ -1009,9 +1039,9 @@ export function getVideoStreamUrl(id: string) {
   - AI viva: locked
 - `free`
   - chapter quiz card: preview badge
-  - mocks: weekly preview badge
-  - grand mocks: weekly preview badge
-  - AI viva: locked
+  - mocks: locked
+  - grand mocks: locked
+  - AI viva: show `10 min free` badge or credit meter
 - `paid`
   - all unlocked
 
@@ -1031,9 +1061,9 @@ Run this once after wiring the mobile app:
    - `POST /api/validate-user` returns `tier: "free"`
    - `GET /api/app/quizzes` shows chapter quizzes with `access.mode: "preview"`
    - `GET /api/app/quizzes/:id` returns only `4` questions
-   - `GET /api/app/mocks` returns preview metadata
-   - `GET /api/app/mocks/:id` returns only the allowed weekly preview slice
-   - `GET /api/app/viva-cases` returns `403`
+   - `GET /api/app/mocks` returns locked metadata or `403` behavior based on screen usage
+   - `GET /api/app/mocks/:id` returns `403`
+   - `GET /api/app/viva-cases` returns free viva access with `10` total minutes
 
 3. Upgrade the same user to paid.
    Expected:

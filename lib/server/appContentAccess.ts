@@ -1,6 +1,6 @@
 import {
+  FREE_AI_VIVA_MINUTES,
   FREE_CHAPTER_PREVIEW_LIMIT,
-  FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
   type QuizType,
 } from "@/lib/appAccess";
 import { adminDb } from "@/lib/firebaseAdmin";
@@ -94,13 +94,11 @@ function isSignedIn(user: AppUserSession) {
 }
 
 function isPreviewableQuizType(type: QuizType) {
-  return type === "chapter" || type === "mock" || type === "grand-mock";
+  return type === "chapter";
 }
 
 function getPreviewLimit(type: QuizType) {
-  return type === "chapter"
-    ? FREE_CHAPTER_PREVIEW_LIMIT
-    : FREE_WEEKLY_MOCK_PREVIEW_LIMIT;
+  return type === "chapter" ? FREE_CHAPTER_PREVIEW_LIMIT : 0;
 }
 
 async function loadVisibleCourses() {
@@ -245,7 +243,8 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
     typeof planAccess.plan?.vivaMinutes === "number" && planAccess.plan.vivaMinutes > 0
       ? planAccess.plan.vivaMinutes
       : 0;
-  const totalVivaMinutes = vivaMinutesFromGrants + planVivaMinutes;
+  const baseFreeVivaMinutes = user.tier === "free" ? FREE_AI_VIVA_MINUTES : 0;
+  const totalVivaMinutes = baseFreeVivaMinutes + vivaMinutesFromGrants + planVivaMinutes;
   const usedVivaMinutes =
     Number.isFinite(Number((user as AppUserSession & { vivaMinutesUsed?: unknown }).vivaMinutesUsed))
       ? Math.max(0, Number((user as AppUserSession & { vivaMinutesUsed?: unknown }).vivaMinutesUsed))
@@ -454,7 +453,7 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
       };
     }
 
-    if (isPreviewableQuizType(type)) {
+    if (type === "chapter" && user.tier === "free" && isPreviewableQuizType(type)) {
       return {
         allowed: true,
         mode: "preview",
@@ -545,6 +544,17 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
         reason: null,
         courseIds,
         source: "plan-content",
+      };
+    }
+
+    if (user.tier === "guest") {
+      return {
+        allowed: false,
+        mode: "locked",
+        previewLimit: null,
+        reason: "Complete your profile to unlock the free chapter quiz preview.",
+        courseIds,
+        source: "locked",
       };
     }
 
@@ -640,6 +650,28 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
         reason: null,
         courseIds,
         source: "plan-content",
+      };
+    }
+
+    if (user.tier === "free") {
+      if (totalVivaMinutes > 0 && remainingVivaMinutes <= 0) {
+        return {
+          allowed: false,
+          mode: "locked",
+          previewLimit: null,
+          reason: "You have used all free AI viva minutes for this account.",
+          courseIds,
+          source: "locked",
+        };
+      }
+
+      return {
+        allowed: true,
+        mode: "full",
+        previewLimit: null,
+        reason: null,
+        courseIds,
+        source: "free-content",
       };
     }
 

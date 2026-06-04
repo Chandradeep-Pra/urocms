@@ -301,6 +301,21 @@ export async function resolveCanonicalUserRecord(params: {
   const currentData = currentSnap.data() ?? {};
 
   if (!normalizedEmail || params.signInProvider === "anonymous") {
+    const canonicalUserId = normalizeString(currentData.canonicalUserId);
+    if (canonicalUserId && canonicalUserId !== params.authUid) {
+      const canonicalRef = adminDb.collection("users").doc(canonicalUserId);
+      const canonicalSnap = await canonicalRef.get();
+      if (canonicalSnap.exists) {
+        return {
+          uid: canonicalUserId,
+          userDocRef: canonicalRef,
+          userData: canonicalSnap.data() ?? {},
+          mergedUserCount: 1,
+          canonicalUserId,
+        };
+      }
+    }
+
     return {
       uid: params.authUid,
       userDocRef: currentRef,

@@ -11,7 +11,7 @@ export interface AccessModule {
 }
 
 export const FREE_CHAPTER_PREVIEW_LIMIT = 4;
-export const FREE_WEEKLY_MOCK_PREVIEW_LIMIT = 4;
+export const FREE_AI_VIVA_MINUTES = 10;
 
 export function isPaidTier(tier: AppTier) {
   return tier === "paid";
@@ -27,23 +27,23 @@ export function getMockAccess(tier: AppTier) {
   }
 
   return {
-    allowed: true,
-    mode: "preview" as const,
-    previewLimit: FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
-    requiredTier: tier === "guest" ? ("free" as const) : null,
+    allowed: false,
+    mode: "locked" as const,
+    previewLimit: null,
+    requiredTier: tier === "guest" ? ("free" as const) : ("paid" as const),
     reason:
       tier === "guest"
-        ? `Sign in for full access. A ${FREE_WEEKLY_MOCK_PREVIEW_LIMIT}-question mock preview is available now.`
-        : `Preview mode: first ${FREE_WEEKLY_MOCK_PREVIEW_LIMIT} questions only.`,
+        ? "Complete your profile to unlock the free starter access."
+        : "Mocks and grand mocks unlock through a paid plan or course assignment.",
   };
 }
 
 export function canAccessMocks(tier: AppTier) {
-  return getMockAccess(tier).allowed;
+  return tier === "paid";
 }
 
 export function canAccessViva(tier: AppTier) {
-  return isPaidTier(tier);
+  return tier === "free" || tier === "paid";
 }
 
 export function getQuizAccess(tier: AppTier, quizType: QuizType) {
@@ -57,14 +57,14 @@ export function getQuizAccess(tier: AppTier, quizType: QuizType) {
     }
 
     return {
-      allowed: true,
-      mode: "preview" as const,
-      previewLimit: FREE_WEEKLY_MOCK_PREVIEW_LIMIT,
-      requiredTier: tier === "guest" ? ("free" as const) : null,
+      allowed: false,
+      mode: "locked" as const,
+      previewLimit: null,
+      requiredTier: tier === "guest" ? ("free" as const) : ("paid" as const),
       reason:
         tier === "guest"
-          ? `Sign in for full access. Preview the first ${FREE_WEEKLY_MOCK_PREVIEW_LIMIT} questions now.`
-          : `Preview mode: first ${FREE_WEEKLY_MOCK_PREVIEW_LIMIT} questions only.`,
+          ? "Complete your profile to unlock chapter quiz previews."
+          : "Mocks and grand mocks unlock through a paid plan or course assignment.",
     };
   }
 
@@ -73,6 +73,16 @@ export function getQuizAccess(tier: AppTier, quizType: QuizType) {
       allowed: true,
       mode: "full" as const,
       previewLimit: null,
+    };
+  }
+
+  if (tier === "guest") {
+    return {
+      allowed: false,
+      mode: "locked" as const,
+      previewLimit: null,
+      requiredTier: "free" as const,
+      reason: "Complete your profile to unlock the free chapter quiz preview.",
     };
   }
 
@@ -120,8 +130,8 @@ export function getTierHeadline(tier: AppTier) {
       };
     case "free":
       return {
-        title: "Free users get a chapter quiz preview only.",
-        description: `Unlock ${FREE_CHAPTER_PREVIEW_LIMIT} chapter quiz questions per chapter and keep mocks plus AI viva locked.`,
+        title: "Free users get chapter quiz previews plus a short AI viva starter credit.",
+        description: `Unlock ${FREE_CHAPTER_PREVIEW_LIMIT} chapter quiz questions per chapter, keep mocks locked, and grant ${FREE_AI_VIVA_MINUTES} AI viva minutes.`,
       };
     case "paid":
       return {
@@ -144,25 +154,25 @@ export function getTierModules(tier: AppTier): AccessModule[] {
       {
         key: "chapter-quizzes",
         label: "Chapter Quizzes",
-        description: `${FREE_CHAPTER_PREVIEW_LIMIT} question preview before profile completion.`,
-        state: "preview",
+        description: "Locked until profile completion.",
+        state: "locked",
       },
       {
         key: "mock-tests",
         label: "Mock Tests",
-        description: `${FREE_WEEKLY_MOCK_PREVIEW_LIMIT} question preview available.`,
-        state: "preview",
+        description: "Locked until a paid plan or course grant is added.",
+        state: "locked",
       },
       {
         key: "grand-mocks",
         label: "Grand Mocks",
-        description: `${FREE_WEEKLY_MOCK_PREVIEW_LIMIT} question preview available.`,
-        state: "preview",
+        description: "Locked until a paid plan or course grant is added.",
+        state: "locked",
       },
       {
         key: "ai-viva",
         label: "AI Viva",
-        description: "Locked until paid upgrade.",
+        description: "Locked until profile completion.",
         state: "locked",
       },
     ];
@@ -185,20 +195,20 @@ export function getTierModules(tier: AppTier): AccessModule[] {
       {
         key: "mock-tests",
         label: "Mock Tests",
-        description: `${FREE_WEEKLY_MOCK_PREVIEW_LIMIT} question preview across each mock or grand mock.`,
-        state: "preview",
+        description: "Locked until a paid plan or course grant is added.",
+        state: "locked",
       },
       {
         key: "grand-mocks",
         label: "Grand Mocks",
-        description: `${FREE_WEEKLY_MOCK_PREVIEW_LIMIT} question preview before upgrade.`,
-        state: "preview",
+        description: "Locked until a paid plan or course grant is added.",
+        state: "locked",
       },
       {
         key: "ai-viva",
         label: "AI Viva",
-        description: "Locked for free users.",
-        state: "locked",
+        description: `${FREE_AI_VIVA_MINUTES} free starter minutes after profile completion.`,
+        state: "preview",
       },
     ];
   }

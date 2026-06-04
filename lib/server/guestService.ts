@@ -83,8 +83,7 @@ export async function getAllUsers(): Promise<AdminUser[]> {
 
   const normalizedUsers = userSnapshot.docs
     .filter((doc) => isVisibleUserDoc(doc.data() ?? {}))
-    .map((doc) => normalizeUser(doc, courseTitleMap))
-    .filter((user) => user.tier === "free" || user.tier === "paid");
+    .map((doc) => normalizeUser(doc, courseTitleMap));
 
   const deduped = new Map<string, AdminUser>();
 
@@ -96,7 +95,10 @@ export async function getAllUsers(): Promise<AdminUser[]> {
       return;
     }
 
-    if (existing.tier !== "paid" && user.tier === "paid") {
+    if (
+      (existing.tier === "guest" && (user.tier === "free" || user.tier === "paid")) ||
+      (existing.tier === "free" && user.tier === "paid")
+    ) {
       deduped.set(key, user);
     }
   });

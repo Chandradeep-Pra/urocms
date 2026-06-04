@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FREE_CHAPTER_PREVIEW_LIMIT, getTierModules } from "@/lib/appAccess";
+import {
+  FREE_AI_VIVA_MINUTES,
+  FREE_CHAPTER_PREVIEW_LIMIT,
+  getTierModules,
+} from "@/lib/appAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function POST(req: NextRequest) {
@@ -13,6 +17,8 @@ export async function POST(req: NextRequest) {
     googleAccessEmail: auth.user.googleAccessEmail,
     policy: {
       freeChapterPreviewLimit: FREE_CHAPTER_PREVIEW_LIMIT,
+      freeWeeklyMockPreviewLimit: 0,
+      freeAiVivaMinutes: FREE_AI_VIVA_MINUTES,
       modules: getTierModules(auth.user.tier),
     },
   });

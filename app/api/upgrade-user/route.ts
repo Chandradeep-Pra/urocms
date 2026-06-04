@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
 import {
   getConfiguredDriveResourceIds,
   grantDriveAccessToEmail,
 } from "@/lib/server/googleDrive";
+import { completeAppUserProfile } from "@/lib/server/appOnboardingService";
 import { requireAppUser } from "@/lib/server/appSession";
-import { normalizeEmail } from "@/lib/server/userIdentity";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,39 +12,30 @@ export async function POST(req: NextRequest) {
     if ("response" in auth) return auth.response;
 
     const { name, phone, country, googleAccessEmail, profileImageUrl } = await req.json();
-    const normalizedAccessEmail = normalizeEmail(
-      googleAccessEmail || auth.user.googleAccessEmail || auth.user.email || ""
-    );
-
-    await adminDb.collection("users").doc(auth.user.uid).set({
+    const upgradedUser = await completeAppUserProfile({
+      uid: auth.user.uid,
+      authEmail: auth.user.email,
+      authName: auth.user.name,
       name,
       phone,
       country,
-      ...(typeof profileImageUrl === "string"
-        ? { profileImageUrl: profileImageUrl.trim() || null }
-        : {}),
-      tier: "free",
-      googleAccessEmail: normalizedAccessEmail || null,
-      canonicalUserId: auth.user.uid,
-      isShadowDuplicate: false,
-      upgradedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }, { merge: true });
+      googleAccessEmail,
+      profileImageUrl,
+    });
 
     const configuredResourceIds = getConfiguredDriveResourceIds();
 
-    if (normalizedAccessEmail && configuredResourceIds.length > 0) {
-      await grantDriveAccessToEmail(normalizedAccessEmail, configuredResourceIds);
+    if (upgradedUser.googleAccessEmail && configuredResourceIds.length > 0) {
+      await grantDriveAccessToEmail(upgradedUser.googleAccessEmail, configuredResourceIds);
     }
 
     return NextResponse.json({
       success: true,
-      tier: "free",
-      googleAccessEmail: normalizedAccessEmail || null,
+      tier: upgradedUser.tier,
+      googleAccessEmail: upgradedUser.googleAccessEmail,
       driveAccessGranted:
-        normalizedAccessEmail.length > 0 && configuredResourceIds.length > 0,
+        Boolean(upgradedUser.googleAccessEmail) && configuredResourceIds.length > 0,
     });
-
   } catch (err) {
     console.error("Upgrade error:", err);
     return NextResponse.json(
