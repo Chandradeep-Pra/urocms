@@ -18,20 +18,20 @@ type Testimonial = {
 
 const QUOTE_PREVIEW_LENGTH = 150;
 
-function getQuotePreview(quote: string) {
+function getQuotePreview(quote: string, maxLength = QUOTE_PREVIEW_LENGTH) {
   const trimmedQuote = quote.trim();
 
-  if (trimmedQuote.length <= QUOTE_PREVIEW_LENGTH) {
+  if (trimmedQuote.length <= maxLength) {
     return {
       text: trimmedQuote,
       isTruncated: false,
     };
   }
 
-  const preview = trimmedQuote.slice(0, QUOTE_PREVIEW_LENGTH).replace(/\s+\S*$/, "");
+  const preview = trimmedQuote.slice(0, maxLength).replace(/\s+\S*$/, "");
 
   return {
-    text: preview || trimmedQuote.slice(0, QUOTE_PREVIEW_LENGTH),
+    text: preview || trimmedQuote.slice(0, maxLength),
     isTruncated: true,
   };
 }
@@ -39,13 +39,15 @@ function getQuotePreview(quote: string) {
 function TestimonialQuote({
   quote,
   isExpanded,
+  hasImage,
   onToggle,
 }: {
   quote: string;
   isExpanded: boolean;
+  hasImage?: boolean;
   onToggle: () => void;
 }) {
-  const preview = getQuotePreview(quote);
+  const preview = getQuotePreview(quote, !isExpanded && hasImage ? 110 : QUOTE_PREVIEW_LENGTH);
   const shouldShowToggle = preview.isTruncated || isExpanded;
   const displayText = isExpanded ? quote.trim() : preview.text;
 
@@ -63,6 +65,27 @@ function TestimonialQuote({
         </button>
       ) : null}
     </p>
+  );
+}
+
+function TestimonialScreenshot({
+  imageUrl,
+  alt,
+  isExpanded,
+}: {
+  imageUrl: string;
+  alt: string;
+  isExpanded: boolean;
+}) {
+  return (
+    <div className="overflow-hidden rounded-[24px] border border-[#0f7896]/10 bg-slate-50">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imageUrl}
+        alt={alt}
+        className={`w-full ${isExpanded ? "max-h-[520px] object-contain" : "h-[140px] object-cover"}`}
+      />
+    </div>
   );
 }
 
@@ -147,9 +170,18 @@ export function SuccessStoriesSection() {
                   </div>
 
                   <div className="flex min-h-[210px] flex-col gap-5 p-6">
+                    {item.imageUrl ? (
+                      <TestimonialScreenshot
+                        imageUrl={item.imageUrl}
+                        alt={item.title || item.candidateName || "Success story screenshot"}
+                        isExpanded={isExpanded}
+                      />
+                    ) : null}
+
                     <TestimonialQuote
                       quote={item.quote}
                       isExpanded={isExpanded}
+                      hasImage={Boolean(item.imageUrl)}
                       onToggle={() =>
                         setExpandedStoryId((current) => (current === item.id ? null : item.id))
                       }
@@ -188,9 +220,18 @@ export function SuccessStoriesSection() {
                       <Quote className="h-4 w-4" />
                     </div>
 
+                    {item.imageUrl ? (
+                      <TestimonialScreenshot
+                        imageUrl={item.imageUrl}
+                        alt={item.title || item.candidateName || "Success story screenshot"}
+                        isExpanded={isExpanded}
+                      />
+                    ) : null}
+
                     <TestimonialQuote
                       quote={item.quote}
                       isExpanded={isExpanded}
+                      hasImage={Boolean(item.imageUrl)}
                       onToggle={() =>
                         setExpandedStoryId((current) => (current === item.id ? null : item.id))
                       }

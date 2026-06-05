@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Edit, Trash2, Clock, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,14 +26,22 @@ interface Quiz {
   durationMinutes: number;
   bankIds: string[];
   questionIds?: string[];
-  createdAt?: any;
+  createdAt?: FirestoreTimestamp | string | Date | null;
 }
+
+type FirestoreTimestamp = {
+  _seconds?: number;
+  seconds?: number;
+  toDate?: () => Date;
+};
 
 const MockTestsPage = () => {
   const [tests, setTests] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
 
   /* ───────── LOAD QUIZZES ───────── */
 
@@ -87,15 +95,55 @@ const MockTestsPage = () => {
     }
   };
 
+  const handleEdit = async (test: Quiz) => {
+    try {
+      setEditingId(test.id);
+
+      const res = await adminFetch(`/api/quizzes/${test.id}`);
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to load quiz for editing");
+      }
+
+      setEditingQuiz(data?.quiz || test);
+
+      requestAnimationFrame(() => {
+        editorRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+
+      toast.info(`Editing ${test.title}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to edit quiz");
+    } finally {
+      setEditingId(null);
+    }
+  };
+
   /* ───────── FORMAT DATE ───────── */
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp?: FirestoreTimestamp | string | Date | null) => {
     if (!timestamp) return "-";
 
-    if (timestamp._seconds) {
-      return new Date(timestamp._seconds * 1000)
-        .toISOString()
-        .split("T")[0];
+    if (timestamp instanceof Date) {
+      return timestamp.toISOString().split("T")[0];
+    }
+
+    if (typeof timestamp === "string") {
+      const date = new Date(timestamp);
+      return Number.isNaN(date.getTime()) ? "-" : date.toISOString().split("T")[0];
+    }
+
+    if (typeof timestamp.toDate === "function") {
+      return timestamp.toDate().toISOString().split("T")[0];
+    }
+
+    const seconds = timestamp._seconds ?? timestamp.seconds;
+    if (typeof seconds === "number") {
+      return new Date(seconds * 1000).toISOString().split("T")[0];
     }
 
     return "-";
@@ -107,14 +155,16 @@ const MockTestsPage = () => {
     <div className="space-y-8">
 
       {/* QUIZ BUILDER */}
-      <QuizBuilderPage
-        initialQuiz={editingQuiz}
-        onSaved={async () => {
-          await loadQuizzes();
-          setEditingQuiz(null);
-        }}
-        onCancelEdit={() => setEditingQuiz(null)}
-      />
+      <div ref={editorRef} className="scroll-mt-24">
+        <QuizBuilderPage
+          initialQuiz={editingQuiz}
+          onSaved={async () => {
+            await loadQuizzes();
+            setEditingQuiz(null);
+          }}
+          onCancelEdit={() => setEditingQuiz(null)}
+        />
+      </div>
 
       {/* HEADER */}
       <div className="flex items-center justify-between">
@@ -164,7 +214,9 @@ const MockTestsPage = () => {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => setEditingQuiz(test)}
+                      disabled={editingId === test.id}
+                      onClick={() => handleEdit(test)}
+                      title="Edit quiz"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
