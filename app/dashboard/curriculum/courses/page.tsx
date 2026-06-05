@@ -74,6 +74,28 @@ export default function CoursesPage() {
     }
   };
 
+  const handleUpdateCourse = async (nextCourse: Course) => {
+    if (!nextCourse.title.trim()) {
+      toast.error("Course title is required");
+      return;
+    }
+
+    try {
+      const res = await adminFetch(`/api/courses/${nextCourse.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextCourse),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update course");
+      toast.success("Course updated");
+      await fetchCourses();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update course");
+      throw error;
+    }
+  };
+
   const handleDelete = async (id: string) => {
     try {
       const res = await adminFetch(`/api/courses/${id}`, { method: "DELETE" });
@@ -114,6 +136,21 @@ export default function CoursesPage() {
                         setForm((prev) => ({ ...prev, title: event.target.value }))
                       }
                       placeholder="FRCS Section 1"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sort order</Label>
+                    <Input
+                      type="number"
+                      value={form.sortOrder}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          sortOrder:
+                            event.target.value === "" ? "" : Number(event.target.value),
+                        }))
+                      }
+                      placeholder="10"
                     />
                   </div>
                   <div className="space-y-2">
@@ -167,7 +204,12 @@ export default function CoursesPage() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {courses.map((course) => (
-              <CourseCard key={course.id} course={course} onDelete={handleDelete} />
+              <CourseCard
+                key={course.id}
+                course={course}
+                onDelete={handleDelete}
+                onUpdate={handleUpdateCourse}
+              />
             ))}
           </div>
         )}

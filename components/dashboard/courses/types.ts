@@ -42,6 +42,7 @@ export type Course = {
   title: string;
   description?: string;
   slug?: string;
+  sortOrder?: number | null;
   accessTier?: CourseAccessTier;
   showOnApp?: boolean;
   memberUserIds?: string[];
@@ -85,6 +86,7 @@ export const emptySection: CourseSection = {
 export const emptyCourseForm = {
   title: "",
   description: "",
+  sortOrder: "" as number | "",
   accessTier: "free" as CourseAccessTier,
   showOnApp: false,
 };

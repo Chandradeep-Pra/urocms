@@ -86,9 +86,6 @@ export function LandingFooter() {
                 Contact Us
               </Link>
               <Link href="#" className="block hover:text-[#0f7896]">
-                Terms of Service
-              </Link>
-              <Link href="#" className="block hover:text-[#0f7896]">
                 Privacy Policy
               </Link>
             </div>

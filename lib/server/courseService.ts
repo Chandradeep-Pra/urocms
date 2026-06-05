@@ -34,6 +34,51 @@ function normalizeIdList(value: unknown) {
   );
 }
 
+function normalizeSortOrder(value: unknown): number | null {
+  if (typeof value === "string" && !value.trim()) return null;
+  if (value === null || typeof value === "undefined") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getCreatedAtMillis(value: unknown) {
+  if (!value) return Number.MAX_SAFE_INTEGER;
+  if (value instanceof Date) return value.getTime();
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toDate" in value &&
+    typeof (value as { toDate?: () => Date }).toDate === "function"
+  ) {
+    return (value as { toDate: () => Date }).toDate().getTime();
+  }
+
+  const parsed = Date.parse(String(value));
+  return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
+}
+
+function sortCourseDocs(
+  docs: (FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot)[]
+) {
+  return [...docs].sort((left, right) => {
+    const leftData = left.data() ?? {};
+    const rightData = right.data() ?? {};
+    const leftSort = normalizeSortOrder(leftData.sortOrder);
+    const rightSort = normalizeSortOrder(rightData.sortOrder);
+
+    if (leftSort !== null || rightSort !== null) {
+      const sortDelta = (leftSort ?? Number.MAX_SAFE_INTEGER) - (rightSort ?? Number.MAX_SAFE_INTEGER);
+      if (sortDelta !== 0) return sortDelta;
+    }
+
+    const createdDelta =
+      getCreatedAtMillis(leftData.createdAt) - getCreatedAtMillis(rightData.createdAt);
+    if (createdDelta !== 0) return createdDelta;
+
+    return left.id.localeCompare(right.id);
+  });
+}
+
 function normalizeCourseMemberAccessGrants(value: unknown) {
   if (!Array.isArray(value)) return [];
 
@@ -79,6 +124,7 @@ export function shapeCourseDoc(
     title: String(data.title || ""),
     description: String(data.description || ""),
     slug: String(data.slug || ""),
+    sortOrder: normalizeSortOrder(data.sortOrder),
     accessTier: normalizeCourseAccessTier(data.accessTier),
     showOnApp: Boolean(data.showOnApp),
     memberUserIds: Array.isArray(data.memberUserIds) ? data.memberUserIds : [],
@@ -92,6 +138,7 @@ export function parseCreateCourseInput(body: any) {
   return {
     title: String(body?.title || "").trim(),
     description: String(body?.description || "").trim(),
+    sortOrder: normalizeSortOrder(body?.sortOrder),
     accessTier: normalizeCourseAccessTier(body?.accessTier),
     showOnApp: Boolean(body?.showOnApp),
   };
@@ -101,6 +148,7 @@ export function parseUpdateCourseInput(body: any) {
   return {
     title: String(body?.title || "").trim(),
     description: String(body?.description || "").trim(),
+    sortOrder: normalizeSortOrder(body?.sortOrder),
     accessTier: normalizeCourseAccessTier(body?.accessTier),
     showOnApp: Boolean(body?.showOnApp),
     sections: Array.isArray(body?.sections) ? body.sections : [],
@@ -111,7 +159,7 @@ export function parseUpdateCourseInput(body: any) {
 
 export async function listCourses() {
   const snapshot = await adminDb.collection("courses").orderBy("createdAt", "asc").get();
-  return snapshot.docs.map((doc) => shapeCourseDoc(doc));
+  return sortCourseDocs(snapshot.docs).map((doc) => shapeCourseDoc(doc));
 }
 
 export async function getCourseById(id: string) {
@@ -122,11 +170,19 @@ export async function getCourseById(id: string) {
 
 export async function createCourse(input: ReturnType<typeof parseCreateCourseInput>) {
   const slug = createCourseSlug(input.title);
+  const existingCourses = await adminDb.collection("courses").get();
+  const nextSortOrder =
+    input.sortOrder ??
+    existingCourses.docs.reduce((max, doc) => {
+      const sortOrder = normalizeSortOrder(doc.data()?.sortOrder);
+      return sortOrder === null ? max : Math.max(max, sortOrder);
+    }, 0) + 10;
 
   const docRef = await adminDb.collection("courses").add({
     title: input.title,
     description: input.description,
     slug,
+    sortOrder: nextSortOrder,
     accessTier: input.accessTier,
     showOnApp: input.showOnApp,
     memberUserIds: [],
@@ -142,6 +198,7 @@ export async function createCourse(input: ReturnType<typeof parseCreateCourseInp
     title: input.title,
     description: input.description,
     slug,
+    sortOrder: nextSortOrder,
     accessTier: input.accessTier,
     showOnApp: input.showOnApp,
     memberUserIds: [],
@@ -217,6 +274,7 @@ export async function updateCourse(
     title: input.title,
     description: input.description,
     slug: createCourseSlug(input.title),
+    sortOrder: input.sortOrder,
     accessTier: input.accessTier,
     showOnApp: input.showOnApp,
     memberUserIds: input.memberUserIds,
@@ -437,6 +495,7 @@ export async function listAppCoursesForUser(user: AppUserSession) {
         title: course.title,
         description: course.description,
         slug: course.slug,
+        sortOrder: course.sortOrder,
         accessTier: course.accessTier,
         showOnApp: true,
         sectionCount: course.sections.length,

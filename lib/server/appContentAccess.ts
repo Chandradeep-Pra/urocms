@@ -14,6 +14,7 @@ type CourseRecord = {
   title: string;
   description: string;
   slug: string;
+  sortOrder: number | null;
   accessTier: "free" | "members";
   showOnApp: boolean;
   memberUserIds: string[];
@@ -75,6 +76,29 @@ function normalizeCourseAccessTier(value: unknown): "free" | "members" {
   return value === "members" || value === "paid" ? "members" : "free";
 }
 
+function normalizeSortOrder(value: unknown): number | null {
+  if (typeof value === "string" && !value.trim()) return null;
+  if (value === null || typeof value === "undefined") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getCreatedAtMillis(value: unknown) {
+  if (!value) return Number.MAX_SAFE_INTEGER;
+  if (value instanceof Date) return value.getTime();
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toDate" in value &&
+    typeof (value as { toDate?: () => Date }).toDate === "function"
+  ) {
+    return (value as { toDate: () => Date }).toDate().getTime();
+  }
+
+  const parsed = Date.parse(String(value));
+  return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
+}
+
 function toSet(values: string[]) {
   return new Set(values.map((value) => normalizeString(value)).filter(Boolean));
 }
@@ -108,7 +132,26 @@ async function loadVisibleCourses() {
     .orderBy("createdAt", "asc")
     .get();
 
-  return snapshot.docs.map((doc) => {
+  const sortedDocs = [...snapshot.docs].sort((left, right) => {
+    const leftData = left.data() ?? {};
+    const rightData = right.data() ?? {};
+    const leftSort = normalizeSortOrder(leftData.sortOrder);
+    const rightSort = normalizeSortOrder(rightData.sortOrder);
+
+    if (leftSort !== null || rightSort !== null) {
+      const sortDelta =
+        (leftSort ?? Number.MAX_SAFE_INTEGER) - (rightSort ?? Number.MAX_SAFE_INTEGER);
+      if (sortDelta !== 0) return sortDelta;
+    }
+
+    const createdDelta =
+      getCreatedAtMillis(leftData.createdAt) - getCreatedAtMillis(rightData.createdAt);
+    if (createdDelta !== 0) return createdDelta;
+
+    return left.id.localeCompare(right.id);
+  });
+
+  return sortedDocs.map((doc) => {
     const data = doc.data() ?? {};
 
     return {
@@ -116,6 +159,7 @@ async function loadVisibleCourses() {
       title: normalizeString(data.title),
       description: normalizeString(data.description),
       slug: normalizeString(data.slug),
+      sortOrder: normalizeSortOrder(data.sortOrder),
       accessTier: normalizeCourseAccessTier(data.accessTier),
       showOnApp: Boolean(data.showOnApp),
       memberUserIds: normalizeIdList(data.memberUserIds),

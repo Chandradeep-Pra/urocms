@@ -16,6 +16,56 @@ type Testimonial = {
   quote: string;
 };
 
+const QUOTE_PREVIEW_LENGTH = 150;
+
+function getQuotePreview(quote: string) {
+  const trimmedQuote = quote.trim();
+
+  if (trimmedQuote.length <= QUOTE_PREVIEW_LENGTH) {
+    return {
+      text: trimmedQuote,
+      isTruncated: false,
+    };
+  }
+
+  const preview = trimmedQuote.slice(0, QUOTE_PREVIEW_LENGTH).replace(/\s+\S*$/, "");
+
+  return {
+    text: preview || trimmedQuote.slice(0, QUOTE_PREVIEW_LENGTH),
+    isTruncated: true,
+  };
+}
+
+function TestimonialQuote({
+  quote,
+  isExpanded,
+  onToggle,
+}: {
+  quote: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const preview = getQuotePreview(quote);
+  const shouldShowToggle = preview.isTruncated || isExpanded;
+  const displayText = isExpanded ? quote.trim() : preview.text;
+
+  return (
+    <p className="text-[15px] leading-7 text-[#071014]">
+      {displayText}
+      {!isExpanded && preview.isTruncated ? "... " : " "}
+      {shouldShowToggle ? (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="font-medium text-[#0f7896] underline underline-offset-4 transition hover:text-[#0b6078]"
+        >
+          {isExpanded ? "Show less" : "Read more"}
+        </button>
+      ) : null}
+    </p>
+  );
+}
+
 export function SuccessStoriesSection() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [expandedStoryId, setExpandedStoryId] = useState<string | null>(null);
@@ -97,64 +147,13 @@ export function SuccessStoriesSection() {
                   </div>
 
                   <div className="flex min-h-[210px] flex-col gap-5 p-6">
-                    <p
-                      className={`text-[15px] leading-7 text-[#071014] ${
-                        isExpanded ? "" : "line-clamp-3"
-                      }`}
-                    >
-                      {item.quote}
-                    </p>
-
-                      <div className="mt-auto flex items-end justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="text-base font-bold text-[#071014]">
-                            {item.candidateName || item.title || "Candidate"}
-                          </p>
-                          {item.companyName ? (
-                            <p className="mt-1 text-sm italic text-[#0f7896]">{item.companyName}</p>
-                          ) : null}
-                          {(item.title || item.candidateRole) ? (
-                            <p className="mt-1 text-sm text-[#071014]/70">
-                              {item.title || item.candidateRole}
-                            </p>
-                          ) : null}
-                        </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedStoryId((current) => (current === item.id ? null : item.id))
-                        }
-                        className="shrink-0 text-sm font-medium text-[#0f7896] underline underline-offset-4 transition hover:text-[#0b6078]"
-                      >
-                        {isExpanded ? "Show less" : "Read full story"}
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              ) : (
-                <article
-                  key={`${item.id}-quote-${index}`}
-                  className="relative w-[82vw] max-w-[360px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)]"
-                >
-                  <span className="pointer-events-none absolute -left-3 -top-6 text-[180px] font-black leading-none text-[#0f7896]/10">
-                    "
-                  </span>
-
-                  <div className="absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-[#0f7896]/10" />
-
-                  <div className="relative flex min-h-[320px] flex-col gap-5 p-6">
-                    <div className="inline-flex w-fit items-center gap-2 text-[#0f7896]">
-                      <Quote className="h-4 w-4" />
-                    </div>
-
-                    <p
-                      className={`text-[15px] leading-7 text-[#071014] ${
-                        isExpanded ? "" : "line-clamp-3"
-                      }`}
-                    >
-                      {item.quote}
-                    </p>
+                    <TestimonialQuote
+                      quote={item.quote}
+                      isExpanded={isExpanded}
+                      onToggle={() =>
+                        setExpandedStoryId((current) => (current === item.id ? null : item.id))
+                      }
+                    />
 
                     <div className="mt-auto flex items-end justify-between gap-4">
                       <div className="min-w-0">
@@ -170,16 +169,47 @@ export function SuccessStoriesSection() {
                           </p>
                         ) : null}
                       </div>
+                    </div>
+                  </div>
+                </article>
+              ) : (
+                <article
+                  key={`${item.id}-quote-${index}`}
+                  className="relative w-[82vw] max-w-[360px] shrink-0 overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white shadow-[0_16px_40px_rgba(15,120,150,0.09)]"
+                >
+                  <span className="pointer-events-none absolute -left-3 -top-6 text-[180px] font-black leading-none text-[#0f7896]/10">
+                    &quot;
+                  </span>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedStoryId((current) => (current === item.id ? null : item.id))
-                        }
-                        className="shrink-0 text-sm font-medium text-[#0f7896] underline underline-offset-4 transition hover:text-[#0b6078]"
-                      >
-                        {isExpanded ? "Show less" : "Read full story"}
-                      </button>
+                  <div className="absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-[#0f7896]/10" />
+
+                  <div className="relative flex min-h-[320px] flex-col gap-5 p-6">
+                    <div className="inline-flex w-fit items-center gap-2 text-[#0f7896]">
+                      <Quote className="h-4 w-4" />
+                    </div>
+
+                    <TestimonialQuote
+                      quote={item.quote}
+                      isExpanded={isExpanded}
+                      onToggle={() =>
+                        setExpandedStoryId((current) => (current === item.id ? null : item.id))
+                      }
+                    />
+
+                    <div className="mt-auto flex items-end justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-base font-bold text-[#071014]">
+                          {item.candidateName || item.title || "Candidate"}
+                        </p>
+                        {item.companyName ? (
+                          <p className="mt-1 text-sm italic text-[#0f7896]">{item.companyName}</p>
+                        ) : null}
+                        {(item.title || item.candidateRole) ? (
+                          <p className="mt-1 text-sm text-[#071014]/70">
+                            {item.title || item.candidateRole}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </article>
