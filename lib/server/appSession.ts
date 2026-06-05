@@ -33,6 +33,25 @@ function normalizePlanStatus(value: unknown): AppPlanStatus {
   return value === "active" || value === "expired" || value === "none" ? value : "none";
 }
 
+function createTransientGuestSession(decoded: Awaited<ReturnType<typeof adminAuth.verifyIdToken>>) {
+  return {
+    authUid: decoded.uid,
+    uid: decoded.uid,
+    email: null,
+    name: null,
+    profileImageUrl: null,
+    tier: "guest",
+    googleAccessEmail: null,
+    source: decoded.firebase.sign_in_provider ?? "anonymous",
+    activeCourseIds: [],
+    activePlanId: null,
+    activePlanStatus: "none",
+    planActivatedAt: null,
+    planExpiresAt: null,
+    vivaMinutesUsed: 0,
+  } satisfies AppUserSession;
+}
+
 export async function requireAppUser(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
 
@@ -47,8 +66,16 @@ export async function requireAppUser(req: NextRequest) {
     const decoded = await adminAuth.verifyIdToken(token);
     const userRef = adminDb.collection("users").doc(decoded.uid);
     const userDoc = await userRef.get();
+    const isAnonymousWithoutEmail =
+      decoded.firebase.sign_in_provider === "anonymous" && !normalizeEmail(decoded.email);
 
     if (!userDoc.exists) {
+      if (isAnonymousWithoutEmail) {
+        return {
+          user: createTransientGuestSession(decoded),
+        };
+      }
+
       const defaultTier = getDefaultTier(decoded.firebase.sign_in_provider);
       const nextUser = {
         email: decoded.email ?? null,

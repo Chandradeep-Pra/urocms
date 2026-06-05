@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebaseAdmin";
 import { ensureGuestAppUser } from "@/lib/server/appOnboardingService";
+import { normalizeEmail } from "@/lib/server/userIdentity";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,10 +16,16 @@ export async function POST(req: NextRequest) {
 
     const uid = decoded.uid;
     const { email } = await req.json();
+    const requestedEmail = normalizeEmail(typeof email === "string" ? email : null);
+
+    if (!requestedEmail) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+
     const user = await ensureGuestAppUser({
       uid,
       authEmail: decoded.email ?? null,
-      requestedEmail: typeof email === "string" ? email : null,
+      requestedEmail,
       source: decoded.firebase.sign_in_provider ?? "mobile-app",
       firebaseName: decoded.name ?? null,
     });

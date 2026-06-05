@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   applicationName: siteConfig.name,
   title: {
-    default: "Urologics | Premium FRCS Urology Prep Platform",
+    default: "Urologics | FRCS Urology Learning Platform",
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,

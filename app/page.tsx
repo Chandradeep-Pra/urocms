@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Best FRCS Urology Course | Urologics",
     description:
-      "AI viva practice, structured video teaching, weekly mocks, analytics, and premium FRCS Urology preparation in one platform.",
+      "AI viva practice, structured video teaching, weekly mocks, analytics, and FRCS Urology preparation in one platform.",
     url: absoluteUrl("/"),
     images: [
       {

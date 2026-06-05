@@ -25,7 +25,7 @@ export function LandingFooter() {
             </div>
 
             <p className="mt-4 text-sm leading-6 text-[#071014]/60">
-              Premium FRCS Urology Learning Platform founded by the Gold Medalist,{" "}
+              App based FRCS Urology Learning Platform founded by the Gold Medalist,{" "}
               <a
                 href={doctorProfileUrl}
                 target="_blank"

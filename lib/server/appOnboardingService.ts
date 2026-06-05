@@ -57,12 +57,24 @@ export async function ensureGuestAppUser(input: EnsureGuestInput) {
     const currentTier = normalizeTier(current.tier);
     const resolvedTier = currentTier === "paid" || currentTier === "free" ? currentTier : "guest";
     const normalizedCurrentEmail = normalizeEmail(current.email);
+    const existingCanonicalUserId = normalizeOptionalString(current.canonicalUserId);
     const shouldLookupExistingGuest =
       Boolean(identity.email) &&
+      (!existingCanonicalUserId || existingCanonicalUserId === input.uid) &&
       (!snapshot.exists || !normalizedCurrentEmail || normalizedCurrentEmail !== identity.email);
 
-    let canonicalGuestId = input.uid;
+    let canonicalGuestId =
+      existingCanonicalUserId && existingCanonicalUserId !== input.uid
+        ? existingCanonicalUserId
+        : input.uid;
     let canonicalGuestData: Record<string, unknown> | null = null;
+
+    if (canonicalGuestId !== input.uid) {
+      const canonicalSnapshot = await transaction.get(usersCollection.doc(canonicalGuestId));
+      if (canonicalSnapshot.exists) {
+        canonicalGuestData = canonicalSnapshot.data() ?? {};
+      }
+    }
 
     if (shouldLookupExistingGuest && identity.email) {
       const sameEmailSnapshot = await transaction.get(
@@ -171,7 +183,13 @@ export async function completeAppUserProfile(input: CompleteProfileInput) {
   const result = await adminDb.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(userRef);
     const current = snapshot.data() ?? {};
-    const currentTier = normalizeTier(current.tier);
+    const canonicalUserId = normalizeOptionalString(current.canonicalUserId);
+    const targetUserId =
+      canonicalUserId && canonicalUserId !== input.uid ? canonicalUserId : input.uid;
+    const targetRef = adminDb.collection("users").doc(targetUserId);
+    const targetSnapshot = targetUserId === input.uid ? snapshot : await transaction.get(targetRef);
+    const targetCurrent = targetSnapshot.data() ?? current;
+    const currentTier = normalizeTier(targetCurrent.tier);
     const resolvedTier: UserTier = currentTier === "paid" ? "paid" : "free";
 
     const payload: Record<string, unknown> = {
@@ -180,22 +198,44 @@ export async function completeAppUserProfile(input: CompleteProfileInput) {
       country: normalizedCountry,
       profileImageUrl: normalizedProfileImageUrl,
       tier: resolvedTier,
-      email: normalizeOptionalString(current.email) ?? normalizedAuthEmail ?? null,
+      email:
+        normalizeOptionalString(targetCurrent.email) ??
+        normalizeOptionalString(current.email) ??
+        normalizedAuthEmail ??
+        null,
       googleAccessEmail:
         normalizedGoogleAccessEmail ||
+        normalizeEmail(targetCurrent.googleAccessEmail) ||
         normalizeEmail(current.googleAccessEmail) ||
         normalizedAuthEmail ||
         null,
-      canonicalUserId: input.uid,
+      canonicalUserId: targetUserId,
       isShadowDuplicate: false,
-      profileCompletedAt: current.profileCompletedAt ?? now,
-      upgradedAt: current.upgradedAt ?? now,
+      profileCompletedAt: targetCurrent.profileCompletedAt ?? now,
+      upgradedAt: targetCurrent.upgradedAt ?? now,
       updatedAt: now,
-      createdAt: current.createdAt ?? now,
-      source: current.source ?? "mobile-app",
+      createdAt: targetCurrent.createdAt ?? current.createdAt ?? now,
+      source: targetCurrent.source ?? current.source ?? "mobile-app",
     };
 
-    transaction.set(userRef, payload, { merge: true });
+    transaction.set(targetRef, payload, { merge: true });
+
+    if (targetUserId !== input.uid) {
+      transaction.set(
+        userRef,
+        {
+          email: normalizeOptionalString(current.email) ?? normalizeOptionalString(payload.email),
+          googleAccessEmail:
+            normalizeOptionalString(current.googleAccessEmail) ??
+            normalizeOptionalString(payload.googleAccessEmail),
+          canonicalUserId: targetUserId,
+          linkedExistingUserId: targetUserId,
+          isShadowDuplicate: true,
+          updatedAt: now,
+        },
+        { merge: true }
+      );
+    }
 
     return {
       tier: resolvedTier,
