@@ -512,7 +512,7 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
       allowed: false,
       mode: "locked",
       previewLimit: null,
-      reason: "This quiz is locked until the matching course or section is unlocked.",
+      reason: "Please complete your profile to access preview.",
       courseIds,
       source: "locked",
     };
