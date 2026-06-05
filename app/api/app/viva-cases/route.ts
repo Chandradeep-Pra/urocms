@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
         access: {
           tier: auth.user.tier,
           allowed: access.allowed,
-          mode: item?.accessType === "public" ? "public" : access.mode,
-          requiredTier: item?.accessType === "public" ? null : access.mode === "locked" ? "paid" : null,
+          mode: access.mode,
+          requiredTier: access.mode === "locked" ? "course-access" : null,
           reason: access.reason,
           courseGranted: access.courseIds.length > 0,
           isPublic: item?.accessType === "public",

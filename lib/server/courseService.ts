@@ -500,8 +500,9 @@ export async function listAppCoursesForUser(user: AppUserSession) {
         showOnApp: true,
         sectionCount: course.sections.length,
         sections: course.sections.map((section: any) => {
+          const sectionAccess = accessContext.getSectionAccess(course, section);
           const items = contentLookup[section.contentType] || new Map();
-          const linkedContent = Array.isArray(section.linkedContentIds)
+          const linkedContent = sectionAccess.allowed && Array.isArray(section.linkedContentIds)
             ? section.linkedContentIds
                 .map((contentId: string) => items.get(contentId))
                 .filter(Boolean)
@@ -509,7 +510,7 @@ export async function listAppCoursesForUser(user: AppUserSession) {
 
           return {
             ...section,
-            access: accessContext.getSectionAccess(course, section),
+            access: sectionAccess,
             linkedContent,
           };
         }),

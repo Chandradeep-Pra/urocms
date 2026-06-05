@@ -619,15 +619,30 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
   }): ResolvedItemAccess {
     const folderId = normalizeString(input.folderId);
     const courseIds = getCourseIdsForViva(input.id);
+    const quotaLockedReason =
+      totalVivaMinutes <= 0 || remainingVivaMinutes <= 0
+        ? "You are out of AI viva quota credits. Please contact admin."
+        : null;
 
-    if (input.accessType === "public") {
+    function allowViva(source: ResolvedItemAccess["source"]): ResolvedItemAccess {
+      if (quotaLockedReason) {
+        return {
+          allowed: false,
+          mode: "locked",
+          previewLimit: null,
+          reason: quotaLockedReason,
+          courseIds,
+          source: "locked",
+        };
+      }
+
       return {
         allowed: true,
         mode: "full",
         previewLimit: null,
         reason: null,
         courseIds,
-        source: "public",
+        source,
       };
     }
 
@@ -637,29 +652,17 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
       (folderId ? entitlements.vivaFolders.includes(folderId) : false);
 
     if (fullViaCourse) {
-      return {
-        allowed: true,
-        mode: "full",
-        previewLimit: null,
-        reason: null,
-        courseIds,
-        source: courseIds.some((id) => freeCourseIds.has(id))
+      return allowViva(
+        courseIds.some((id) => freeCourseIds.has(id))
           ? "free-course"
           : courseIds.some((id) => activeCourseIds.has(id))
             ? "course-membership"
-            : "plan-course",
-      };
+            : "plan-course"
+      );
     }
 
     if (fullViaPlan) {
-      return {
-        allowed: true,
-        mode: "full",
-        previewLimit: null,
-        reason: null,
-        courseIds,
-        source: "plan-content",
-      };
+      return allowViva("plan-content");
     }
 
     const sectionGranted = courses.some((course) =>
@@ -676,47 +679,7 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
     );
 
     if (sectionGranted) {
-      if (totalVivaMinutes > 0 && remainingVivaMinutes <= 0) {
-        return {
-          allowed: false,
-          mode: "locked",
-          previewLimit: null,
-          reason: "You have used all allocated AI viva minutes for your current access.",
-          courseIds,
-          source: "locked",
-        };
-      }
-
-      return {
-        allowed: true,
-        mode: "full",
-        previewLimit: null,
-        reason: null,
-        courseIds,
-        source: "plan-content",
-      };
-    }
-
-    if (user.tier === "free") {
-      if (totalVivaMinutes > 0 && remainingVivaMinutes <= 0) {
-        return {
-          allowed: false,
-          mode: "locked",
-          previewLimit: null,
-          reason: "You have used all free AI viva minutes for this account.",
-          courseIds,
-          source: "locked",
-        };
-      }
-
-      return {
-        allowed: true,
-        mode: "full",
-        previewLimit: null,
-        reason: null,
-        courseIds,
-        source: "free-content",
-      };
+      return allowViva("plan-content");
     }
 
     return {
@@ -782,6 +745,17 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
   }
 
   function getSectionAccess(course: CourseRecord, section: any): ResolvedCourseAccess {
+    if (
+      section?.contentType === "ai-vivas" &&
+      (totalVivaMinutes <= 0 || remainingVivaMinutes <= 0)
+    ) {
+      return {
+        allowed: false,
+        mode: "locked",
+        reason: "You are out of AI viva quota credits. Please contact admin.",
+      };
+    }
+
     if (hasFullCourseAccess(course.id)) {
       return {
         allowed: true,

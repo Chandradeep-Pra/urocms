@@ -67,6 +67,19 @@ export async function POST(req: NextRequest) {
     const caseTitle =
       String(vivaCaseData?.case?.title || vivaCaseData?.title || "").trim() || null;
 
+    if (
+      consumedMinutes > 0 &&
+      accessContext.vivaCredit.remainingMinutes >= 0 &&
+      consumedMinutes > accessContext.vivaCredit.remainingMinutes
+    ) {
+      return tierLockedResponse({
+        feature: "ai-viva",
+        tier: auth.user.tier,
+        requiredTier: "paid",
+        reason: "You are out of AI viva quota credits. Please contact admin.",
+      });
+    }
+
     await Promise.all([
       adminDb.collection("vivaAttempts").add({
         caseId,

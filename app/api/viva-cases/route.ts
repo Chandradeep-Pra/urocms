@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
         access: {
           tier: appAuth.user.tier,
           allowed: access.allowed,
-          mode: isPublic ? "public" : access.mode,
-          requiredTier: isPublic ? null : access.mode === "locked" ? "paid" : null,
+          mode: access.mode,
+          requiredTier: access.mode === "locked" ? "course-access" : null,
           reason: access.reason,
           courseGranted: access.courseIds.length > 0,
           isPublic,
