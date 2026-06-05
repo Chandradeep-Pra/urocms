@@ -176,15 +176,19 @@ export default function SectionSidebar({
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
+                <div className="group/section relative">
                   <button
                     type="button"
                     onClick={() => setActiveSection(s.id)}
-                    className="flex min-w-0 flex-1 items-center justify-between text-left"
+                    className={`flex w-full min-w-0 items-start justify-between gap-3 rounded-xl text-left ${
+                      s.id !== "all" ? "pr-8 group-hover/section:pr-[72px] group-focus-within/section:pr-[72px]" : ""
+                    }`}
                   >
-                    <span className="truncate text-sm font-medium">{s.title}</span>
+                    <span className="min-w-0 whitespace-normal break-words text-sm font-medium leading-5">
+                      {s.title}
+                    </span>
                     <span
-                      className={`ml-3 shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                         activeSection === s.id
                           ? "bg-white/15 text-white"
                           : "bg-white text-slate-500"
@@ -195,9 +199,13 @@ export default function SectionSidebar({
                   </button>
 
                   {s.id !== "all" && (
-                    <div className="flex shrink-0 gap-1">
+                    <div
+                      className={`absolute right-0 top-0 flex shrink-0 gap-1 rounded-full p-0.5 opacity-0 shadow-sm transition-opacity group-hover/section:opacity-100 group-focus-within/section:opacity-100 ${
+                        activeSection === s.id ? "bg-slate-900" : "bg-white"
+                      }`}
+                    >
                       <span
-                        className={`grid h-7 min-w-7 place-items-center rounded-full px-2 text-[11px] font-semibold ${
+                        className={`grid h-7 min-w-7 place-items-center rounded-full px-2 text-[11px] font-semibold shadow-sm ${
                           activeSection === s.id
                             ? "bg-white/15 text-white"
                             : "bg-white text-slate-500"
