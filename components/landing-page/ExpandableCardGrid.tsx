@@ -29,7 +29,7 @@ export function ExpandableCardGrid({ items }: { items: ExpandableCardItem[] }) {
         return (
           <div
             key={item.title}
-            className={`group relative flex flex-col rounded-[32px] p-8 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            className={`group relative flex flex-col rounded-[32px] py-8 px-6 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               isActive
                 ? `min-h-[360px] scale-[1.02] border border-[#0f7896]/20 bg-gradient-to-br from-[#0f7896] to-[#1294ba] text-white shadow-[0_24px_65px_rgba(15,120,150,0.35)] ${getExpandedPlacementClass(index)}`
                 : "min-h-[220px] border border-slate-100/80 bg-white/80 text-[#071014] shadow-[0_8px_30px_rgb(0,0,0,0.03)] backdrop-blur-md hover:-translate-y-2 hover:border-[#0f7896]/30 hover:shadow-[0_20px_48px_rgba(15,120,150,0.12)]"
