@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Instagram, Youtube, Mail, Linkedin } from "lucide-react";
+import { Youtube, Mail, Linkedin } from "lucide-react";
 
 const doctorProfileUrl = "https://www.youtube.com/@ankitgoel2863";
+const supportFeedbackMailUrl =
+  "mailto:ankitgoel042@gmail.com?subject=Urologics%3A%20Support%20and%20Feedback";
 
 export function LandingFooter() {
   return (
@@ -73,23 +75,23 @@ export function LandingFooter() {
           </div>
 
           {/* Support */}
-          {/* <div>
+          <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#0f7896]">
               Support
             </p>
 
             <div className="mt-4 space-y-3 text-sm text-[#071014]/70">
-              <Link href="#" className="block hover:text-[#0f7896]">
-                Help Center
-              </Link>
-              <Link href="#" className="block hover:text-[#0f7896]">
-                Contact Us
-              </Link>
-              <Link href="#" className="block hover:text-[#0f7896]">
-                Privacy Policy
+              <a
+                href={supportFeedbackMailUrl}
+                className="block hover:text-[#0f7896]"
+              >
+                Help and Feedback
+              </a>
+              <Link href="/account-deletion" className="block hover:text-[#0f7896]">
+                Delete Account
               </Link>
             </div>
-          </div> */}
+          </div>
 
           {/* Mentor / Company */}
           <div>

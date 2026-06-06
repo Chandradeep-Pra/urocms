@@ -7,6 +7,7 @@ import { normalizeEmail, resolveCanonicalUserRecord } from "@/lib/server/userIde
 export interface AppUserSession {
   authUid: string;
   uid: string;
+  authTime: number | null;
   email: string | null;
   name: string | null;
   profileImageUrl: string | null;
@@ -21,7 +22,7 @@ export interface AppUserSession {
   vivaMinutesUsed: number;
 }
 
-function getDefaultTier(_signInProvider?: string): AppTier {
+function getDefaultTier(): AppTier {
   return "guest";
 }
 
@@ -37,6 +38,7 @@ function createTransientGuestSession(decoded: Awaited<ReturnType<typeof adminAut
   return {
     authUid: decoded.uid,
     uid: decoded.uid,
+    authTime: typeof decoded.auth_time === "number" ? decoded.auth_time : null,
     email: null,
     name: null,
     profileImageUrl: null,
@@ -76,7 +78,7 @@ export async function requireAppUser(req: NextRequest) {
         };
       }
 
-      const defaultTier = getDefaultTier(decoded.firebase.sign_in_provider);
+      const defaultTier = getDefaultTier();
       const nextUser = {
         email: decoded.email ?? null,
         name: decoded.name ?? null,
@@ -103,6 +105,7 @@ export async function requireAppUser(req: NextRequest) {
       user: {
         authUid: decoded.uid,
         uid: resolved.uid,
+        authTime: typeof decoded.auth_time === "number" ? decoded.auth_time : null,
         email: user.email ?? decoded.email ?? null,
         name: user.name ?? decoded.name ?? null,
         profileImageUrl:

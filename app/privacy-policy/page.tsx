@@ -76,7 +76,7 @@ const sections = [
     title: "6. Data Retention",
     body: [
       "We keep account, learning, quiz, mock, and viva data for as long as your account is active or as long as needed to provide the service, meet legal requirements, resolve disputes, and maintain security.",
-      "You may request deletion of your account or personal data by contacting us. Some information may be retained where required for legal, security, payment, or audit reasons.",
+      "You can initiate account deletion inside the Urologics mobile app from Profile > Delete Account. If you cannot access the app, you may request deletion from the account deletion page or by contacting us. Some information may be retained where required for legal, security, payment, or audit reasons.",
     ],
   },
   {
