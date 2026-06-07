@@ -15,7 +15,7 @@ export const siteConfig = {
   ],
   creator: "Urologics",
   authors: [{ name: "Urologics" }],
-  defaultOgImage: "/logo.png",
+  defaultOgImage: "/share-preview.jpeg",
 };
 
 export function getSiteUrl() {
