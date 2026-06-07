@@ -41,6 +41,10 @@ import {
   type VivaMode,
 } from "@/components/viva/types";
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function AIVivaPage() {
   const router = useRouter();
   const [folders, setFolders] = useState<{ id: string; title: string; description?: string }[]>([]);
@@ -49,6 +53,11 @@ export default function AIVivaPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
+  const [folderDeleteTarget, setFolderDeleteTarget] = useState<{
+    id: string;
+    title: string;
+    count: number;
+  } | null>(null);
   const [fastModeDialogOpen, setFastModeDialogOpen] = useState(false);
   const [uploadingExhibitIndex, setUploadingExhibitIndex] = useState<number | null>(null);
   const [activeMode, setActiveMode] = useState<VivaMode>("Calm and Composed");
@@ -171,8 +180,39 @@ export default function AIVivaPage() {
       setFolderDialogOpen(false);
       setFolderForm({ title: "", description: "" });
       fetchFolders();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create folder");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to create folder"));
+    }
+  };
+
+  const handleDeleteFolder = async () => {
+    if (!folderDeleteTarget) return;
+
+    try {
+      const res = await adminFetch(
+        `/api/viva-folders?id=${encodeURIComponent(folderDeleteTarget.id)}`,
+        {
+          method: "DELETE",
+        }
+      );
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to delete folder");
+      }
+
+      toast.success(
+        data?.movedCount
+          ? `Folder deleted. ${data.movedCount} viva set${data.movedCount === 1 ? "" : "s"} moved to Unfoldered.`
+          : "Folder deleted"
+      );
+      if (activeFolderId === folderDeleteTarget.id) {
+        setActiveFolderId("unfoldered");
+      }
+      setFolderDeleteTarget(null);
+      await Promise.all([fetchFolders(), fetchCases()]);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to delete folder"));
     }
   };
 
@@ -198,8 +238,8 @@ export default function AIVivaPage() {
 
       toast.success(folderId ? "Case moved to folder" : "Case moved out of folder");
       fetchCases();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to move case");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to move case"));
     }
   };
 
@@ -399,16 +439,19 @@ export default function AIVivaPage() {
       id: "all",
       title: "All Cases",
       count: cases.length,
+      canDelete: false,
     },
     {
       id: "unfoldered",
       title: "Unfoldered",
       count: cases.filter((item) => !item.folderId).length,
+      canDelete: false,
     },
     ...folders.map((folder) => ({
       id: folder.id,
       title: folder.title,
       count: cases.filter((item) => item.folderId === folder.id).length,
+      canDelete: true,
     })),
   ];
   const visibleCases = cases.filter((item) => {
@@ -1001,26 +1044,47 @@ export default function AIVivaPage() {
                 active && isFolder ? FolderOpen : isFolder ? Folder : FileText;
 
               return (
-                <button
+                <div
                   key={node.id}
-                  type="button"
-                  onClick={() =>
-                    setActiveFolderId(node.id as "all" | "unfoldered" | string)
-                  }
-                  className={`flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left transition ${
+                  className={`group flex w-full items-center gap-2 rounded-2xl px-2 py-2 transition ${
                     active
                       ? "bg-teal-50 text-teal-700"
                       : "text-slate-600 hover:bg-slate-50"
                   }`}
                 >
-                  <span className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveFolderId(node.id as "all" | "unfoldered" | string)
+                    }
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left"
+                  >
                     <FolderIcon className="h-4 w-4 shrink-0" />
                     <span className="truncate text-sm font-medium">{node.title}</span>
-                  </span>
+                  </button>
+
                   <span className="rounded-full bg-white px-2.5 py-1 text-[11px] text-slate-500 shadow-sm">
                     {node.count}
                   </span>
-                </button>
+
+                  {node.canDelete ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setFolderDeleteTarget({
+                          id: node.id,
+                          title: node.title,
+                          count: node.count,
+                        });
+                      }}
+                      aria-label={`Delete ${node.title}`}
+                      className="rounded-lg p-1.5 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
               );
             })}
           </div>
@@ -1240,6 +1304,39 @@ export default function AIVivaPage() {
               className="bg-red-600 text-white hover:bg-red-700"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!folderDeleteTarget}
+        onOpenChange={(open) => {
+          if (!open) setFolderDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent className="rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Viva Folder?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {folderDeleteTarget
+                ? `${folderDeleteTarget.title} contains ${folderDeleteTarget.count} viva set${
+                    folderDeleteTarget.count === 1 ? "" : "s"
+                  }. Do you still want to delete it?`
+                : "Do you still want to delete this folder?"}
+              <span className="mt-2 block">
+                The viva sets will be moved to Unfoldered so authored cases are not lost.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteFolder}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              Delete Folder
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -137,12 +137,13 @@ export async function createTestimonial(input: Record<string, unknown>) {
   const isActive = input.isActive !== false;
   const sourceVideo = normalizeString(input.videoUrl || input.youtubeId);
   const imageUrl = normalizeString(input.imageUrl);
+  const hasMedia = Boolean(sourceVideo || imageUrl);
 
   if (!title && !candidateName) {
     throw new Error("Either title or candidate name is required");
   }
 
-  if (!quote) {
+  if (!quote && !hasMedia) {
     throw new Error("Quote is required");
   }
 
@@ -177,12 +178,13 @@ export async function updateTestimonial(id: string, input: Record<string, unknow
   const isActive = input.isActive !== false;
   const sourceVideo = normalizeString(input.videoUrl || input.youtubeId);
   const imageUrl = normalizeString(input.imageUrl);
+  const hasMedia = Boolean(sourceVideo || imageUrl);
 
   if (!title && !candidateName) {
     throw new Error("Either title or candidate name is required");
   }
 
-  if (!quote) {
+  if (!quote && !hasMedia) {
     throw new Error("Quote is required");
   }
 

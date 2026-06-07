@@ -1,6 +1,12 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebaseAdmin";
 
+type CourseSectionLike = {
+  id?: unknown;
+  contentType?: unknown;
+  linkedContentIds?: unknown;
+};
+
 function normalizeFolderInput(input: { title?: unknown; description?: unknown }) {
   return {
     title: String(input.title || "").trim(),
@@ -279,6 +285,47 @@ export async function createVivaFolder(input: { title?: unknown; description?: u
   };
 }
 
+export async function deleteVivaFolder(id: string) {
+  const folderId = String(id || "").trim();
+  if (!folderId) {
+    throw new Error("Folder id is required");
+  }
+
+  const folderRef = adminDb.collection("vivaFolders").doc(folderId);
+  const folderDoc = await folderRef.get();
+  if (!folderDoc.exists) {
+    throw new Error("Folder not found");
+  }
+
+  const linkedCasesSnap = await adminDb
+    .collection("vivaCases")
+    .where("folderId", "==", folderId)
+    .get();
+
+  const docsToUpdate = linkedCasesSnap.docs;
+  const batches = [];
+
+  for (let index = 0; index < docsToUpdate.length; index += 450) {
+    const batch = adminDb.batch();
+    docsToUpdate.slice(index, index + 450).forEach((doc) => {
+      batch.update(doc.ref, {
+        folderId: "",
+        folderName: "",
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
+    batches.push(batch.commit());
+  }
+
+  await Promise.all(batches);
+  await folderRef.delete();
+
+  return {
+    success: true,
+    movedCount: docsToUpdate.length,
+  };
+}
+
 export async function syncCourseVivaAllowedUsers(params: {
   courseId: string;
   previousSections: unknown;
@@ -300,13 +347,15 @@ export async function syncCourseVivaAllowedUsers(params: {
 
   if (!targetVivaIds.length) return;
 
-  const nextSections = Array.isArray(params.nextSections) ? params.nextSections : [];
+  const nextSections: CourseSectionLike[] = Array.isArray(params.nextSections)
+    ? params.nextSections
+    : [];
   const fullMemberEmails = normalizeEmailList(
     params.fullMemberUsers.map((user) => String(user?.email || ""))
   );
   const vivaEmailMap = new Map<string, string[]>();
 
-  nextSections.forEach((section: any) => {
+  nextSections.forEach((section) => {
     if (section?.contentType !== "ai-vivas") return;
     const linkedIds = Array.isArray(section?.linkedContentIds) ? section.linkedContentIds : [];
     linkedIds.forEach((vivaId: string) => {
@@ -326,7 +375,7 @@ export async function syncCourseVivaAllowedUsers(params: {
 
     (grant.sectionGrants || []).forEach((sectionGrant) => {
       const section = nextSections.find(
-        (item: any) => item?.id === sectionGrant.sectionId && item?.contentType === "ai-vivas"
+        (item) => item?.id === sectionGrant.sectionId && item?.contentType === "ai-vivas"
       );
       if (!section) return;
 

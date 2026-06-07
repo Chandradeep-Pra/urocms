@@ -3,6 +3,7 @@ import { requireAdminSession } from "@/lib/server/adminAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 import {
   createVivaFolder,
+  deleteVivaFolder,
   listVivaFolders,
 } from "@/lib/server/vivaService";
 
@@ -51,6 +52,32 @@ export async function POST(req: NextRequest) {
             ? 400
             : message === "Folder already exists"
               ? 409
+              : 500,
+      }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+
+  const id = req.nextUrl.searchParams.get("id") || "";
+
+  try {
+    return NextResponse.json(await deleteVivaFolder(id));
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to delete folder";
+    console.error("Failed to delete viva folder:", error);
+    return NextResponse.json(
+      { error: message },
+      {
+        status:
+          message === "Folder id is required"
+            ? 400
+            : message === "Folder not found"
+              ? 404
               : 500,
       }
     );

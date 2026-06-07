@@ -161,7 +161,7 @@ export default function TestimonialsPage() {
     }
   }
 
-  function useFeedbackAsDraft(item: PublishableFeedback) {
+  function applyFeedbackAsDraft(item: PublishableFeedback) {
     setEditingId(null);
     setForm({
       title:
@@ -186,8 +186,10 @@ export default function TestimonialsPage() {
       return;
     }
 
-    if (!form.quote.trim()) {
-      toast.error("Quote is required");
+    const hasMedia = Boolean(form.videoUrl?.trim() || form.imageUrl?.trim());
+
+    if (!form.quote.trim() && !hasMedia) {
+      toast.error("Quote is required for quote-only testimonials");
       return;
     }
 
@@ -376,13 +378,19 @@ export default function TestimonialsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="testimonial-quote">Short Quote</Label>
+              <Label htmlFor="testimonial-quote">
+                Short Quote {form.videoUrl?.trim() || form.imageUrl?.trim() ? "(optional)" : ""}
+              </Label>
               <Textarea
                 id="testimonial-quote"
                 rows={4}
                 value={form.quote}
                 onChange={(e) => update("quote", e.target.value)}
-                placeholder="What stood out in the learning experience?"
+                placeholder={
+                  form.videoUrl?.trim() || form.imageUrl?.trim()
+                    ? "Optional caption or quote for this media testimonial"
+                    : "What stood out in the learning experience?"
+                }
               />
             </div>
 
@@ -458,7 +466,7 @@ export default function TestimonialsPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => useFeedbackAsDraft(item)}
+                          onClick={() => applyFeedbackAsDraft(item)}
                         >
                           Use in Form
                         </Button>
@@ -510,7 +518,7 @@ export default function TestimonialsPage() {
                   ) : (
                     <div className="relative flex min-h-[220px] items-end overflow-hidden bg-slate-50 p-6">
                       <span className="pointer-events-none absolute left-3 top-0 text-[180px] font-black leading-none text-slate-100">
-                        "
+                        &ldquo;
                       </span>
                       <div className="absolute bottom-0 right-0 h-28 w-28 rounded-full bg-cyan-100/70" />
                       <div className="relative">
