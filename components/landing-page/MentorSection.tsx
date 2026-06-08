@@ -65,7 +65,7 @@ export function MentorSection() {
           <div className="flex justify-center lg:justify-start">
             <div className="overflow-hidden rounded-[28px] border border-[#0f7896]/10 bg-gradient-to-br from-[#0f7896]/5 to-transparent p-2 shadow-[0_32px_80px_rgba(15,120,150,0.06)] backdrop-blur-sm sm:rounded-[40px] sm:p-4">
               <Image
-                src="/my-mentor-2.jpeg"
+                src="/my-mentor-2.webp"
                 alt="Dr. Ankit Goel"
                 width={800}
                 height={1000}

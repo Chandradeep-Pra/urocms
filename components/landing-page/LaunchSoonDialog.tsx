@@ -80,16 +80,23 @@ export function LaunchSoonDialog({
   eyebrow,
   label,
   className,
+  controlledOpen,
+  onControlledOpenChange,
 }: {
   icon: string;
   eyebrow: string;
   label: string;
   className?: string;
+  controlledOpen?: boolean;
+  onControlledOpenChange?: (open: boolean) => void;
 }) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [updatesOpen, setUpdatesOpen] = useState(false);
   const [announcement, setAnnouncement] = useState<AnnouncementPayload | null>(null);
   const [loadingAnnouncement, setLoadingAnnouncement] = useState(false);
   const [announcementError, setAnnouncementError] = useState("");
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onControlledOpenChange ?? setInternalOpen;
 
   useEffect(() => {
     if (!updatesOpen) return;
@@ -133,16 +140,18 @@ export function LaunchSoonDialog({
 
   return (
     <>
-      <Dialog>
-        <DialogTrigger asChild>
-          <StoreButton
-            type="button"
-            icon={icon}
-            eyebrow={eyebrow}
-            label={label}
-            className={className}
-          />
-        </DialogTrigger>
+      <Dialog open={open} onOpenChange={setOpen}>
+        {controlledOpen === undefined ? (
+          <DialogTrigger asChild>
+            <StoreButton
+              type="button"
+              icon={icon}
+              eyebrow={eyebrow}
+              label={label}
+              className={className}
+            />
+          </DialogTrigger>
+        ) : null}
         <DialogContent className="rounded-[32px] border border-[#0f7896]/14 bg-white p-6 text-center shadow-[0_24px_70px_rgba(15,120,150,0.18)] sm:max-w-lg">
           <DialogHeader className="items-center text-center">
             <div className="grid h-40 w-full place-items-center overflow-hidden">

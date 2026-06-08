@@ -1,5 +1,3 @@
-"use client";
-
 import { ExpandableCardGrid } from "@/components/landing-page/ExpandableCardGrid";
 import { GraduationCap, Presentation, Users2 } from "lucide-react";
 

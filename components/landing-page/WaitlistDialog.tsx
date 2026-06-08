@@ -48,17 +48,25 @@ const fallbackCountries: CountryOption[] = [
 export function WaitlistDialog({
   triggerLabel = "Join Waitlist",
   triggerClassName = "",
+  controlledOpen,
+  onControlledOpenChange,
 }: {
   triggerLabel?: string;
   triggerClassName?: string;
+  controlledOpen?: boolean;
+  onControlledOpenChange?: (open: boolean) => void;
 }) {
   const [countries, setCountries] = useState<CountryOption[]>(fallbackCountries);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [country, setCountry] = useState("United Kingdom-+44");
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [error, setError] = useState("");
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onControlledOpenChange ?? setInternalOpen;
 
   useEffect(() => {
+    if (!open) return;
+
     let cancelled = false;
 
     async function loadCountries() {
@@ -102,7 +110,7 @@ export function WaitlistDialog({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [open]);
 
   const submitWaitlist = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -146,11 +154,13 @@ export function WaitlistDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className={`rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-8 py-7 text-base font-bold text-white shadow-[0_8px_30px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-1 hover:scale-105 hover:from-[#1294ba] hover:to-[#0f7896] hover:shadow-[0_12px_40px_rgba(15,120,150,0.4)] ${triggerClassName}`}>
-          {triggerLabel}
-        </Button>
-      </DialogTrigger>
+      {controlledOpen === undefined ? (
+        <DialogTrigger asChild>
+          <Button className={`rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-8 py-7 text-base font-bold text-white shadow-[0_8px_30px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-1 hover:scale-105 hover:from-[#1294ba] hover:to-[#0f7896] hover:shadow-[0_12px_40px_rgba(15,120,150,0.4)] ${triggerClassName}`}>
+            {triggerLabel}
+          </Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-h-[92vh] overflow-y-auto rounded-[32px] border border-[#0f7896]/14 bg-white p-6 shadow-[0_24px_70px_rgba(15,120,150,0.18)] sm:max-w-2xl">
         <DialogHeader className="text-center">
           <DialogTitle className="text-3xl font-extrabold tracking-[-0.04em] text-[#071014]">
@@ -168,7 +178,7 @@ export function WaitlistDialog({
             <Heart className="absolute right-10 top-12 h-4 w-4 animate-pulse fill-[#1294ba] text-[#1294ba]" />
             <Heart className="absolute bottom-10 left-12 h-4 w-4 animate-ping fill-[#0f7896] text-[#0f7896]" />
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="Urologics logo"
               width={84}
               height={84}

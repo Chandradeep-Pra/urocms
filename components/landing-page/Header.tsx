@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { SignUpDialog } from "./SignUpDialog";
+import { LazySignUpDialog } from "./LazySignUpDialog";
 
 const navItems = [
   { label: "Mentor", href: "#mentor" },
@@ -18,26 +17,34 @@ export function LandingHeader() {
   const [isOpen, setIsOpen] = useState(false);
 
   const [showHeader, setShowHeader] = useState(true);
-const [lastScrollY, setLastScrollY] = useState(0);
+const lastScrollYRef = useRef(0);
+const tickingRef = useRef(false);
 
 useEffect(() => {
   const handleScroll = () => {
-    const currentScrollY = window.scrollY;
+    if (tickingRef.current) return;
 
-    if (currentScrollY < 50) {
-      setShowHeader(true); // always show at top
-    } else if (currentScrollY > lastScrollY) {
-      setShowHeader(false); // scrolling down
-    } else {
-      setShowHeader(true); // scrolling up
-    }
+    tickingRef.current = true;
+    window.requestAnimationFrame(() => {
+      const currentScrollY = window.scrollY;
+      const lastScrollY = lastScrollYRef.current;
 
-    setLastScrollY(currentScrollY);
+      if (currentScrollY < 50) {
+        setShowHeader(true); // always show at top
+      } else if (currentScrollY > lastScrollY) {
+        setShowHeader(false); // scrolling down
+      } else {
+        setShowHeader(true); // scrolling up
+      }
+
+      lastScrollYRef.current = currentScrollY;
+      tickingRef.current = false;
+    });
   };
 
-  window.addEventListener("scroll", handleScroll);
+  window.addEventListener("scroll", handleScroll, { passive: true });
   return () => window.removeEventListener("scroll", handleScroll);
-}, [lastScrollY]);
+}, []);
 
   return (
     <header
@@ -49,7 +56,7 @@ useEffect(() => {
         <Link href="/" className="group flex items-center gap-3">
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-[#0f7896]/10 bg-white md:h-14 md:w-14 shadow-sm transition-transform group-hover:scale-105">
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="Urologics logo"
               fill
               className="object-contain"
@@ -81,13 +88,7 @@ useEffect(() => {
           >
             Login
           </Link>
-          <SignUpDialog>
-            <Button
-              className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-7 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,120,150,0.35)]"
-            >
-              Sign Up
-            </Button>
-          </SignUpDialog>
+          <LazySignUpDialog className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-7 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,120,150,0.35)]" />
         </div>
 
         <button
@@ -140,13 +141,7 @@ useEffect(() => {
             >
               Login
             </Link>
-            <SignUpDialog>
-              <Button
-                className="w-full rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-6 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25"
-              >
-                Sign Up
-              </Button>
-            </SignUpDialog>
+            <LazySignUpDialog className="w-full rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-6 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25" />
           </div>
         </div>
       </div>

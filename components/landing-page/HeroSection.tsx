@@ -1,8 +1,8 @@
 import { CirclePlay } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { chipClass } from "@/components/landing-page/theme";
-import { LaunchSoonDialog } from "./LaunchSoonDialog";
-import { WaitlistDialog } from "./WaitlistDialog";
+import { LazyLaunchSoonDialog } from "./LazyLaunchSoonDialog";
+import { LazyWaitlistDialog } from "./LazyWaitlistDialog";
 import Image from "next/image";
 
 export function HeroSection() {
@@ -24,7 +24,7 @@ export function HeroSection() {
           </div>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start">
-            <WaitlistDialog />
+            <LazyWaitlistDialog />
 
             <Button
               variant="outline"
@@ -36,21 +36,21 @@ export function HeroSection() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:justify-center lg:justify-start">
-  <LaunchSoonDialog
-    icon="/apple-logo.png"
+  <LazyLaunchSoonDialog
+    icon="/apple-logo.webp"
     eyebrow="Download on the"
     label="App Store"
   />
 
-  <LaunchSoonDialog
-    icon="/google-play.png"
+  <LazyLaunchSoonDialog
+    icon="/google-play.webp"
     eyebrow="Get it on"
     label="Google Play"
   />
 
   {/* <StoreButton
     href="#"
-    icon="/web.png"
+    icon="/web.webp"
     eyebrow="Continue on"
     label="Web Platform"
     className="col-span-2 mx-auto w-fit sm:col-span-1 sm:mx-0 hidden md:block"
@@ -62,11 +62,12 @@ export function HeroSection() {
           <div className="relative mx-auto flex w-full justify-center sm:min-h-[440px]">
             <div className="relative z-10 w-full max-w-[220px] sm:absolute sm:left-1/2 sm:top-0 sm:max-w-[273px] sm:-translate-x-1/2 lg:-top-10 xl:max-w-[294px]">
               <Image
-                src="/ai-screen-phone.png"
+                src="/ai-screen-phone.webp"
                 alt="Urologics AI viva phone screen"
                 width={450}
                 height={920}
                 className="h-auto w-full"
+                sizes="(min-width: 1280px) 294px, (min-width: 640px) 273px, 220px"
                 priority
               />
             </div>

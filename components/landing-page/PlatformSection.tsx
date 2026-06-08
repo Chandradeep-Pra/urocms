@@ -1,5 +1,3 @@
-"use client";
-
 import { features } from "@/components/landing-page/data";
 import { ExpandableCardGrid } from "@/components/landing-page/ExpandableCardGrid";
 

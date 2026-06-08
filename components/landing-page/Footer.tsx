@@ -18,7 +18,7 @@ export function LandingFooter() {
           <div>
             <div className="flex items-center gap-3">
               <div className="relative h-11 w-11">
-                <Image src="/logo.png" alt="Urologics logo" fill className="object-contain" />
+                <Image src="/logo.webp" alt="Urologics logo" fill className="object-contain" />
               </div>
 
               <p className="text-lg font-semibold text-[#071014]">

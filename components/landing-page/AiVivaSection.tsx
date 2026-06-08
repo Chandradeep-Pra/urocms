@@ -87,10 +87,11 @@ export function AiVivaSection() {
           <div className="relative">
             <div className="relative overflow-hidden rounded-[32px] shadow-[0_22px_70px_rgba(15,120,150,0.16)]">
               <Image
-                src="/my-mentor-ai.jpeg"
+                src="/my-mentor-ai.webp"
                 alt="Urologics AI Viva laptop preview"
                 width={1200}
                 height={800}
+                sizes="(min-width: 1024px) 590px, 100vw"
                 className="h-auto w-full object-contain"
               />
             </div>

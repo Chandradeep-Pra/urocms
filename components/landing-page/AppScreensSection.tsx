@@ -41,7 +41,7 @@ const dailyPoints = [
 const tabletShowcases = [
   {
     title: "Mini Mock Test",
-    image: "/ipad-portrait.png",
+    image: "/ipad-portrait.webp",
     width: 433,
     height: 577,
     icon: Tablet,
@@ -49,7 +49,7 @@ const tabletShowcases = [
   },
   {
     title: "Chapter Wise",
-    image: "/ipad-hori.png",
+    image: "/ipad-hori.webp",
     width: 577,
     height: 433,
     icon: Layers3,
@@ -57,7 +57,7 @@ const tabletShowcases = [
   },
   {
     title: "Image Based Question",
-    image: "/ipad-hori-2.png",
+    image: "/ipad-hori-2.webp",
     width: 577,
     height: 433,
     icon: ImageIcon,
@@ -90,7 +90,7 @@ function MacbookMockup() {
     <div className="relative mx-auto w-full max-w-[900px]">
       <div className="absolute left-[9.2%] top-[2%] h-[90.5%] w-[81.6%] overflow-hidden rounded-t-[12px] bg-cyan-50">
         <Image
-          src="/macbook-screen.png"
+          src="/macbook-screen.webp"
           alt="Grand mock test screen"
           fill
           className="object-cover object-top"
@@ -98,7 +98,7 @@ function MacbookMockup() {
         />
       </div>
       <Image
-        src="/macbook-mockup.png"
+        src="/macbook-mockup.webp"
         alt="MacBook mockup"
         width={750}
         height={431}
@@ -113,12 +113,13 @@ function DailyQuickQuestionItem() {
   return (
     <div className="grid w-full max-w-[900px] grid-cols-[0.46fr_0.54fr] items-center gap-4 sm:flex sm:flex-row sm:gap-10">
       <Image
-        src="/daily-quiz-device.png"
+        src="/daily-quiz-device.webp"
         alt="Daily quiz app screen"
         width={450}
         height={920}
         className="h-auto w-full max-w-[138px] justify-self-end sm:max-w-[330px]"
         priority={false}
+        sizes="(min-width: 640px) 330px, 138px"
       />
 
       <div className="min-w-0 flex-1">
@@ -176,6 +177,8 @@ function TabletShowcaseItem({
         alt={`${item.title} app mockup`}
         width={item.width}
         height={item.height}
+        loading="lazy"
+        decoding="async"
         className={`block h-auto w-full ${item.className}`}
       />
     </div>

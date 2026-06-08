@@ -3,12 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Chrome, Loader2 } from "lucide-react";
-import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile,
-} from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,17 +13,26 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { auth } from "@/lib/firebaseClient";
 
-export function SignUpDialog({ children }: { children: React.ReactNode }) {
+export function SignUpDialog({
+  children,
+  controlledOpen,
+  onControlledOpenChange,
+}: {
+  children?: React.ReactNode;
+  controlledOpen?: boolean;
+  onControlledOpenChange?: (open: boolean) => void;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onControlledOpenChange ?? setInternalOpen;
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +45,8 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
 
     try {
       setLoading(true);
+      const [{ createUserWithEmailAndPassword, updateProfile }, { auth }] =
+        await Promise.all([import("firebase/auth"), import("@/lib/firebaseClient")]);
       const credential = await createUserWithEmailAndPassword(auth, email, password);
 
       await updateProfile(credential.user, {
@@ -62,9 +67,9 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
 
       setOpen(false);
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Sign up error:", err);
-      setError(err?.message || "Failed to create account");
+      setError(err instanceof Error ? err.message : "Failed to create account");
     } finally {
       setLoading(false);
     }
@@ -74,6 +79,8 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
     setError("");
     try {
       setGoogleLoading(true);
+      const [{ GoogleAuthProvider, signInWithPopup }, { auth }] =
+        await Promise.all([import("firebase/auth"), import("@/lib/firebaseClient")]);
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({
         prompt: "select_account",
@@ -95,9 +102,9 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
 
       setOpen(false);
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Google sign up error:", err);
-      setError(err?.message || "Google sign-up failed");
+      setError(err instanceof Error ? err.message : "Google sign-up failed");
     } finally {
       setGoogleLoading(false);
     }
@@ -105,7 +112,7 @@ export function SignUpDialog({ children }: { children: React.ReactNode }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
       <DialogContent className="sm:max-w-md rounded-[32px] border border-[#0f7896]/14 bg-white p-6 text-[#071014] shadow-[0_24px_70px_rgba(15,120,150,0.18)]">
         <DialogHeader>
           <DialogTitle className="text-center text-3xl font-extrabold tracking-tight text-[#0f7896]">
