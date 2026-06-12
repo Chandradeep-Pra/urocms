@@ -14,8 +14,12 @@ import { Chrome, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
-const NON_ADMIN_REDIRECT_URL = "https://testing-zone-five.vercel.app"
-const ALLOWED_APP_REDIRECT_ORIGIN = "https://testing-zone-five.vercel.app"
+const NON_ADMIN_REDIRECT_URL =
+  process.env.NEXT_PUBLIC_USER_APP_URL || "https://urologics.co.uk/web"
+const ALLOWED_APP_REDIRECT_ORIGINS = new Set([
+  "https://urologics.co.uk",
+  "https://testing-zone-five.vercel.app",
+])
 
 async function verifyAdminAccess(idToken: string) {
   const response = await fetch("/api/admin/session", {
@@ -68,7 +72,18 @@ function getSafeAppRedirect(rawRedirect: string | null) {
   try {
     const redirectUrl = new URL(rawRedirect)
 
-    if (redirectUrl.origin === ALLOWED_APP_REDIRECT_ORIGIN) {
+    if (ALLOWED_APP_REDIRECT_ORIGINS.has(redirectUrl.origin)) {
+      if (redirectUrl.origin === "https://urologics.co.uk" && !redirectUrl.pathname.startsWith("/web")) {
+        return NON_ADMIN_REDIRECT_URL
+      }
+
+      if (
+        redirectUrl.origin === "https://testing-zone-five.vercel.app" &&
+        !redirectUrl.pathname.startsWith("/web")
+      ) {
+        redirectUrl.pathname = `/web${redirectUrl.pathname === "/" ? "" : redirectUrl.pathname}`
+      }
+
       return redirectUrl.toString()
     }
   } catch {
