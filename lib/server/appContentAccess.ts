@@ -619,6 +619,18 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
   }): ResolvedItemAccess {
     const folderId = normalizeString(input.folderId);
     const courseIds = getCourseIdsForViva(input.id);
+
+    if (normalizeString(input.accessType) === "public") {
+      return {
+        allowed: true,
+        mode: "full",
+        previewLimit: null,
+        reason: null,
+        courseIds,
+        source: "public",
+      };
+    }
+
     const quotaLockedReason =
       totalVivaMinutes <= 0 || remainingVivaMinutes <= 0
         ? "You are out of AI viva quota credits. Please contact admin."

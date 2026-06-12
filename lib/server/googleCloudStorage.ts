@@ -110,6 +110,49 @@ export async function getCloudStorageSignedReadUrl(input: {
   };
 }
 
+export async function getCloudStorageReadStream(input: {
+  storagePath: string;
+  storageBucket?: string;
+  rangeHeader?: string | null;
+}) {
+  const bucket = input.storageBucket
+    ? getStorageClient().bucket(input.storageBucket)
+    : await getResolvedGoogleCloudStorageBucket();
+  const file = bucket.file(input.storagePath);
+  const [metadata] = await file.getMetadata();
+  const size = Number(metadata.size || 0);
+  const contentType = String(metadata.contentType || "video/mp4");
+  const range = input.rangeHeader?.match(/bytes=(\d*)-(\d*)/);
+
+  if (range && size > 0) {
+    const start = range[1] ? Number(range[1]) : 0;
+    const end = range[2] ? Number(range[2]) : size - 1;
+    const safeStart = Number.isFinite(start) ? Math.max(0, start) : 0;
+    const safeEnd = Number.isFinite(end) ? Math.min(size - 1, end) : size - 1;
+
+    return {
+      stream: file.createReadStream({ start: safeStart, end: safeEnd }),
+      status: 206,
+      headers: {
+        "content-type": contentType,
+        "content-length": String(safeEnd - safeStart + 1),
+        "content-range": `bytes ${safeStart}-${safeEnd}/${size}`,
+        "accept-ranges": "bytes",
+      },
+    };
+  }
+
+  return {
+    stream: file.createReadStream(),
+    status: 200,
+    headers: {
+      "content-type": contentType,
+      ...(size > 0 ? { "content-length": String(size) } : {}),
+      "accept-ranges": "bytes",
+    },
+  };
+}
+
 export async function deleteCloudStorageObject(input: {
   storagePath?: string | null;
   storageBucket?: string | null;

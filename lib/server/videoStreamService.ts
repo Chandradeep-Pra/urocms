@@ -1,7 +1,9 @@
+import { Readable } from "node:stream";
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { type AppUserSession } from "@/lib/server/appSession";
+import { getCloudStorageReadStream } from "@/lib/server/googleCloudStorage";
 import {
   fetchDriveFileStream,
   getDriveFileDebugInfo,
@@ -9,7 +11,7 @@ import {
   grantDriveAccessToEmail,
 } from "@/lib/server/googleDrive";
 
-function normalizeEffectiveVideoTier(video: Record<string, any>) {
+function normalizeEffectiveVideoTier(video: Record<string, unknown>) {
   return video.effectiveAccessTier === "paid" || video.accessTier === "paid"
     ? "paid"
     : "free";
@@ -30,6 +32,40 @@ export async function buildDriveVideoStreamResponse(params: {
   }
 
   const video = videoDoc.data() ?? {};
+  if (video.storagePath) {
+    const accessTier = normalizeEffectiveVideoTier(video);
+    if (params.mode === "app" && params.user) {
+      const accessContext = await buildAppContentAccessContext(params.user);
+      const access = accessContext.getVideoAccess({
+        id: params.videoId,
+        sectionId: typeof video.sectionId === "string" ? video.sectionId : null,
+        effectiveAccessTier: accessTier,
+        accessTier: typeof video.accessTier === "string" ? video.accessTier : null,
+      });
+
+      if (access.mode !== "full") {
+        const error = new Error(access.reason || "Video access is locked");
+        (error as Error & { status?: number }).status = 403;
+        throw error;
+      }
+    }
+
+    const storageResponse = await getCloudStorageReadStream({
+      storagePath: String(video.storagePath),
+      storageBucket: typeof video.storageBucket === "string" ? video.storageBucket : undefined,
+      rangeHeader: params.rangeHeader,
+    });
+    const headers = new Headers(storageResponse.headers);
+    headers.set("content-disposition", `inline; filename="${String(video.title || "video")}.mp4"`);
+    headers.set("cache-control", "private, max-age=0, must-revalidate");
+    headers.set("x-content-type-options", "nosniff");
+
+    return new NextResponse(Readable.toWeb(storageResponse.stream), {
+      status: storageResponse.status,
+      headers,
+    });
+  }
+
   if (video.provider !== "drive" || !video.driveFileId) {
     const error = new Error("This video is not a Drive file");
     (error as Error & { status?: number }).status = 400;
