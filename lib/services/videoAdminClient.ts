@@ -29,7 +29,12 @@ async function parseJson<T>(res: Response): Promise<T> {
 
 export async function updateVideoSection(
   sectionId: string,
-  payload: { title?: string; accessTier?: "free" | "paid"; sortOrder?: number }
+  payload: {
+    title?: string;
+    accessTier?: "free" | "paid";
+    sortOrder?: number;
+    imageUrl?: string;
+  }
 ) {
   const res = await adminFetch(`/api/videos/videoSection/${sectionId}`, {
     method: "PATCH",

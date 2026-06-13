@@ -7,6 +7,7 @@ export interface VideoSectionRecord {
   title: string;
   accessTier: VideoSectionAccessTier;
   sortOrder: number;
+  imageUrl: string;
 }
 
 function normalizeSortOrder(value: unknown, fallback: number) {
@@ -33,6 +34,7 @@ export async function listVideoSections(): Promise<VideoSectionRecord[]> {
       title: String(doc.data().title || ""),
       accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
       sortOrder: normalizeSortOrder(doc.data().sortOrder, index + 1),
+      imageUrl: String(doc.data().imageUrl || ""),
     }))
     .sort((a, b) => {
       if (a.sortOrder !== b.sortOrder) {
@@ -73,7 +75,12 @@ export async function createVideoSection(input: {
 
 export async function updateVideoSection(
   id: string,
-  input: { title?: string; accessTier?: VideoSectionAccessTier; sortOrder?: number }
+  input: {
+    title?: string;
+    accessTier?: VideoSectionAccessTier;
+    sortOrder?: number;
+    imageUrl?: string;
+  }
 ) {
   const sectionRef = adminDb.collection("videoSections").doc(id);
   const currentSectionDoc = await sectionRef.get();
@@ -99,6 +106,11 @@ export async function updateVideoSection(
 
   if (input.accessTier) {
     payload.accessTier = input.accessTier === "paid" ? "paid" : "free";
+  }
+
+  if ("imageUrl" in input) {
+    payload.imageUrl =
+      typeof input.imageUrl === "string" ? input.imageUrl.trim() : "";
   }
 
   const requestedSortOrder = normalizeSortOrder(input.sortOrder, 0);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 import { FolderPlus, Loader2, Pencil, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ interface SectionOption {
   title: string;
   accessTier?: "free" | "paid";
   sortOrder?: number;
+  imageUrl?: string;
 }
 
 interface Props {
@@ -46,7 +47,9 @@ export default function SectionActionPanel({
   const [sectionTitle, setSectionTitle] = useState("");
   const [sectionAccessTier, setSectionAccessTier] = useState<"free" | "paid">("free");
   const [sectionSortOrder, setSectionSortOrder] = useState("");
+  const [sectionImageUrl, setSectionImageUrl] = useState("");
   const [savingSection, setSavingSection] = useState(false);
+  const [uploadingSectionImage, setUploadingSectionImage] = useState(false);
   const [loadingFolders, setLoadingFolders] = useState(false);
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -72,6 +75,7 @@ export default function SectionActionPanel({
     setSectionSortOrder(
       typeof section.sortOrder === "number" ? String(section.sortOrder) : ""
     );
+    setSectionImageUrl(section.imageUrl || "");
   }, [section]);
 
   useEffect(() => {
@@ -139,6 +143,7 @@ export default function SectionActionPanel({
         title: sectionTitle,
         accessTier: sectionAccessTier,
         sortOrder: sectionSortOrder.trim() ? Number(sectionSortOrder) : undefined,
+        imageUrl: sectionImageUrl,
       });
       await onSectionsUpdated();
       toast.success("Section updated");
@@ -147,6 +152,38 @@ export default function SectionActionPanel({
       toast.error(error.message || "Could not update section");
     } finally {
       setSavingSection(false);
+    }
+  };
+
+  const uploadSectionImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "video-section-images");
+
+    const toastId = toast.loading("Uploading folder image...");
+    setUploadingSectionImage(true);
+
+    try {
+      const res = await fetch("/api/cloudinary-upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || "Folder image upload failed");
+      }
+
+      setSectionImageUrl(data.url);
+      toast.success("Folder image uploaded", { id: toastId });
+    } catch (error: any) {
+      toast.error(error.message || "Folder image upload failed", { id: toastId });
+    } finally {
+      setUploadingSectionImage(false);
+      event.target.value = "";
     }
   };
 
@@ -244,6 +281,57 @@ export default function SectionActionPanel({
               onChange={(event) => setSectionSortOrder(event.target.value)}
               placeholder="Section sort order"
             />
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-start gap-3">
+                <div className="h-20 w-28 overflow-hidden rounded-xl bg-white">
+                  {sectionImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={sectionImageUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-xs text-slate-400">
+                      Folder image
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Input
+                    value={sectionImageUrl}
+                    onChange={(event) => setSectionImageUrl(event.target.value)}
+                    placeholder="Folder image URL"
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                      {uploadingSectionImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <UploadCloud className="h-4 w-4" />
+                      )}
+                      Upload Image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={uploadSectionImage}
+                        disabled={uploadingSectionImage}
+                      />
+                    </label>
+                    {sectionImageUrl ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setSectionImageUrl("")}
+                      >
+                        Remove
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {(["free", "paid"] as const).map((tier) => (
                 <button

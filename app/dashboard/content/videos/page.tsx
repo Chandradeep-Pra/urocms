@@ -16,6 +16,7 @@ export interface Section {
   title: string;
   accessTier?: "free" | "paid";
   sortOrder?: number;
+  imageUrl?: string;
 }
 
 export interface VideoItem {

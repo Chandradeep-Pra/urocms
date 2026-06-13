@@ -11,6 +11,8 @@ export interface AppUserSession {
   email: string | null;
   name: string | null;
   profileImageUrl: string | null;
+  phone: string | null;
+  country: string | null;
   tier: AppTier;
   googleAccessEmail: string | null;
   source: string | null;
@@ -42,6 +44,8 @@ function createTransientGuestSession(decoded: Awaited<ReturnType<typeof adminAut
     email: null,
     name: null,
     profileImageUrl: null,
+    phone: null,
+    country: null,
     tier: "guest",
     googleAccessEmail: null,
     source: decoded.firebase.sign_in_provider ?? "anonymous",
@@ -112,6 +116,8 @@ export async function requireAppUser(req: NextRequest) {
           typeof user.profileImageUrl === "string" && user.profileImageUrl.trim()
             ? user.profileImageUrl.trim()
             : null,
+        phone: typeof user.phone === "string" && user.phone.trim() ? user.phone.trim() : null,
+        country: typeof user.country === "string" && user.country.trim() ? user.country.trim() : null,
         tier: normalizeTier(user.tier),
         googleAccessEmail: user.googleAccessEmail ?? user.email ?? decoded.email ?? null,
         source: user.source ?? decoded.firebase.sign_in_provider ?? null,

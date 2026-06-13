@@ -116,6 +116,7 @@ export async function GET(req: NextRequest) {
         return {
           id: doc.id,
           title: String(data.title || ""),
+          imageUrl: String(data.imageUrl || ""),
           accessTier: data.accessTier === "paid" ? "paid" : "free",
           sortOrder: normalizeSortOrder(data.sortOrder, index + 1),
           effectiveAccessTier:
