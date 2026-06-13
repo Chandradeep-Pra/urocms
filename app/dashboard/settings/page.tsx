@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { auth } from "@/lib/firebaseClient";
+import { clearTestingZoneAuth } from "@/lib/testingZoneAuthHandoff";
 
 const SettingsPage = () => {
   const router = useRouter();
@@ -26,6 +27,7 @@ const SettingsPage = () => {
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
+      clearTestingZoneAuth();
       await signOut(auth);
       router.replace("/login");
     } catch (error) {

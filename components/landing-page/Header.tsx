@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
-import { syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff";
+import { consumeRecentLogoutFlag, syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff";
 import { LazySignUpDialog } from "./LazySignUpDialog";
 
 const navItems = [
@@ -34,12 +34,15 @@ export function LandingHeader() {
   const [checkingDestination, setCheckingDestination] = useState(false);
   const [showAdminChoice, setShowAdminChoice] = useState(false);
   const handledAuthUidRef = useRef<string | null>(null);
+  const skipAutoRouteRef = useRef(false);
 
   const [showHeader, setShowHeader] = useState(true);
 const lastScrollYRef = useRef(0);
 const tickingRef = useRef(false);
 
 useEffect(() => {
+  skipAutoRouteRef.current = consumeRecentLogoutFlag();
+
   const unsubscribe = onAuthStateChanged(auth, (user) => {
     setAuthUser(user);
     setAuthReady(true);
@@ -102,6 +105,7 @@ const verifyAdminAccess = async (idToken: string) => {
 };
 
 useEffect(() => {
+  if (skipAutoRouteRef.current) return;
   if (!authReady || !authUser || handledAuthUidRef.current === authUser.uid) return;
 
   handledAuthUidRef.current = authUser.uid;

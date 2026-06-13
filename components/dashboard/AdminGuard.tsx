@@ -4,6 +4,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebaseClient";
+import { clearTestingZoneAuth } from "@/lib/testingZoneAuthHandoff";
 
 export default function AdminGuard({
   children,
@@ -34,6 +35,7 @@ export default function AdminGuard({
         });
 
         if (!response.ok) {
+          clearTestingZoneAuth();
           await signOut(auth);
           if (!cancelled) {
             router.replace("/login");
@@ -46,6 +48,7 @@ export default function AdminGuard({
         }
       } catch (error) {
         console.error("Admin guard error:", error);
+        clearTestingZoneAuth();
         await signOut(auth).catch(() => {});
         if (!cancelled) {
           router.replace("/login");

@@ -66,3 +66,21 @@ export async function syncTestingZoneAuth(user: User, idToken?: string) {
     })
   )
 }
+
+export function clearTestingZoneAuth() {
+  if (typeof window === "undefined") return
+
+  window.localStorage.removeItem(TESTING_ZONE_AUTH_STORAGE_KEY)
+  window.sessionStorage.setItem("urologics-auth-logged-out", "1")
+}
+
+export function consumeRecentLogoutFlag() {
+  if (typeof window === "undefined") return false
+
+  const wasLoggedOut = window.sessionStorage.getItem("urologics-auth-logged-out") === "1"
+  if (wasLoggedOut) {
+    window.sessionStorage.removeItem("urologics-auth-logged-out")
+  }
+
+  return wasLoggedOut
+}
