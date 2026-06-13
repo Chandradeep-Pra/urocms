@@ -698,7 +698,7 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
       allowed: false,
       mode: "locked",
       previewLimit: null,
-      reason: "This AI viva case is locked until the matching course or section is unlocked.",
+      reason: "Please join Urologics member to get this Viva case.",
       courseIds,
       source: "locked",
     };
