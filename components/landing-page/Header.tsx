@@ -31,6 +31,9 @@ export function LandingHeader() {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [openingPlatform, setOpeningPlatform] = useState(false);
+  const [checkingDestination, setCheckingDestination] = useState(false);
+  const [showAdminChoice, setShowAdminChoice] = useState(false);
+  const handledAuthUidRef = useRef<string | null>(null);
 
   const [showHeader, setShowHeader] = useState(true);
 const lastScrollYRef = useRef(0);
@@ -82,6 +85,61 @@ const openPlatform = async () => {
   }
 };
 
+const verifyAdminAccess = async (idToken: string) => {
+  const response = await fetch("/api/admin/session", {
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    if (payload?.error === "Admin access denied") return false;
+    throw new Error(payload?.error || "Failed to verify admin access");
+  }
+
+  return true;
+};
+
+useEffect(() => {
+  if (!authReady || !authUser || handledAuthUidRef.current === authUser.uid) return;
+
+  handledAuthUidRef.current = authUser.uid;
+
+  let cancelled = false;
+
+  async function routeLoggedInUser() {
+    try {
+      setCheckingDestination(true);
+      const token = await authUser.getIdToken();
+      const isAdmin = await verifyAdminAccess(token);
+
+      if (cancelled) return;
+
+      if (isAdmin) {
+        setShowAdminChoice(true);
+        return;
+      }
+
+      await syncTestingZoneAuth(authUser, token);
+      if (!cancelled) {
+        window.location.assign(USER_APP_URL);
+      }
+    } catch (error) {
+      console.error("Landing auth routing error:", error);
+      handledAuthUidRef.current = null;
+    } finally {
+      if (!cancelled) setCheckingDestination(false);
+    }
+  }
+
+  void routeLoggedInUser();
+
+  return () => {
+    cancelled = true;
+  };
+}, [authReady, authUser]);
+
   return (
     <header
   className={`fixed inset-x-0 top-4 z-50 mx-auto max-w-7xl px-4 sm:px-6 transition-all duration-500 ease-in-out ${
@@ -119,19 +177,9 @@ const openPlatform = async () => {
 
         <div className="hidden items-center gap-2 md:flex">
           {authReady && authUser ? (
-            <>
-              <span className="rounded-full bg-cyan-50 px-4 py-2 text-xs font-bold text-[#0f7896]">
-                Signed in as {getFirstName(authUser)}
-              </span>
-              <button
-                type="button"
-                onClick={openPlatform}
-                disabled={openingPlatform}
-                className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-7 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,120,150,0.35)] disabled:cursor-wait disabled:opacity-70"
-              >
-                {openingPlatform ? "Opening..." : "Platform"}
-              </button>
-            </>
+            <span className="rounded-full bg-cyan-50 px-4 py-2 text-xs font-bold text-[#0f7896]">
+              {checkingDestination ? "Opening platform..." : "Signed in"}
+            </span>
           ) : (
             <>
               <Link
@@ -189,22 +237,9 @@ const openPlatform = async () => {
 
           <div className="mt-2 flex flex-col gap-2">
             {authReady && authUser ? (
-              <>
-                <div className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-bold text-[#0f7896]">
-                  Signed in as {getFirstName(authUser)}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsOpen(false);
-                    void openPlatform();
-                  }}
-                  disabled={openingPlatform}
-                  className="w-full rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-3 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25 disabled:cursor-wait disabled:opacity-70"
-                >
-                  {openingPlatform ? "Opening..." : "Platform"}
-                </button>
-              </>
+              <div className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-bold text-[#0f7896]">
+                {checkingDestination ? "Opening platform..." : "Signed in"}
+              </div>
             ) : (
               <>
                 <Link
@@ -220,6 +255,36 @@ const openPlatform = async () => {
           </div>
         </div>
       </div>
+
+      {showAdminChoice && authUser ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#071014]/55 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[32px] border border-[#0f7896]/14 bg-white p-6 text-[#071014] shadow-[0_24px_70px_rgba(15,120,150,0.18)]">
+            <div className="space-y-2 text-center">
+              <h2 className="text-2xl font-extrabold text-[#0f7896]">Continue as</h2>
+              <p className="text-sm text-[#071014]/58">
+                Signed in as {getFirstName(authUser)}. Choose where you want to go.
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-3">
+              <Link
+                href="/dashboard"
+                className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-4 text-base font-bold text-white hover:from-[#1294ba] hover:to-[#0f7896]"
+              >
+                Admin dashboard
+              </Link>
+              <button
+                type="button"
+                onClick={openPlatform}
+                disabled={openingPlatform}
+                className="w-full rounded-2xl border border-[#0f7896]/16 bg-white py-4 text-base font-bold text-[#071014] hover:bg-cyan-50 disabled:cursor-wait disabled:opacity-70"
+              >
+                {openingPlatform ? "Opening platform..." : "Platform"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }
