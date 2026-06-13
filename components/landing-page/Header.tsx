@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import { auth } from "@/lib/firebaseClient";
+import { syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff";
 import { LazySignUpDialog } from "./LazySignUpDialog";
 
 const navItems = [
@@ -13,12 +16,34 @@ const navItems = [
   // { label: "Pricing", href: "/pricing" },
 ];
 
+const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "/web";
+const USER_APP_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.app")
+  ? "/web"
+  : CONFIGURED_USER_APP_URL;
+
+function getFirstName(user: User | null) {
+  const source = user?.displayName || user?.email?.split("@")[0] || "";
+  return source.trim().split(/\s+/)[0] || "Learner";
+}
+
 export function LandingHeader() {
   const [isOpen, setIsOpen] = useState(false);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [openingPlatform, setOpeningPlatform] = useState(false);
 
   const [showHeader, setShowHeader] = useState(true);
 const lastScrollYRef = useRef(0);
 const tickingRef = useRef(false);
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    setAuthUser(user);
+    setAuthReady(true);
+  });
+
+  return unsubscribe;
+}, []);
 
 useEffect(() => {
   const handleScroll = () => {
@@ -45,6 +70,17 @@ useEffect(() => {
   window.addEventListener("scroll", handleScroll, { passive: true });
   return () => window.removeEventListener("scroll", handleScroll);
 }, []);
+
+const openPlatform = async () => {
+  if (!authUser) return;
+
+  try {
+    setOpeningPlatform(true);
+    await syncTestingZoneAuth(authUser);
+  } finally {
+    window.location.assign(USER_APP_URL);
+  }
+};
 
   return (
     <header
@@ -82,13 +118,31 @@ useEffect(() => {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Link
-            href="/login"
-            className="rounded-full px-5 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-300 hover:bg-slate-100/80 hover:text-[#0f7896]"
-          >
-            Login
-          </Link>
-          <LazySignUpDialog className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-7 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,120,150,0.35)]" />
+          {authReady && authUser ? (
+            <>
+              <span className="rounded-full bg-cyan-50 px-4 py-2 text-xs font-bold text-[#0f7896]">
+                Signed in as {getFirstName(authUser)}
+              </span>
+              <button
+                type="button"
+                onClick={openPlatform}
+                disabled={openingPlatform}
+                className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-7 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,120,150,0.35)] disabled:cursor-wait disabled:opacity-70"
+              >
+                {openingPlatform ? "Opening..." : "Platform"}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-full px-5 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-300 hover:bg-slate-100/80 hover:text-[#0f7896]"
+              >
+                Login
+              </Link>
+              <LazySignUpDialog className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-7 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,120,150,0.35)]" />
+            </>
+          )}
         </div>
 
         <button
@@ -134,14 +188,35 @@ useEffect(() => {
           ))}
 
           <div className="mt-2 flex flex-col gap-2">
-            <Link
-              href="/login"
-              onClick={() => setIsOpen(false)}
-              className="flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              Login
-            </Link>
-            <LazySignUpDialog className="w-full rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-6 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25" />
+            {authReady && authUser ? (
+              <>
+                <div className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-bold text-[#0f7896]">
+                  Signed in as {getFirstName(authUser)}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    void openPlatform();
+                  }}
+                  disabled={openingPlatform}
+                  className="w-full rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-3 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25 disabled:cursor-wait disabled:opacity-70"
+                >
+                  {openingPlatform ? "Opening..." : "Platform"}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Login
+                </Link>
+                <LazySignUpDialog className="w-full rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-6 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25" />
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         requiredTier: "paid",
         reason:
           access.reason ||
-          "This AI viva case is locked until the matching course or section is unlocked.",
+          "Become a memeber to unlock Urologics AI.",
       });
     }
 

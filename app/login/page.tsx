@@ -14,6 +14,7 @@ import { syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff"
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
   updateProfile,
@@ -21,7 +22,7 @@ import {
 } from "firebase/auth"
 import { Chrome, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "https://urologics.co.uk/web"
 const NON_ADMIN_REDIRECT_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.app")
@@ -124,6 +125,7 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState("")
   const [appRedirectUrl, setAppRedirectUrl] = useState(NON_ADMIN_REDIRECT_URL)
+  const initialAuthCheckedRef = useRef(false)
   const selectedCountry = splitCountryValue(countryValue)
   const fullPhone = phone.trim() ? `${selectedCountry.dialCode} ${phone.trim()}`.trim() : ""
 
@@ -189,6 +191,32 @@ export default function LoginPage() {
     await syncTestingZoneAuth(user, token)
     redirectNonAdmin()
   }
+
+  useEffect(() => {
+    let cancelled = false
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (initialAuthCheckedRef.current) return
+      initialAuthCheckedRef.current = true
+      if (!user || cancelled) return
+
+      setLoading(true)
+      void routeAuthenticatedUser(user, { provider: "email" })
+        .catch((err: unknown) => {
+          if (cancelled) return
+          console.error("Existing session redirect error:", err)
+          setError(getErrorMessage(err, "Failed to restore existing session"))
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false)
+        })
+    })
+
+    return () => {
+      cancelled = true
+      unsubscribe()
+    }
+  }, [appRedirectUrl])
 
   const continueAsUser = async () => {
     if (!pendingAdminChoice) return

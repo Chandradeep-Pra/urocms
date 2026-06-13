@@ -332,20 +332,12 @@ export default async function PricingPage() {
             </h1>
           </div>
 
-          <Button
-            asChild
-            className="hidden rounded-full bg-[#0f7896] px-5 text-white hover:bg-[#0b647d] md:inline-flex"
-          >
-            <Link href="/">Return Home</Link>
-          </Button>
         </div>
 
         {plans.length === 0 ? (
           <div className="rounded-[32px] border border-[#0f7896]/12 bg-white p-10 shadow-[0_18px_50px_rgba(15,120,150,0.08)]">
             <p className="text-lg font-semibold text-[#071014]">No pricing plans published yet.</p>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[#071014]/65">
-              Plans created and marked active in Plan Creator will appear here automatically.
-            </p>
+           
           </div>
         ) : (
           <PricingCategoryAccordion groupedPlans={groupedPlans} />
