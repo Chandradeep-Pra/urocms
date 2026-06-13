@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { onAuthStateChanged, type User } from "firebase/auth";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
 import { consumeRecentLogoutFlag, syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff";
 import { LazySignUpDialog } from "./LazySignUpDialog";
@@ -44,6 +44,15 @@ useEffect(() => {
   skipAutoRouteRef.current = consumeRecentLogoutFlag();
 
   const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (skipAutoRouteRef.current && user) {
+      void signOut(auth).finally(() => {
+        setAuthUser(null);
+        setAuthReady(true);
+        skipAutoRouteRef.current = false;
+      });
+      return;
+    }
+
     setAuthUser(user);
     setAuthReady(true);
   });

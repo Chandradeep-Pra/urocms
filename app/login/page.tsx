@@ -10,11 +10,12 @@ import {
 } from "@/lib/countryOptions"
 import { auth } from "@/lib/firebaseClient"
 import { completeSignupProfile } from "@/lib/signupCompletion"
-import { syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff"
+import { consumeRecentLogoutFlag, syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff"
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
+  signOut,
   signInWithEmailAndPassword,
   signInWithPopup,
   updateProfile,
@@ -194,10 +195,17 @@ export default function LoginPage() {
 
   useEffect(() => {
     let cancelled = false
+    const shouldForceLogout = consumeRecentLogoutFlag()
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (initialAuthCheckedRef.current) return
       initialAuthCheckedRef.current = true
+
+      if (shouldForceLogout && user) {
+        void signOut(auth)
+        return
+      }
+
       if (!user || cancelled) return
 
       setLoading(true)
