@@ -359,6 +359,10 @@ export async function resolveCanonicalUserRecord(params: {
     ),
     phone: firstNonEmptyString(canonical.data.phone, currentData.phone),
     country: firstNonEmptyString(canonical.data.country, currentData.country),
+    medicalInstitution: firstNonEmptyString(
+      canonical.data.medicalInstitution,
+      currentData.medicalInstitution
+    ),
     source:
       firstNonEmptyString(params.source, canonical.data.source, currentData.source) ??
       params.signInProvider ??

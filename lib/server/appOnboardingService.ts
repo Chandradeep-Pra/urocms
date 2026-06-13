@@ -19,6 +19,7 @@ type CompleteProfileInput = {
   name?: string | null;
   phone?: string | null;
   country?: string | null;
+  medicalInstitution?: string | null;
   googleAccessEmail?: string | null;
   profileImageUrl?: string | null;
 };
@@ -174,6 +175,7 @@ export async function completeAppUserProfile(input: CompleteProfileInput) {
 
   const normalizedPhone = normalizeOptionalString(input.phone);
   const normalizedCountry = normalizeOptionalString(input.country);
+  const normalizedMedicalInstitution = normalizeOptionalString(input.medicalInstitution);
   const normalizedProfileImageUrl = normalizeOptionalString(input.profileImageUrl);
   const normalizedGoogleAccessEmail = normalizeEmail(
     input.googleAccessEmail || input.authEmail || ""
@@ -196,6 +198,7 @@ export async function completeAppUserProfile(input: CompleteProfileInput) {
       name: normalizedName,
       phone: normalizedPhone,
       country: normalizedCountry,
+      medicalInstitution: normalizedMedicalInstitution,
       profileImageUrl: normalizedProfileImageUrl,
       tier: resolvedTier,
       email:

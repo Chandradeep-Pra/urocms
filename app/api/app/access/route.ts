@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
       profileImageUrl: auth.user.profileImageUrl,
       phone: auth.user.phone,
       country: auth.user.country,
+      medicalInstitution: auth.user.medicalInstitution,
       googleAccessEmail: auth.user.googleAccessEmail,
       activeCourseIds: auth.user.activeCourseIds,
       activePlanId: planAccess.activePlanId,

@@ -11,7 +11,14 @@ export async function POST(req: NextRequest) {
     const auth = await requireAppUser(req);
     if ("response" in auth) return auth.response;
 
-    const { name, phone, country, googleAccessEmail, profileImageUrl } = await req.json();
+    const {
+      name,
+      phone,
+      country,
+      medicalInstitution,
+      googleAccessEmail,
+      profileImageUrl,
+    } = await req.json();
     const upgradedUser = await completeAppUserProfile({
       uid: auth.user.uid,
       authEmail: auth.user.email,
@@ -19,6 +26,7 @@ export async function POST(req: NextRequest) {
       name,
       phone,
       country,
+      medicalInstitution,
       googleAccessEmail,
       profileImageUrl,
     });

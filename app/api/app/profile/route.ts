@@ -28,6 +28,10 @@ export async function PATCH(req: NextRequest) {
       updates.country = String(body.country || "").trim();
     }
 
+    if (body?.medicalInstitution !== undefined) {
+      updates.medicalInstitution = String(body.medicalInstitution || "").trim();
+    }
+
     if (body?.profileImageUrl !== undefined) {
       const profileImageUrl = String(body.profileImageUrl || "").trim();
       updates.profileImageUrl = profileImageUrl || null;
@@ -69,6 +73,7 @@ export async function PATCH(req: NextRequest) {
             : null,
         phone: updatedData.phone ?? null,
         country: updatedData.country ?? null,
+        medicalInstitution: updatedData.medicalInstitution ?? null,
         tier: updatedData.tier ?? auth.user.tier,
       },
     });
