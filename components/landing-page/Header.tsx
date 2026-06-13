@@ -20,6 +20,7 @@ const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "/web";
 const USER_APP_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.app")
   ? "/web"
   : CONFIGURED_USER_APP_URL;
+const LOGOUT_FLAG_KEY = "urologics-auth-logged-out";
 
 function getFirstName(user: User | null) {
   const source = user?.displayName || user?.email?.split("@")[0] || "";
@@ -43,12 +44,32 @@ const tickingRef = useRef(false);
 useEffect(() => {
   skipAutoRouteRef.current = consumeRecentLogoutFlag();
 
+  const forceSignedOutState = () => {
+    setAuthUser(null);
+    setAuthReady(true);
+    setShowAdminChoice(false);
+    setCheckingDestination(false);
+    setOpeningPlatform(false);
+    handledAuthUidRef.current = null;
+    skipAutoRouteRef.current = false;
+  };
+
+  const handleCrossAppLogout = (event: StorageEvent) => {
+    if (event.key !== LOGOUT_FLAG_KEY || event.newValue !== "1") return;
+
+    skipAutoRouteRef.current = true;
+    void signOut(auth).finally(() => {
+      window.localStorage.removeItem(LOGOUT_FLAG_KEY);
+      forceSignedOutState();
+    });
+  };
+
+  window.addEventListener("storage", handleCrossAppLogout);
+
   const unsubscribe = onAuthStateChanged(auth, (user) => {
     if (skipAutoRouteRef.current && user) {
       void signOut(auth).finally(() => {
-        setAuthUser(null);
-        setAuthReady(true);
-        skipAutoRouteRef.current = false;
+        forceSignedOutState();
       });
       return;
     }
@@ -57,7 +78,10 @@ useEffect(() => {
     setAuthReady(true);
   });
 
-  return unsubscribe;
+  return () => {
+    window.removeEventListener("storage", handleCrossAppLogout);
+    unsubscribe();
+  };
 }, []);
 
 useEffect(() => {
