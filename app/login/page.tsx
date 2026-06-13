@@ -20,6 +20,18 @@ const ALLOWED_APP_REDIRECT_ORIGINS = new Set([
   "https://urologics.co.uk",
   "https://testing-zone-five.vercel.app",
 ])
+const TESTING_ZONE_AUTH_STORAGE_KEY = "urologics-testing-zone-auth"
+
+type AppAccessResponse = {
+  tier?: "guest" | "free" | "paid"
+  profile?: {
+    uid?: string
+    email?: string | null
+    name?: string | null
+    profileImageUrl?: string | null
+    activeCourseIds?: string[]
+  }
+}
 
 async function verifyAdminAccess(idToken: string) {
   const response = await fetch("/api/admin/session", {
@@ -60,6 +72,50 @@ async function completeGoogleOnboarding(idToken: string) {
   if (!response.ok) {
     throw new Error(data?.error || "Failed to finalize Google sign-in")
   }
+}
+
+async function fetchAppAccess(idToken: string): Promise<AppAccessResponse | null> {
+  try {
+    const response = await fetch("/api/app/access", {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    })
+
+    if (!response.ok) return null
+
+    return (await response.json()) as AppAccessResponse
+  } catch {
+    return null
+  }
+}
+
+async function syncTestingZoneAuth(user: User, idToken: string) {
+  const access = await fetchAppAccess(idToken)
+  const profile = access?.profile
+  const email = (profile?.email || user.email || "").trim().toLowerCase()
+
+  if (!email) return
+
+  const fallbackName = email.split("@")[0]?.replace(/[._-]+/g, " ").trim() || "Learner"
+
+  window.localStorage.setItem(
+    TESTING_ZONE_AUTH_STORAGE_KEY,
+    JSON.stringify({
+      uid: profile?.uid || user.uid,
+      email,
+      name: (profile?.name || user.displayName || fallbackName).trim(),
+      tier:
+        access?.tier === "paid" || access?.tier === "free" || access?.tier === "guest"
+          ? access.tier
+          : "guest",
+      idToken,
+      refreshToken: user.refreshToken,
+      expiresAt: Date.now() + 55 * 60 * 1000,
+      profileImageUrl: profile?.profileImageUrl || user.photoURL || null,
+      activeCourseIds: Array.isArray(profile?.activeCourseIds) ? profile.activeCourseIds : [],
+    })
+  )
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -144,6 +200,7 @@ export default function LoginPage() {
       await completeEmailOnboarding(token)
     }
 
+    await syncTestingZoneAuth(user, token)
     redirectNonAdmin()
   }
 
@@ -156,6 +213,10 @@ export default function LoginPage() {
         await completeGoogleOnboarding(pendingAdminChoice.token)
       } else if (pendingAdminChoice.isSignUp) {
         await completeEmailOnboarding(pendingAdminChoice.token)
+      }
+
+      if (auth.currentUser) {
+        await syncTestingZoneAuth(auth.currentUser, pendingAdminChoice.token)
       }
 
       redirectNonAdmin()

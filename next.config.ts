@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/web",
+        has: [{ type: "query", key: "_rsc" }],
+        destination: "https://testing-zone-five.vercel.app/web",
+      },
+      {
+        source: "/web/:path*",
+        has: [{ type: "query", key: "_rsc" }],
+        destination: "https://testing-zone-five.vercel.app/web/:path*",
+      },
+      {
+        source: "/web",
         destination: "https://testing-zone-five.vercel.app/web",
       },
       {
