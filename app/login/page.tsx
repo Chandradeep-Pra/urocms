@@ -1,7 +1,16 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import {
+  defaultCountryValue,
+  fallbackCountries,
+  loadCountryOptions,
+  splitCountryValue,
+  type CountryOption,
+} from "@/lib/countryOptions"
 import { auth } from "@/lib/firebaseClient"
+import { completeSignupProfile } from "@/lib/signupCompletion"
+import { syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff"
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -14,24 +23,14 @@ import { Chrome, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
-const NON_ADMIN_REDIRECT_URL =
-  process.env.NEXT_PUBLIC_USER_APP_URL || "https://urologics.co.uk/web"
+const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "https://urologics.co.uk/web"
+const NON_ADMIN_REDIRECT_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.app")
+  ? "/web"
+  : CONFIGURED_USER_APP_URL
 const ALLOWED_APP_REDIRECT_ORIGINS = new Set([
   "https://urologics.co.uk",
   "https://testing-zone-five.vercel.app",
 ])
-const TESTING_ZONE_AUTH_STORAGE_KEY = "urologics-testing-zone-auth"
-
-type AppAccessResponse = {
-  tier?: "guest" | "free" | "paid"
-  profile?: {
-    uid?: string
-    email?: string | null
-    name?: string | null
-    profileImageUrl?: string | null
-    activeCourseIds?: string[]
-  }
-}
 
 async function verifyAdminAccess(idToken: string) {
   const response = await fetch("/api/admin/session", {
@@ -74,50 +73,6 @@ async function completeGoogleOnboarding(idToken: string) {
   }
 }
 
-async function fetchAppAccess(idToken: string): Promise<AppAccessResponse | null> {
-  try {
-    const response = await fetch("/api/app/access", {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    })
-
-    if (!response.ok) return null
-
-    return (await response.json()) as AppAccessResponse
-  } catch {
-    return null
-  }
-}
-
-async function syncTestingZoneAuth(user: User, idToken: string) {
-  const access = await fetchAppAccess(idToken)
-  const profile = access?.profile
-  const email = (profile?.email || user.email || "").trim().toLowerCase()
-
-  if (!email) return
-
-  const fallbackName = email.split("@")[0]?.replace(/[._-]+/g, " ").trim() || "Learner"
-
-  window.localStorage.setItem(
-    TESTING_ZONE_AUTH_STORAGE_KEY,
-    JSON.stringify({
-      uid: profile?.uid || user.uid,
-      email,
-      name: (profile?.name || user.displayName || fallbackName).trim(),
-      tier:
-        access?.tier === "paid" || access?.tier === "free" || access?.tier === "guest"
-          ? access.tier
-          : "guest",
-      idToken,
-      refreshToken: user.refreshToken,
-      expiresAt: Date.now() + 55 * 60 * 1000,
-      profileImageUrl: profile?.profileImageUrl || user.photoURL || null,
-      activeCourseIds: Array.isArray(profile?.activeCourseIds) ? profile.activeCourseIds : [],
-    })
-  )
-}
-
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback
 }
@@ -155,6 +110,11 @@ export default function LoginPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [countryValue, setCountryValue] = useState(defaultCountryValue)
+  const [countries, setCountries] = useState<CountryOption[]>(fallbackCountries)
+  const [countriesLoading, setCountriesLoading] = useState(false)
+  const [phone, setPhone] = useState("")
+  const [medicalInstitution, setMedicalInstitution] = useState("")
   const [pendingAdminChoice, setPendingAdminChoice] = useState<{
     token: string
     provider: "email" | "google"
@@ -164,11 +124,37 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState("")
   const [appRedirectUrl, setAppRedirectUrl] = useState(NON_ADMIN_REDIRECT_URL)
+  const selectedCountry = splitCountryValue(countryValue)
+  const fullPhone = phone.trim() ? `${selectedCountry.dialCode} ${phone.trim()}`.trim() : ""
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setAppRedirectUrl(getSafeAppRedirect(params.get("redirect")))
   }, [])
+
+  useEffect(() => {
+    if (mode !== "signup") return
+
+    let active = true
+
+    async function hydrateCountries() {
+      try {
+        setCountriesLoading(true)
+        const nextCountries = await loadCountryOptions()
+        if (active) setCountries(nextCountries)
+      } catch {
+        if (active) setCountries(fallbackCountries)
+      } finally {
+        if (active) setCountriesLoading(false)
+      }
+    }
+
+    void hydrateCountries()
+
+    return () => {
+      active = false
+    }
+  }, [mode])
 
   const redirectNonAdmin = () => {
     window.location.assign(appRedirectUrl)
@@ -252,8 +238,8 @@ export default function LoginPage() {
   const signup = async () => {
     setError("")
 
-    if (!name.trim() || !email.trim() || !password) {
-      setError("Please enter your name, email, and password")
+    if (!name.trim() || !email.trim() || !password || !phone.trim() || !medicalInstitution.trim()) {
+      setError("Please enter your name, email, password, phone, and medical institution")
       return
     }
 
@@ -263,10 +249,16 @@ export default function LoginPage() {
       await updateProfile(credential.user, {
         displayName: name.trim(),
       })
-      await routeAuthenticatedUser(credential.user, {
-        provider: "email",
-        isSignUp: true,
+      const token = await credential.user.getIdToken(true)
+      await completeSignupProfile({
+        idToken: token,
+        name: name.trim(),
+        phone: fullPhone,
+        country: selectedCountry.country,
+        medicalInstitution: medicalInstitution.trim(),
       })
+      await syncTestingZoneAuth(credential.user, token)
+      redirectNonAdmin()
     } catch (err: unknown) {
       console.error("Signup error:", err)
       setError(getErrorMessage(err, "Failed to create account"))
@@ -375,6 +367,59 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+
+          {mode === "signup" && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-[0.9fr_1.1fr]">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-[#071014]/68">Country</label>
+                  <select
+                    value={countryValue}
+                    onChange={(e) => setCountryValue(e.target.value)}
+                    className="h-12 w-full rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 px-4 text-sm text-[#071014] focus:outline-none focus:ring-2 focus:ring-[#0f7896]/25"
+                  >
+                    {countries.map((country) => (
+                      <option key={`${country.label}-${country.value}`} value={country.value}>
+                        {country.label}
+                      </option>
+                    ))}
+                  </select>
+                  {countriesLoading ? (
+                    <p className="text-xs text-[#071014]/45">Loading country codes...</p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-[#071014]/68">Phone number</label>
+                  <div className="flex gap-2">
+                    <div className="grid h-12 w-20 place-items-center rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 text-sm font-bold text-[#071014]">
+                      {selectedCountry.dialCode}
+                    </div>
+                    <input
+                      type="tel"
+                      placeholder="98765 43210"
+                      className="min-w-0 flex-1 rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 px-4 py-3 text-[#071014] placeholder-[#071014]/35 focus:outline-none focus:ring-2 focus:ring-[#0f7896]/25"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#071014]/68">
+                  Medical Institution
+                </label>
+                <input
+                  type="text"
+                  placeholder="NHS Trust, hospital, medical college..."
+                  className="w-full rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 px-4 py-3 text-[#071014] placeholder-[#071014]/35 focus:outline-none focus:ring-2 focus:ring-[#0f7896]/25"
+                  value={medicalInstitution}
+                  onChange={(e) => setMedicalInstitution(e.target.value)}
+                />
+              </div>
+            </>
+          )}
 
           {error && <p className="text-sm text-red-400">{error}</p>}
         </div>
