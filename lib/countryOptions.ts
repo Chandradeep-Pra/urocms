@@ -3,16 +3,6 @@ export type CountryOption = {
   value: string
 }
 
-type RestCountry = {
-  name?: {
-    common?: string
-  }
-  idd?: {
-    root?: string
-    suffixes?: string[]
-  }
-}
-
 export const defaultCountryValue = "United Kingdom-+44"
 
 export const fallbackCountries: CountryOption[] = [
@@ -33,27 +23,18 @@ export function splitCountryValue(value: string) {
 }
 
 export async function loadCountryOptions() {
-  const response = await fetch("https://restcountries.com/v3.1/all?fields=name,idd")
-  const data = await response.json()
-
-  if (!Array.isArray(data)) return fallbackCountries
-
-  const countries = (data as RestCountry[])
-    .map((country) => {
-      const root = country?.idd?.root
-      const suffix = country?.idd?.suffixes?.[0] ?? ""
-      const name = country?.name?.common
-
-      if (!root || !name) return null
-
-      const dialCode = `${root}${suffix}`
-      return {
-        label: `${name} (${dialCode})`,
-        value: `${name}-${dialCode}`,
-      }
+  try {
+    const response = await fetch("/api/countries/dial-codes", {
+      cache: "no-store",
     })
-    .filter((country): country is CountryOption => Boolean(country))
-    .sort((left, right) => left.label.localeCompare(right.label))
 
-  return countries.length ? countries : fallbackCountries
+    if (!response.ok) return fallbackCountries
+
+    const payload = (await response.json()) as { countries?: CountryOption[] }
+    return Array.isArray(payload.countries) && payload.countries.length
+      ? payload.countries
+      : fallbackCountries
+  } catch {
+    return fallbackCountries
+  }
 }

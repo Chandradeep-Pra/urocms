@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Chrome, Loader2 } from "lucide-react";
+import { ChevronDown, Chrome, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -45,6 +45,7 @@ export function SignUpDialog({
   const [medicalInstitution, setMedicalInstitution] = useState("");
   const [countries, setCountries] = useState<CountryOption[]>(fallbackCountries);
   const [countrySearch, setCountrySearch] = useState("");
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -116,6 +117,7 @@ export function SignUpDialog({
 
       await syncTestingZoneAuth(credential.user, token);
       setOpen(false);
+      setCountryPickerOpen(false);
       window.location.assign(USER_APP_URL);
     } catch (err: unknown) {
       console.error("Sign up error:", err);
@@ -213,42 +215,21 @@ export function SignUpDialog({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-[0.9fr_1.1fr]">
-            <div className="space-y-2">
-              <Label htmlFor="signup-country" className="text-[#071014]/68">
-                Country
-              </Label>
-              <Input
-                value={countrySearch}
-                onChange={(event) => setCountrySearch(event.target.value)}
-                placeholder="Search country or code"
-                className="h-10 rounded-2xl border-[#0f7896]/14 bg-white text-[#071014] placeholder-[#071014]/35 focus-visible:ring-[#0f7896]/25"
-              />
-              <select
-                id="signup-country"
-                value={countryValue}
-                onChange={(event) => setCountryValue(event.target.value)}
-                className="h-12 w-full rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 px-4 text-sm text-[#071014] focus:outline-none focus:ring-2 focus:ring-[#0f7896]/25"
-              >
-                {visibleCountries.map((country) => (
-                  <option key={`${country.label}-${country.value}`} value={country.value}>
-                    {country.label}
-                  </option>
-                ))}
-              </select>
-              {countriesLoading ? (
-                <p className="text-xs text-[#071014]/45">Loading country codes...</p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="signup-phone" className="text-[#071014]/68">
-                Phone Number
-              </Label>
+          <div className="space-y-2">
+            <Label htmlFor="signup-phone" className="text-[#071014]/68">
+              Phone Number
+            </Label>
+            <div className="relative">
               <div className="flex gap-2">
-                <div className="grid h-12 w-20 place-items-center rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 text-sm font-bold text-[#071014]">
+                <button
+                  type="button"
+                  onClick={() => setCountryPickerOpen((current) => !current)}
+                  className="flex h-12 min-w-24 items-center justify-center gap-2 rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 px-3 text-sm font-bold text-[#071014] transition hover:border-[#0f7896]/30 hover:bg-cyan-50"
+                  aria-label="Choose country code"
+                >
                   {selectedCountry.dialCode}
-                </div>
+                  <ChevronDown className={`h-4 w-4 transition ${countryPickerOpen ? "rotate-180" : ""}`} />
+                </button>
                 <Input
                   id="signup-phone"
                   type="tel"
@@ -258,6 +239,61 @@ export function SignUpDialog({
                   className="h-12 rounded-2xl border-[#0f7896]/14 bg-cyan-50/60 text-[#071014] placeholder-[#071014]/35 focus-visible:ring-[#0f7896]/25"
                 />
               </div>
+
+              {countryPickerOpen ? (
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[80] overflow-hidden rounded-[24px] border border-[#0f7896]/14 bg-white shadow-[0_24px_70px_rgba(15,120,150,0.18)]">
+                  <div className="border-b border-[#0f7896]/10 bg-cyan-50/70 p-3">
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0f7896]" />
+                      <Input
+                        value={countrySearch}
+                        onChange={(event) => setCountrySearch(event.target.value)}
+                        placeholder="Search country or code"
+                        className="h-11 rounded-2xl border-[#0f7896]/14 bg-white pl-10 text-[#071014] placeholder-[#071014]/35 focus-visible:ring-[#0f7896]/25"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto p-2">
+                    {countriesLoading ? (
+                      <div className="rounded-2xl px-4 py-3 text-sm font-semibold text-[#0f7896]">
+                        Loading countries...
+                      </div>
+                    ) : visibleCountries.length === 0 ? (
+                      <div className="rounded-2xl px-4 py-3 text-sm text-[#071014]/55">
+                        No country found.
+                      </div>
+                    ) : (
+                      visibleCountries.map((country) => {
+                        const parsed = splitCountryValue(country.value);
+                        const selected = country.value === countryValue;
+
+                        return (
+                          <button
+                            key={`${country.label}-${country.value}`}
+                            type="button"
+                            onClick={() => {
+                              setCountryValue(country.value);
+                              setCountryPickerOpen(false);
+                              setCountrySearch("");
+                            }}
+                            className={`flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left text-sm transition ${
+                              selected
+                                ? "bg-[#0f7896] font-bold text-white"
+                                : "text-[#071014] hover:bg-cyan-50"
+                            }`}
+                          >
+                            <span className="truncate">{parsed.country}</span>
+                            <span className={selected ? "text-white" : "font-bold text-[#0f7896]"}>
+                              {parsed.dialCode}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
 
