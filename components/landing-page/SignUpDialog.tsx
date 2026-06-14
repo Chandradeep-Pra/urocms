@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getFriendlyFirebaseAuthError } from "@/lib/firebaseAuthErrors";
 import {
   defaultCountryValue,
   fallbackCountries,
@@ -121,7 +122,7 @@ export function SignUpDialog({
       window.location.assign(USER_APP_URL);
     } catch (err: unknown) {
       console.error("Sign up error:", err);
-      setError(err instanceof Error ? err.message : "Failed to create account");
+      setError(getFriendlyFirebaseAuthError(err, "Failed to create account. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -157,7 +158,7 @@ export function SignUpDialog({
       window.location.assign(USER_APP_URL);
     } catch (err: unknown) {
       console.error("Google sign up error:", err);
-      setError(err instanceof Error ? err.message : "Google sign-up failed");
+      setError(getFriendlyFirebaseAuthError(err, "Google sign-up failed. Please try again."));
     } finally {
       setGoogleLoading(false);
     }

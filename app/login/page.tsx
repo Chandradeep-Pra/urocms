@@ -9,6 +9,7 @@ import {
   type CountryOption,
 } from "@/lib/countryOptions"
 import { auth } from "@/lib/firebaseClient"
+import { getFriendlyFirebaseAuthError } from "@/lib/firebaseAuthErrors"
 import { completeSignupProfile } from "@/lib/signupCompletion"
 import { consumeRecentLogoutFlag, syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff"
 import {
@@ -76,7 +77,7 @@ async function completeGoogleOnboarding(idToken: string) {
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback
+  return getFriendlyFirebaseAuthError(error, fallback)
 }
 
 function getSafeAppRedirect(rawRedirect: string | null) {
