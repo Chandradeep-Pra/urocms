@@ -34,7 +34,9 @@ export async function listVideoSections(): Promise<VideoSectionRecord[]> {
       title: String(doc.data().title || ""),
       accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
       sortOrder: normalizeSortOrder(doc.data().sortOrder, index + 1),
-      imageUrl: String(doc.data().imageUrl || ""),
+      imageUrl: String(
+        doc.data().imageUrl || doc.data().folderImageUrl || doc.data().thumbnailUrl || ""
+      ),
     }))
     .sort((a, b) => {
       if (a.sortOrder !== b.sortOrder) {
@@ -109,8 +111,10 @@ export async function updateVideoSection(
   }
 
   if ("imageUrl" in input) {
-    payload.imageUrl =
+    const imageUrl =
       typeof input.imageUrl === "string" ? input.imageUrl.trim() : "";
+    payload.imageUrl = imageUrl;
+    payload.folderImageUrl = imageUrl;
   }
 
   const requestedSortOrder = normalizeSortOrder(input.sortOrder, 0);

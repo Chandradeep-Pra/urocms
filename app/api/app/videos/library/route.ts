@@ -113,10 +113,15 @@ export async function GET(req: NextRequest) {
             return String(a.title || "").localeCompare(String(b.title || ""));
           });
 
+        const sectionImageUrl = String(
+          data.imageUrl || data.folderImageUrl || data.thumbnailUrl || ""
+        );
+
         return {
           id: doc.id,
           title: String(data.title || ""),
-          imageUrl: String(data.imageUrl || ""),
+          imageUrl: sectionImageUrl,
+          folderImageUrl: sectionImageUrl,
           accessTier: data.accessTier === "paid" ? "paid" : "free",
           sortOrder: normalizeSortOrder(data.sortOrder, index + 1),
           effectiveAccessTier:
@@ -148,13 +153,20 @@ export async function GET(req: NextRequest) {
         return a.title.localeCompare(b.title);
       });
 
-    return NextResponse.json({
-      tier: auth.user.tier,
-      sectionCount: sections.length,
-      videoCount: videos.length,
-      sections,
-      videos,
-    });
+    return NextResponse.json(
+      {
+        tier: auth.user.tier,
+        sectionCount: sections.length,
+        videoCount: videos.length,
+        sections,
+        videos,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     console.error("App video library error:", error);
     return NextResponse.json({ error: "Failed to load library" }, { status: 500 });
