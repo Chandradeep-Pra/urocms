@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("Upgrade error:", err);
     return NextResponse.json(
-      { error: "Failed to upgrade" },
-      { status: 500 }
+      { error: err instanceof Error ? err.message : "Failed to upgrade" },
+      { status: err instanceof Error ? 400 : 500 }
     );
   }
 }

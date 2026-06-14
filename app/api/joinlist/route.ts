@@ -5,6 +5,10 @@ function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function getPhoneDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -19,6 +23,13 @@ export async function POST(req: NextRequest) {
     if (!name || !email || !phone) {
       return NextResponse.json(
         { error: "Name, email, and number are required" },
+        { status: 400 }
+      );
+    }
+
+    if (getPhoneDigits(phone).length !== 10) {
+      return NextResponse.json(
+        { error: "Phone number should be exactly 10 digits" },
         { status: 400 }
       );
     }

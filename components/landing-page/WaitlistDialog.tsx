@@ -45,6 +45,10 @@ const fallbackCountries: CountryOption[] = [
   { label: "Singapore (+65)", value: "Singapore-+65" },
 ];
 
+function getPhoneDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
+
 export function WaitlistDialog({
   triggerLabel = "Join Waitlist",
   triggerClassName = "",
@@ -128,6 +132,12 @@ export function WaitlistDialog({
       currentInstitute: String(formData.get("currentInstitute") || ""),
       note: String(formData.get("note") || ""),
     };
+
+    if (getPhoneDigits(payload.phone).length !== 10) {
+      setStatus("idle");
+      setError("Phone number should be exactly 10 digits");
+      return;
+    }
 
     try {
       const response = await fetch("/api/joinlist", {
@@ -257,6 +267,12 @@ export function WaitlistDialog({
                   type="tel"
                   required
                   placeholder="98765 43210"
+                  onChange={(event) => {
+                    event.currentTarget.value = getPhoneDigits(event.currentTarget.value).slice(
+                      0,
+                      10
+                    );
+                  }}
                   className="h-12 rounded-2xl border-[#0f7896]/14 bg-cyan-50/60"
                 />
               </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Chrome, Loader2, Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,6 +28,10 @@ const USER_APP_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.
   ? "/web"
   : CONFIGURED_USER_APP_URL;
 
+function getPhoneDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
+
 export function SignUpDialog({
   children,
   controlledOpen,
@@ -49,7 +53,6 @@ export function SignUpDialog({
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const open = controlledOpen ?? internalOpen;
   const setOpen = onControlledOpenChange ?? setInternalOpen;
@@ -97,6 +100,11 @@ export function SignUpDialog({
       return;
     }
 
+    if (getPhoneDigits(phone).length !== 10) {
+      setError("Phone number should be exactly 10 digits");
+      return;
+    }
+
     try {
       setLoading(true);
       const [{ createUserWithEmailAndPassword, updateProfile }, { auth }] =
@@ -125,42 +133,6 @@ export function SignUpDialog({
       setError(getFriendlyFirebaseAuthError(err, "Failed to create account. Please try again."));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    setError("");
-    try {
-      setGoogleLoading(true);
-      const [{ GoogleAuthProvider, signInWithPopup }, { auth }] =
-        await Promise.all([import("firebase/auth"), import("@/lib/firebaseClient")]);
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({
-        prompt: "select_account",
-      });
-
-      const credential = await signInWithPopup(auth, provider);
-      const token = await credential.user.getIdToken();
-      const response = await fetch("/api/auth/google/complete", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to finalize Google sign-up");
-      }
-
-      await syncTestingZoneAuth(credential.user, token);
-      setOpen(false);
-      window.location.assign(USER_APP_URL);
-    } catch (err: unknown) {
-      console.error("Google sign up error:", err);
-      setError(getFriendlyFirebaseAuthError(err, "Google sign-up failed. Please try again."));
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -236,7 +208,7 @@ export function SignUpDialog({
                   type="tel"
                   placeholder="98765 43210"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(getPhoneDigits(e.target.value).slice(0, 10))}
                   className="h-12 rounded-2xl border-[#0f7896]/14 bg-cyan-50/60 text-[#071014] placeholder-[#071014]/35 focus-visible:ring-[#0f7896]/25"
                 />
               </div>
@@ -315,38 +287,12 @@ export function SignUpDialog({
 
           <Button
             type="submit"
-            disabled={loading || googleLoading}
+            disabled={loading}
             className="w-full rounded-2xl bg-[#0f7896] py-6 text-base font-bold text-white shadow-[0_12px_36px_rgba(15,120,150,0.24)] hover:bg-[#1294ba]"
           >
             {loading ? "Creating account..." : "Sign Up"}
           </Button>
         </form>
-
-        <div className="my-4 flex items-center gap-3">
-          <div className="h-px flex-1 bg-[#0f7896]/14" />
-          <span className="text-xs uppercase tracking-[0.2em] text-[#071014]/40">or</span>
-          <div className="h-px flex-1 bg-[#0f7896]/14" />
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleGoogleSignUp}
-          disabled={loading || googleLoading}
-          className="w-full rounded-2xl border border-[#0f7896]/16 bg-white py-6 text-base font-bold text-[#071014] shadow-sm hover:border-[#0f7896]/30 hover:bg-cyan-50 hover:text-[#071014]"
-        >
-          {googleLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Signing up with Google...
-            </>
-          ) : (
-            <>
-              <Chrome className="mr-2 h-4 w-4" />
-              Continue with Google
-            </>
-          )}
-        </Button>
       </DialogContent>
     </Dialog>
   );

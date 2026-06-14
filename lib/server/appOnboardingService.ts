@@ -33,6 +33,18 @@ function normalizeOptionalString(value: unknown) {
   return text.length ? text : null;
 }
 
+function getLocalPhoneDigits(phone: string | null) {
+  if (!phone) return "";
+  const trimmedPhone = phone.trim();
+
+  if (trimmedPhone.startsWith("+")) {
+    const [, ...localParts] = trimmedPhone.split(/\s+/);
+    return localParts.join("").replace(/\D/g, "");
+  }
+
+  return trimmedPhone.replace(/\D/g, "");
+}
+
 function resolveGuestIdentity(input: EnsureGuestInput) {
   const authEmail = normalizeEmail(input.authEmail);
   const requestedEmail = normalizeEmail(input.requestedEmail);
@@ -174,6 +186,10 @@ export async function completeAppUserProfile(input: CompleteProfileInput) {
   }
 
   const normalizedPhone = normalizeOptionalString(input.phone);
+  if (normalizedPhone && getLocalPhoneDigits(normalizedPhone).length !== 10) {
+    throw new Error("Phone number should be exactly 10 digits");
+  }
+
   const normalizedCountry = normalizeOptionalString(input.country);
   const normalizedMedicalInstitution = normalizeOptionalString(input.medicalInstitution);
   const normalizedProfileImageUrl = normalizeOptionalString(input.profileImageUrl);

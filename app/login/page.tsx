@@ -80,6 +80,10 @@ function getErrorMessage(error: unknown, fallback: string) {
   return getFriendlyFirebaseAuthError(error, fallback)
 }
 
+function getPhoneDigits(value: string) {
+  return value.replace(/\D/g, "")
+}
+
 function getSafeAppRedirect(rawRedirect: string | null) {
   if (!rawRedirect) return NON_ADMIN_REDIRECT_URL
 
@@ -287,6 +291,11 @@ export default function LoginPage() {
       return
     }
 
+    if (getPhoneDigits(phone).length !== 10) {
+      setError("Phone number should be exactly 10 digits")
+      return
+    }
+
     try {
       setLoading(true)
       const credential = await createUserWithEmailAndPassword(auth, email, password)
@@ -451,7 +460,7 @@ export default function LoginPage() {
                       placeholder="98765 43210"
                       className="min-w-0 flex-1 rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 px-4 py-3 text-[#071014] placeholder-[#071014]/35 focus:outline-none focus:ring-2 focus:ring-[#0f7896]/25"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(getPhoneDigits(e.target.value).slice(0, 10))}
                     />
                   </div>
                 </div>
@@ -489,31 +498,35 @@ export default function LoginPage() {
               : "Create account"}
         </Button>
 
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-[#0f7896]/14" />
-          <span className="text-xs uppercase tracking-[0.2em] text-[#071014]/40">or</span>
-          <div className="h-px flex-1 bg-[#0f7896]/14" />
-        </div>
+        {mode === "login" ? (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-[#0f7896]/14" />
+              <span className="text-xs uppercase tracking-[0.2em] text-[#071014]/40">or</span>
+              <div className="h-px flex-1 bg-[#0f7896]/14" />
+            </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={loginWithGoogle}
-          disabled={isBusy}
-          className="w-full rounded-2xl border border-[#0f7896]/16 bg-white py-6 text-base font-bold text-[#071014] shadow-sm hover:border-[#0f7896]/30 hover:bg-cyan-50 hover:text-[#071014]"
-        >
-          {googleLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Continuing with Google...
-            </>
-          ) : (
-            <>
-              <Chrome className="h-4 w-4" />
-              Continue with Google
-            </>
-          )}
-        </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={loginWithGoogle}
+              disabled={isBusy}
+              className="w-full rounded-2xl border border-[#0f7896]/16 bg-white py-6 text-base font-bold text-[#071014] shadow-sm hover:border-[#0f7896]/30 hover:bg-cyan-50 hover:text-[#071014]"
+            >
+              {googleLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Continuing with Google...
+                </>
+              ) : (
+                <>
+                  <Chrome className="h-4 w-4" />
+                  Continue with Google
+                </>
+              )}
+            </Button>
+          </>
+        ) : null}
 
         <p className="text-center text-xs text-[#071014]/45">
           Non-admin users continue to the app after authentication

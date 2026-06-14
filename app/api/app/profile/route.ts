@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { requireAppUser } from "@/lib/server/appSession";
 
+function getLocalPhoneDigits(phone: string) {
+  const trimmedPhone = phone.trim();
+
+  if (trimmedPhone.startsWith("+")) {
+    const [, ...localParts] = trimmedPhone.split(/\s+/);
+    return localParts.join("").replace(/\D/g, "");
+  }
+
+  return trimmedPhone.replace(/\D/g, "");
+}
+
 export async function PATCH(req: NextRequest) {
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
@@ -21,7 +32,14 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (body?.phone !== undefined) {
-      updates.phone = String(body.phone || "").trim();
+      const phone = String(body.phone || "").trim();
+      if (phone && getLocalPhoneDigits(phone).length !== 10) {
+        return NextResponse.json(
+          { error: "Phone number should be exactly 10 digits" },
+          { status: 400 }
+        );
+      }
+      updates.phone = phone;
     }
 
     if (body?.country !== undefined) {
