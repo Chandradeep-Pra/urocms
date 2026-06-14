@@ -36,7 +36,7 @@ const liveCourses = [
 
 export function FaceToFaceSection() {
   return (
-    <section className="bg-cyan-50 px-4 py-16 sm:px-6 sm:py-24">
+    <section id="courses" className="scroll-mt-28 bg-cyan-50 px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-7xl">
         <div className="mb-20 text-center">
           <h2 className="text-3xl font-extrabold tracking-tight text-[#071014] sm:text-6xl">

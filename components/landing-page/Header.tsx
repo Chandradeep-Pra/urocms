@@ -27,6 +27,17 @@ function getFirstName(user: User | null) {
   return source.trim().split(/\s+/)[0] || "Learner";
 }
 
+function scrollToSection(href: string) {
+  if (!href.startsWith("#")) return false;
+
+  const target = document.querySelector(href);
+  if (!target) return false;
+
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.history.replaceState(null, "", href);
+  return true;
+}
+
 export function LandingHeader() {
   const [isOpen, setIsOpen] = useState(false);
   const [authUser, setAuthUser] = useState<User | null>(null);
@@ -205,6 +216,11 @@ useEffect(() => {
             <Link
               key={item.label}
               href={item.href}
+              onClick={(event) => {
+                if (scrollToSection(item.href)) {
+                  event.preventDefault();
+                }
+              }}
               className="rounded-full px-4 py-2 text-md font-semibold text-slate-600 transition duration-300 hover:bg-[#0f7896]/5 hover:text-[#0f7896]"
             >
               {item.label}
@@ -265,7 +281,12 @@ useEffect(() => {
             <Link
               key={item.label}
               href={item.href}
-              onClick={() => setIsOpen(false)}
+              onClick={(event) => {
+                if (scrollToSection(item.href)) {
+                  event.preventDefault();
+                }
+                setIsOpen(false);
+              }}
               className="rounded-2xl px-4 py-3 text-base font-bold text-[#0f7896] transition hover:bg-[#0f7896] hover:text-white"
             >
               {item.label}

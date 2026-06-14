@@ -23,7 +23,7 @@ import {
 } from "firebase/auth"
 import { Chrome, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "https://urologics.co.uk/web"
 const NON_ADMIN_REDIRECT_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.app")
@@ -114,6 +114,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [countryValue, setCountryValue] = useState(defaultCountryValue)
   const [countries, setCountries] = useState<CountryOption[]>(fallbackCountries)
+  const [countrySearch, setCountrySearch] = useState("")
   const [countriesLoading, setCountriesLoading] = useState(false)
   const [phone, setPhone] = useState("")
   const [medicalInstitution, setMedicalInstitution] = useState("")
@@ -128,6 +129,12 @@ export default function LoginPage() {
   const [appRedirectUrl, setAppRedirectUrl] = useState(NON_ADMIN_REDIRECT_URL)
   const initialAuthCheckedRef = useRef(false)
   const selectedCountry = splitCountryValue(countryValue)
+  const visibleCountries = useMemo(() => {
+    const search = countrySearch.trim().toLowerCase()
+    if (!search) return countries
+
+    return countries.filter((country) => country.label.toLowerCase().includes(search))
+  }, [countries, countrySearch])
   const fullPhone = phone.trim() ? `${selectedCountry.dialCode} ${phone.trim()}`.trim() : ""
 
   useEffect(() => {
@@ -409,12 +416,19 @@ export default function LoginPage() {
               <div className="grid gap-4 sm:grid-cols-[0.9fr_1.1fr]">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-[#071014]/68">Country</label>
+                  <input
+                    type="text"
+                    placeholder="Search country or code"
+                    className="h-10 w-full rounded-2xl border border-[#0f7896]/14 bg-white px-4 text-sm text-[#071014] placeholder-[#071014]/35 focus:outline-none focus:ring-2 focus:ring-[#0f7896]/25"
+                    value={countrySearch}
+                    onChange={(e) => setCountrySearch(e.target.value)}
+                  />
                   <select
                     value={countryValue}
                     onChange={(e) => setCountryValue(e.target.value)}
                     className="h-12 w-full rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 px-4 text-sm text-[#071014] focus:outline-none focus:ring-2 focus:ring-[#0f7896]/25"
                   >
-                    {countries.map((country) => (
+                    {visibleCountries.map((country) => (
                       <option key={`${country.label}-${country.value}`} value={country.value}>
                         {country.label}
                       </option>

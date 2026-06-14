@@ -44,6 +44,7 @@ export function SignUpDialog({
   const [phone, setPhone] = useState("");
   const [medicalInstitution, setMedicalInstitution] = useState("");
   const [countries, setCountries] = useState<CountryOption[]>(fallbackCountries);
+  const [countrySearch, setCountrySearch] = useState("");
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -51,6 +52,12 @@ export function SignUpDialog({
   const open = controlledOpen ?? internalOpen;
   const setOpen = onControlledOpenChange ?? setInternalOpen;
   const selectedCountry = useMemo(() => splitCountryValue(countryValue), [countryValue]);
+  const visibleCountries = useMemo(() => {
+    const search = countrySearch.trim().toLowerCase();
+    if (!search) return countries;
+
+    return countries.filter((country) => country.label.toLowerCase().includes(search));
+  }, [countries, countrySearch]);
   const fullPhone = phone.trim()
     ? `${selectedCountry.dialCode} ${phone.trim()}`.trim()
     : "";
@@ -211,13 +218,19 @@ export function SignUpDialog({
               <Label htmlFor="signup-country" className="text-[#071014]/68">
                 Country
               </Label>
+              <Input
+                value={countrySearch}
+                onChange={(event) => setCountrySearch(event.target.value)}
+                placeholder="Search country or code"
+                className="h-10 rounded-2xl border-[#0f7896]/14 bg-white text-[#071014] placeholder-[#071014]/35 focus-visible:ring-[#0f7896]/25"
+              />
               <select
                 id="signup-country"
                 value={countryValue}
                 onChange={(event) => setCountryValue(event.target.value)}
                 className="h-12 w-full rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 px-4 text-sm text-[#071014] focus:outline-none focus:ring-2 focus:ring-[#0f7896]/25"
               >
-                {countries.map((country) => (
+                {visibleCountries.map((country) => (
                   <option key={`${country.label}-${country.value}`} value={country.value}>
                     {country.label}
                   </option>
