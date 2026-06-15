@@ -257,12 +257,28 @@ export async function completeAppUserProfile(input: CompleteProfileInput) {
     }
 
     return {
+      uid: targetUserId,
       tier: resolvedTier,
+      email: String(payload.email ?? "").trim() || null,
+      name: normalizedName,
       googleAccessEmail: String(payload.googleAccessEmail ?? "").trim() || null,
+      shouldSendWelcomeEmail: !normalizeOptionalString(targetCurrent.welcomeEmailSentAt),
     };
   });
 
   return result;
+}
+
+export async function markWelcomeEmailSent(uid: string) {
+  if (!uid) return;
+
+  await adminDb.collection("users").doc(uid).set(
+    {
+      welcomeEmailSentAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
 }
 
 export async function consumeVivaMinutes(uid: string, minutes: number) {

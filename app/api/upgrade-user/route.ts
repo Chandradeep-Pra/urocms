@@ -3,8 +3,12 @@ import {
   getConfiguredDriveResourceIds,
   grantDriveAccessToEmail,
 } from "@/lib/server/googleDrive";
-import { completeAppUserProfile } from "@/lib/server/appOnboardingService";
+import {
+  completeAppUserProfile,
+  markWelcomeEmailSent,
+} from "@/lib/server/appOnboardingService";
 import { requireAppUser } from "@/lib/server/appSession";
+import { sendWelcomeEmail } from "@/lib/server/emailService";
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,6 +39,18 @@ export async function POST(req: NextRequest) {
 
     if (upgradedUser.googleAccessEmail && configuredResourceIds.length > 0) {
       await grantDriveAccessToEmail(upgradedUser.googleAccessEmail, configuredResourceIds);
+    }
+
+    if (upgradedUser.shouldSendWelcomeEmail && upgradedUser.email) {
+      try {
+        await sendWelcomeEmail({
+          to: upgradedUser.email,
+          name: upgradedUser.name,
+        });
+        await markWelcomeEmailSent(upgradedUser.uid);
+      } catch (emailError) {
+        console.error("Welcome email send error:", emailError);
+      }
     }
 
     return NextResponse.json({
