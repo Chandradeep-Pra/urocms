@@ -154,6 +154,22 @@ export default async function UserProfilePage({
                   {user.name}
                 </h1>
                 <p className="mt-2 text-sm text-slate-500">{user.email}</p>
+                <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Phone Number
+                    </p>
+                    <p className="mt-1 font-medium text-slate-800">{user.phone || "-"}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Medical Institution
+                    </p>
+                    <p className="mt-1 font-medium text-slate-800">
+                      {user.medicalInstitution || "-"}
+                    </p>
+                  </div>
+                </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Badge className="bg-slate-900 text-white">{user.tier}</Badge>
                   <Badge variant="outline" className="border-cyan-200 bg-cyan-50 text-cyan-700">

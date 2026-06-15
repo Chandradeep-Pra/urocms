@@ -39,6 +39,8 @@ export type AdminUserProfile = {
     id: string;
     name: string;
     email: string;
+    phone: string | null;
+    medicalInstitution: string | null;
     tier: "guest" | "free" | "paid";
     source: string | null;
     createdAt: string | null;
@@ -137,9 +139,23 @@ export async function getAdminUserProfile(userId: string): Promise<AdminUserProf
     ]);
 
   const sessionLikeUser: AppUserSession = {
+    authUid: userId,
     uid: userId,
+    authTime: null,
     email: userData.email ?? null,
     name: userData.name ?? null,
+    profileImageUrl:
+      typeof userData.profileImageUrl === "string" && userData.profileImageUrl.trim()
+        ? userData.profileImageUrl.trim()
+        : null,
+    phone:
+      typeof userData.phone === "string" && userData.phone.trim() ? userData.phone.trim() : null,
+    country:
+      typeof userData.country === "string" && userData.country.trim() ? userData.country.trim() : null,
+    medicalInstitution:
+      typeof userData.medicalInstitution === "string" && userData.medicalInstitution.trim()
+        ? userData.medicalInstitution.trim()
+        : null,
     tier: userData.tier === "paid" || userData.tier === "free" || userData.tier === "guest"
       ? userData.tier
       : "guest",
@@ -173,6 +189,8 @@ export async function getAdminUserProfile(userId: string): Promise<AdminUserProf
       id: userDoc.id,
       name: String(userData.name || "").trim() || "Unnamed user",
       email: String(userData.email || "").trim() || "No email",
+      phone: sessionLikeUser.phone,
+      medicalInstitution: sessionLikeUser.medicalInstitution,
       tier: sessionLikeUser.tier,
       source: userData.source ? String(userData.source) : null,
       createdAt: toIsoString(userData.createdAt),
