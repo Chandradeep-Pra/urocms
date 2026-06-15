@@ -44,6 +44,7 @@ export function SignUpDialog({
   const [internalOpen, setInternalOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [countryValue, setCountryValue] = useState(defaultCountryValue);
   const [phone, setPhone] = useState("");
@@ -98,8 +99,20 @@ export function SignUpDialog({
     setProfileCreated(false);
     const normalizedEmail = email.trim().toLowerCase();
 
-    if (!normalizedEmail || !password || !name.trim() || !phone || !medicalInstitution.trim()) {
+    if (
+      !normalizedEmail ||
+      !password ||
+      !confirmPassword ||
+      !name.trim() ||
+      !phone ||
+      !medicalInstitution.trim()
+    ) {
       setError("Please fill in all fields");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
 
@@ -131,6 +144,7 @@ export function SignUpDialog({
       await signOut(auth);
       setProfileCreated(true);
       setPassword("");
+      setConfirmPassword("");
       setPhone("");
       setMedicalInstitution("");
       setCountryPickerOpen(false);
@@ -198,14 +212,28 @@ export function SignUpDialog({
 
           <div className="space-y-2">
             <Label htmlFor="password" className="text-[#071014]/68">
-              Password
+              Enter Password
             </Label>
             <Input
               id="password"
               type="password"
-              placeholder="Password"
+              placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="h-12 rounded-2xl border-[#0f7896]/14 bg-cyan-50/60 text-[#071014] placeholder-[#071014]/35 focus-visible:ring-[#0f7896]/25"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirm-password" className="text-[#071014]/68">
+              Confirm Password
+            </Label>
+            <Input
+              id="confirm-password"
+              type="password"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               className="h-12 rounded-2xl border-[#0f7896]/14 bg-cyan-50/60 text-[#071014] placeholder-[#071014]/35 focus-visible:ring-[#0f7896]/25"
             />
           </div>

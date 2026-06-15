@@ -123,6 +123,7 @@ export default function LoginPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [countryValue, setCountryValue] = useState(defaultCountryValue)
   const [countries, setCountries] = useState<CountryOption[]>(fallbackCountries)
   const [countrySearch, setCountrySearch] = useState("")
@@ -335,8 +336,20 @@ export default function LoginPage() {
     setSuccess("")
     const normalizedEmail = email.trim().toLowerCase()
 
-    if (!name.trim() || !normalizedEmail || !password || !phone.trim() || !medicalInstitution.trim()) {
-      setError("Please enter your name, email, password, phone, and medical institution")
+    if (
+      !name.trim() ||
+      !normalizedEmail ||
+      !password ||
+      !confirmPassword ||
+      !phone.trim() ||
+      !medicalInstitution.trim()
+    ) {
+      setError("Please enter your name, email, password, confirm password, phone, and medical institution")
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
       return
     }
 
@@ -364,6 +377,7 @@ export default function LoginPage() {
       await signOut(auth)
       setMode("login")
       setPassword("")
+      setConfirmPassword("")
       setPhone("")
       setMedicalInstitution("")
       setSuccess("Your profile has been created successfully. Please login to continue.")
@@ -472,7 +486,9 @@ export default function LoginPage() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <label className="text-sm font-semibold text-[#071014]/68">Password</label>
+              <label className="text-sm font-semibold text-[#071014]/68">
+                {mode === "signup" ? "Enter Password" : "Password"}
+              </label>
               {mode === "login" ? (
                 <button
                   type="button"
@@ -486,7 +502,7 @@ export default function LoginPage() {
             </div>
             <input
               type="password"
-              placeholder="Password"
+              placeholder={mode === "signup" ? "Enter password" : "Password"}
               className="w-full rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 px-4 py-3 text-[#071014] placeholder-[#071014]/35 focus:outline-none focus:ring-2 focus:ring-[#0f7896]/25"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -495,6 +511,19 @@ export default function LoginPage() {
 
           {mode === "signup" && (
             <>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#071014]/68">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Confirm password"
+                  className="w-full rounded-2xl border border-[#0f7896]/14 bg-cyan-50/60 px-4 py-3 text-[#071014] placeholder-[#071014]/35 focus:outline-none focus:ring-2 focus:ring-[#0f7896]/25"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-[0.9fr_1.1fr]">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-[#071014]/68">Country</label>
