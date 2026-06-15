@@ -11,7 +11,11 @@ import {
 import { auth } from "@/lib/firebaseClient"
 import { getFriendlyFirebaseAuthError } from "@/lib/firebaseAuthErrors"
 import { completeSignupProfile } from "@/lib/signupCompletion"
-import { consumeRecentLogoutFlag, syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff"
+import {
+  consumeRecentLogoutFlag,
+  setSignupAutoRouteSuppressed,
+  syncTestingZoneAuth,
+} from "@/lib/testingZoneAuthHandoff"
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -134,6 +138,7 @@ export default function LoginPage() {
   const [success, setSuccess] = useState("")
   const [appRedirectUrl, setAppRedirectUrl] = useState(NON_ADMIN_REDIRECT_URL)
   const initialAuthCheckedRef = useRef(false)
+  const signupInProgressRef = useRef(false)
   const selectedCountry = splitCountryValue(countryValue)
   const visibleCountries = useMemo(() => {
     const search = countrySearch.trim().toLowerCase()
@@ -211,6 +216,7 @@ export default function LoginPage() {
     const shouldForceLogout = consumeRecentLogoutFlag()
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (signupInProgressRef.current) return
       if (initialAuthCheckedRef.current) return
       initialAuthCheckedRef.current = true
 
@@ -303,6 +309,8 @@ export default function LoginPage() {
 
     try {
       setLoading(true)
+      signupInProgressRef.current = true
+      setSignupAutoRouteSuppressed(true)
       const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, password)
       await updateProfile(credential.user, {
         displayName: name.trim(),
@@ -325,6 +333,8 @@ export default function LoginPage() {
       console.error("Signup error:", err)
       setError(getErrorMessage(err, "Failed to create account"))
     } finally {
+      signupInProgressRef.current = false
+      setSignupAutoRouteSuppressed(false)
       setLoading(false)
     }
   }

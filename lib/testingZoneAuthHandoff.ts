@@ -4,6 +4,7 @@ import type { User } from "firebase/auth"
 
 const TESTING_ZONE_AUTH_STORAGE_KEY = "urologics-testing-zone-auth"
 const LOGOUT_FLAG_KEY = "urologics-auth-logged-out"
+export const SIGNUP_AUTO_ROUTE_SUPPRESS_KEY = "urologics-signup-auto-route-suppressed"
 
 type AppAccessResponse = {
   tier?: "guest" | "free" | "paid"
@@ -96,4 +97,20 @@ export function consumeRecentLogoutFlag() {
   }
 
   return wasLoggedOut
+}
+
+export function setSignupAutoRouteSuppressed(suppressed: boolean) {
+  if (typeof window === "undefined") return
+
+  if (suppressed) {
+    window.localStorage.setItem(SIGNUP_AUTO_ROUTE_SUPPRESS_KEY, "1")
+  } else {
+    window.localStorage.removeItem(SIGNUP_AUTO_ROUTE_SUPPRESS_KEY)
+  }
+}
+
+export function isSignupAutoRouteSuppressed() {
+  if (typeof window === "undefined") return false
+
+  return window.localStorage.getItem(SIGNUP_AUTO_ROUTE_SUPPRESS_KEY) === "1"
 }

@@ -21,6 +21,7 @@ import {
   type CountryOption,
 } from "@/lib/countryOptions";
 import { completeSignupProfile } from "@/lib/signupCompletion";
+import { setSignupAutoRouteSuppressed } from "@/lib/testingZoneAuthHandoff";
 
 const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "/web";
 const USER_APP_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.app")
@@ -109,6 +110,7 @@ export function SignUpDialog({
 
     try {
       setLoading(true);
+      setSignupAutoRouteSuppressed(true);
       const [{ createUserWithEmailAndPassword, signOut, updateProfile }, { auth }] =
         await Promise.all([import("firebase/auth"), import("@/lib/firebaseClient")]);
       const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
@@ -136,6 +138,7 @@ export function SignUpDialog({
       console.error("Sign up error:", err);
       setError(getFriendlyFirebaseAuthError(err, "Failed to create account. Please try again."));
     } finally {
+      setSignupAutoRouteSuppressed(false);
       setLoading(false);
     }
   };

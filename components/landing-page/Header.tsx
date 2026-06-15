@@ -5,7 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
-import { consumeRecentLogoutFlag, syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff";
+import {
+  consumeRecentLogoutFlag,
+  isSignupAutoRouteSuppressed,
+  syncTestingZoneAuth,
+} from "@/lib/testingZoneAuthHandoff";
 import { LazySignUpDialog } from "./LazySignUpDialog";
 
 const navItems = [
@@ -150,6 +154,7 @@ const verifyAdminAccess = async (idToken: string) => {
 
 useEffect(() => {
   if (skipAutoRouteRef.current) return;
+  if (isSignupAutoRouteSuppressed()) return;
   if (!authReady || !authUser || handledAuthUidRef.current === authUser.uid) return;
 
   handledAuthUidRef.current = authUser.uid;
