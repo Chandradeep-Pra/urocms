@@ -136,6 +136,7 @@ export default function LoginPage() {
   } | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [appRedirectUrl, setAppRedirectUrl] = useState(NON_ADMIN_REDIRECT_URL)
@@ -295,6 +296,40 @@ export default function LoginPage() {
     }
   }
 
+  const sendPasswordReset = async () => {
+    setError("")
+    setSuccess("")
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (!normalizedEmail) {
+      setError("Please enter your email first")
+      return
+    }
+
+    try {
+      setResetLoading(true)
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: normalizedEmail }),
+      })
+      const payload = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Unable to send password reset email")
+      }
+
+      setSuccess(payload?.message || "If an account exists, a password reset email has been sent.")
+    } catch (err: unknown) {
+      console.error("Forgot password error:", err)
+      setError(getErrorMessage(err, "Unable to send password reset email"))
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
   const signup = async () => {
     setError("")
     setSuccess("")
@@ -436,7 +471,19 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-[#071014]/68">Password</label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm font-semibold text-[#071014]/68">Password</label>
+              {mode === "login" ? (
+                <button
+                  type="button"
+                  onClick={sendPasswordReset}
+                  disabled={resetLoading || isBusy}
+                  className="text-xs font-bold text-[#0f7896] underline-offset-4 transition hover:underline disabled:cursor-wait disabled:opacity-60"
+                >
+                  {resetLoading ? "Sending..." : "Forgot password?"}
+                </button>
+              ) : null}
+            </div>
             <input
               type="password"
               placeholder="Password"
