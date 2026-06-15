@@ -137,19 +137,19 @@ const openPlatform = async () => {
 };
 
 const verifyAdminAccess = async (idToken: string) => {
-  const response = await fetch("/api/admin/session", {
+  const response = await fetch("/api/auth/role", {
     headers: {
       Authorization: `Bearer ${idToken}`,
     },
   });
 
+  const payload = await response.json().catch(() => null);
+
   if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    if (payload?.error === "Admin access denied") return false;
-    throw new Error(payload?.error || "Failed to verify admin access");
+    throw new Error(payload?.error || "Failed to verify account role");
   }
 
-  return true;
+  return payload?.isAdmin === true;
 };
 
 useEffect(() => {

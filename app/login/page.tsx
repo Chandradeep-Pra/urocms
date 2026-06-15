@@ -40,7 +40,7 @@ const ALLOWED_APP_REDIRECT_ORIGINS = new Set([
 ])
 
 async function verifyAdminAccess(idToken: string) {
-  const response = await fetch("/api/admin/session", {
+  const response = await fetch("/api/auth/role", {
     headers: {
       Authorization: `Bearer ${idToken}`,
     },
@@ -48,8 +48,10 @@ async function verifyAdminAccess(idToken: string) {
 
   const data = await response.json().catch(() => null)
   if (!response.ok) {
-    throw new Error(data?.error || "Admin access denied")
+    throw new Error(data?.error || "Failed to verify account role")
   }
+
+  return data?.isAdmin === true
 }
 
 async function completeEmailOnboarding(idToken: string) {
@@ -188,17 +190,18 @@ export default function LoginPage() {
     const token = await user.getIdToken(Boolean(options.isSignUp))
 
     try {
-      await verifyAdminAccess(token)
-      setPendingAdminChoice({
-        token,
-        provider: options.provider,
-        isSignUp: options.isSignUp,
-      })
-      return
-    } catch (adminError: unknown) {
-      if (getErrorMessage(adminError, "") !== "Admin access denied") {
-        throw adminError
+      const isAdmin = await verifyAdminAccess(token)
+
+      if (isAdmin) {
+        setPendingAdminChoice({
+          token,
+          provider: options.provider,
+          isSignUp: options.isSignUp,
+        })
+        return
       }
+    } catch (roleError: unknown) {
+      throw roleError
     }
 
     if (options.provider === "google") {
