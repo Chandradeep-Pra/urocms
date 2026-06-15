@@ -19,6 +19,14 @@ type AppAccessResponse = {
   }
 }
 
+type AuthHandoffOverrides = {
+  tier?: "guest" | "free" | "paid"
+  name?: string | null
+  phone?: string | null
+  country?: string | null
+  medicalInstitution?: string | null
+}
+
 async function fetchAppAccess(idToken: string): Promise<AppAccessResponse | null> {
   try {
     const response = await fetch("/api/app/access", {
@@ -36,7 +44,11 @@ async function fetchAppAccess(idToken: string): Promise<AppAccessResponse | null
   }
 }
 
-export async function syncTestingZoneAuth(user: User, idToken?: string) {
+export async function syncTestingZoneAuth(
+  user: User,
+  idToken?: string,
+  overrides: AuthHandoffOverrides = {}
+) {
   const token = idToken || (await user.getIdToken())
   const access = await fetchAppAccess(token)
   const profile = access?.profile
@@ -51,19 +63,19 @@ export async function syncTestingZoneAuth(user: User, idToken?: string) {
     JSON.stringify({
       uid: profile?.uid || user.uid,
       email,
-      name: (profile?.name || user.displayName || fallbackName).trim(),
+      name: (profile?.name || overrides.name || user.displayName || fallbackName).trim(),
       tier:
         access?.tier === "paid" || access?.tier === "free" || access?.tier === "guest"
           ? access.tier
-          : "guest",
+          : overrides.tier || "guest",
       idToken: token,
       refreshToken: user.refreshToken,
       expiresAt: Date.now() + 55 * 60 * 1000,
       profileImageUrl: profile?.profileImageUrl || user.photoURL || null,
       activeCourseIds: Array.isArray(profile?.activeCourseIds) ? profile.activeCourseIds : [],
-      phone: profile?.phone || null,
-      country: profile?.country || null,
-      medicalInstitution: profile?.medicalInstitution || null,
+      phone: profile?.phone || overrides.phone || null,
+      country: profile?.country || overrides.country || null,
+      medicalInstitution: profile?.medicalInstitution || overrides.medicalInstitution || null,
     })
   )
 }

@@ -131,6 +131,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const [appRedirectUrl, setAppRedirectUrl] = useState(NON_ADMIN_REDIRECT_URL)
   const initialAuthCheckedRef = useRef(false)
   const selectedCountry = splitCountryValue(countryValue)
@@ -270,10 +271,12 @@ export default function LoginPage() {
 
   const login = async () => {
     setError("")
+    setSuccess("")
+    const normalizedEmail = email.trim().toLowerCase()
 
     try {
       setLoading(true)
-      const credential = await signInWithEmailAndPassword(auth, email, password)
+      const credential = await signInWithEmailAndPassword(auth, normalizedEmail, password)
       await routeAuthenticatedUser(credential.user, { provider: "email" })
     } catch (err: unknown) {
       console.error("Login error:", err)
@@ -285,8 +288,10 @@ export default function LoginPage() {
 
   const signup = async () => {
     setError("")
+    setSuccess("")
+    const normalizedEmail = email.trim().toLowerCase()
 
-    if (!name.trim() || !email.trim() || !password || !phone.trim() || !medicalInstitution.trim()) {
+    if (!name.trim() || !normalizedEmail || !password || !phone.trim() || !medicalInstitution.trim()) {
       setError("Please enter your name, email, password, phone, and medical institution")
       return
     }
@@ -298,7 +303,7 @@ export default function LoginPage() {
 
     try {
       setLoading(true)
-      const credential = await createUserWithEmailAndPassword(auth, email, password)
+      const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, password)
       await updateProfile(credential.user, {
         displayName: name.trim(),
       })
@@ -310,8 +315,12 @@ export default function LoginPage() {
         country: selectedCountry.country,
         medicalInstitution: medicalInstitution.trim(),
       })
-      await syncTestingZoneAuth(credential.user, token)
-      redirectNonAdmin()
+      await signOut(auth)
+      setMode("login")
+      setPassword("")
+      setPhone("")
+      setMedicalInstitution("")
+      setSuccess("Your profile has been created successfully. Please login to continue.")
     } catch (err: unknown) {
       console.error("Signup error:", err)
       setError(getErrorMessage(err, "Failed to create account"))
@@ -322,6 +331,7 @@ export default function LoginPage() {
 
   const loginWithGoogle = async () => {
     setError("")
+    setSuccess("")
 
     try {
       setGoogleLoading(true)
@@ -360,6 +370,7 @@ export default function LoginPage() {
             onClick={() => {
               setMode("login")
               setError("")
+              setSuccess("")
             }}
             className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
               mode === "login"
@@ -374,6 +385,7 @@ export default function LoginPage() {
             onClick={() => {
               setMode("signup")
               setError("")
+              setSuccess("")
             }}
             className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
               mode === "signup"
@@ -479,6 +491,12 @@ export default function LoginPage() {
                 />
               </div>
             </>
+          )}
+
+          {success && (
+            <p className="rounded-2xl border border-[#0f7896]/14 bg-cyan-50 px-4 py-3 text-sm font-semibold text-[#0f7896]">
+              {success}
+            </p>
           )}
 
           {error && <p className="text-sm text-red-400">{error}</p>}

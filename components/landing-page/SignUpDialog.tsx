@@ -21,7 +21,6 @@ import {
   type CountryOption,
 } from "@/lib/countryOptions";
 import { completeSignupProfile } from "@/lib/signupCompletion";
-import { syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff";
 
 const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "/web";
 const USER_APP_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.app")
@@ -53,6 +52,7 @@ export function SignUpDialog({
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [profileCreated, setProfileCreated] = useState(false);
   const [error, setError] = useState("");
   const open = controlledOpen ?? internalOpen;
   const setOpen = onControlledOpenChange ?? setInternalOpen;
@@ -94,8 +94,10 @@ export function SignUpDialog({
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setProfileCreated(false);
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!email || !password || !name || !phone || !medicalInstitution) {
+    if (!normalizedEmail || !password || !name.trim() || !phone || !medicalInstitution.trim()) {
       setError("Please fill in all fields");
       return;
     }
@@ -107,12 +109,12 @@ export function SignUpDialog({
 
     try {
       setLoading(true);
-      const [{ createUserWithEmailAndPassword, updateProfile }, { auth }] =
+      const [{ createUserWithEmailAndPassword, signOut, updateProfile }, { auth }] =
         await Promise.all([import("firebase/auth"), import("@/lib/firebaseClient")]);
-      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
 
       await updateProfile(credential.user, {
-        displayName: name,
+        displayName: name.trim(),
       });
 
       const token = await credential.user.getIdToken(true);
@@ -124,10 +126,12 @@ export function SignUpDialog({
         medicalInstitution: medicalInstitution.trim(),
       });
 
-      await syncTestingZoneAuth(credential.user, token);
-      setOpen(false);
+      await signOut(auth);
+      setProfileCreated(true);
+      setPassword("");
+      setPhone("");
+      setMedicalInstitution("");
       setCountryPickerOpen(false);
-      window.location.assign(USER_APP_URL);
     } catch (err: unknown) {
       console.error("Sign up error:", err);
       setError(getFriendlyFirebaseAuthError(err, "Failed to create account. Please try again."));
@@ -146,6 +150,21 @@ export function SignUpDialog({
           </DialogTitle>
         </DialogHeader>
 
+        {profileCreated ? (
+          <div className="mt-5 rounded-[26px] border border-[#0f7896]/14 bg-cyan-50/70 p-5 text-center">
+            <h3 className="text-xl font-extrabold text-[#0f7896]">Profile created</h3>
+            <p className="mt-2 text-sm leading-6 text-[#071014]/62">
+              Your Urologics profile has been created successfully. Please login to continue to the platform.
+            </p>
+            <Button
+              type="button"
+              onClick={() => window.location.assign(`/login?redirect=${encodeURIComponent(USER_APP_URL)}`)}
+              className="mt-5 w-full rounded-2xl bg-[#0f7896] py-6 text-base font-bold text-white shadow-[0_12px_36px_rgba(15,120,150,0.24)] hover:bg-[#1294ba]"
+            >
+              Login to continue
+            </Button>
+          </div>
+        ) : (
         <form onSubmit={handleSignUp} className="mt-4 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-[#071014]/68">
@@ -293,6 +312,7 @@ export function SignUpDialog({
             {loading ? "Creating account..." : "Sign Up"}
           </Button>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );
