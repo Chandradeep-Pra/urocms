@@ -87,6 +87,16 @@ export type PricingCoupon = {
   isActive: boolean;
 };
 
+export type PricingPlanWaitlistResponse = {
+  id: string;
+  planId: string;
+  planName: string;
+  name: string;
+  email: string;
+  institution: string;
+  createdAt?: string | null;
+};
+
 export type CatalogResponse = {
   courses: CatalogItem[];
   chapters: CatalogItem[];

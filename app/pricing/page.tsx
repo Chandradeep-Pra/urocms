@@ -88,6 +88,7 @@ type PricingPlanCard = {
   expiryMonths: number;
   durationLabel?: string;
   sortOrder?: number;
+  isActive: boolean;
 };
 
 const featureMeta = {
@@ -126,7 +127,7 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
   try {
     const [snapshot, coursesSnap, chaptersSnap, videosSnap, quizzesSnap, mocksSnap, vivaSnap] =
       await Promise.all([
-        adminDb.collection("pricingPlans").where("isActive", "==", true).get(),
+        adminDb.collection("pricingPlans").get(),
         adminDb.collection("courses").get(),
         adminDb.collection("chapters").where("isActive", "==", true).get(),
         adminDb.collection("videoItems").get(),
@@ -261,6 +262,7 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
           expiryMonths: Number(data.expiryMonths ?? 1),
           durationLabel: String(data.durationLabel ?? "").trim(),
           sortOrder: Number(data.sortOrder ?? 0),
+          isActive: data.isActive !== false,
         };
       })
       .sort((a, b) => {

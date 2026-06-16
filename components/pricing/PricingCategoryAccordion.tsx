@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import {
   CheckCircle2,
   ChevronDown,
@@ -10,6 +10,15 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 type PricingPlanVersion = {
   id: string;
@@ -55,6 +64,7 @@ type PricingPlanCard = {
   expiryMonths: number;
   durationLabel?: string;
   sortOrder?: number;
+  isActive: boolean;
 };
 
 type GroupedPlans = {
@@ -88,7 +98,124 @@ function AccessLine({ text, meta }: { text: string; meta?: string }) {
   );
 }
 
+function PlanWaitlistOverlay({ plan }: { plan: PricingPlanCard }) {
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    institution: "",
+  });
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    try {
+      setSaving(true);
+      const response = await fetch("/api/pricing-plans/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: plan.id,
+          name: form.name,
+          email: form.email,
+          institution: form.institution,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to join waitlist");
+      }
+
+      toast.success("You have joined the waitlist");
+      setForm({ name: "", email: "", institution: "" });
+      setOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to join waitlist");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/10 p-6 backdrop-blur-[2px]">
+        <div className="max-w-sm rounded-[28px] border border-white/70 bg-white/95 p-5 text-center shadow-[0_18px_50px_rgba(7,16,20,0.16)]">
+          <p className="text-lg font-semibold tracking-[-0.03em] text-[#071014]">
+            This plan is coming soon, please join the waitlist
+          </p>
+          <Button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="mt-4 rounded-full bg-[#0f7896] px-6 text-white hover:bg-[#0b647d]"
+          >
+            Join Waitlist
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="rounded-[28px] border border-[#0f7896]/14 bg-white p-6 shadow-[0_24px_70px_rgba(15,120,150,0.18)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-semibold tracking-[-0.04em] text-[#071014]">
+              Join waitlist
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-6 text-[#071014]/60">
+              Register interest for {plan.name}. We will contact you when this plan opens.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#071014]">Name</label>
+              <Input
+                required
+                value={form.name}
+                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                className="h-11 rounded-xl"
+                placeholder="Your name"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#071014]">Email</label>
+              <Input
+                required
+                type="email"
+                value={form.email}
+                onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                className="h-11 rounded-xl"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#071014]">Institution</label>
+              <Input
+                required
+                value={form.institution}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, institution: event.target.value }))
+                }
+                className="h-11 rounded-xl"
+                placeholder="Hospital / institution"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={saving}
+              className="w-full rounded-full bg-[#0f7896] text-white hover:bg-[#0b647d]"
+            >
+              {saving ? "Joining..." : "Submit"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function PlanCard({ plan }: { plan: PricingPlanCard }) {
+  const isComingSoon = plan.isActive === false;
   const sortedVersions =
     Array.isArray(plan.versions) && plan.versions.length > 0
       ? [...plan.versions].sort((a, b) => Number(a.months) - Number(b.months))
@@ -110,7 +237,14 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
     sortedVersions.find((version) => version.id === activeVersionId) ?? sortedVersions[0];
 
   return (
-    <article className="relative flex h-full flex-col overflow-hidden rounded-[28px] border border-[#0f7896]/12 bg-white p-6 shadow-[0_16px_38px_rgba(15,120,150,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(15,120,150,0.14)]">
+    <article
+      className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border p-6 transition duration-300 ${
+        isComingSoon
+          ? "border-slate-200 bg-slate-100 shadow-[0_16px_38px_rgba(7,16,20,0.04)]"
+          : "border-[#0f7896]/12 bg-white shadow-[0_16px_38px_rgba(15,120,150,0.08)] hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(15,120,150,0.14)]"
+      }`}
+      aria-disabled={isComingSoon}
+    >
       <div className="absolute inset-x-0 top-0 h-1 bg-[#0f7896]" />
 
       <div className="flex items-start justify-between gap-4">
@@ -159,6 +293,7 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
             <button
               key={version.id}
               type="button"
+              disabled={isComingSoon}
               onClick={() => setActiveVersionId(version.id)}
               className={`rounded-full border px-3 py-2 text-sm font-medium transition ${
                 activeVersion.id === version.id
@@ -260,10 +395,13 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
           </p>
         ) : null}
         <Button
-          asChild={Boolean(activeVersion.embeddedLink || plan.embeddedLink)}
+          asChild={!isComingSoon && Boolean(activeVersion.embeddedLink || plan.embeddedLink)}
+          disabled={isComingSoon}
           className="mt-4 w-full rounded-full bg-[#0f7896] text-white hover:bg-[#0b647d]"
         >
-          {activeVersion.embeddedLink || plan.embeddedLink ? (
+          {isComingSoon ? (
+            <span>Coming Soon</span>
+          ) : activeVersion.embeddedLink || plan.embeddedLink ? (
             <a
               href={activeVersion.embeddedLink || plan.embeddedLink}
               target="_blank"
@@ -276,6 +414,7 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
           )}
         </Button>
       </div>
+      {isComingSoon ? <PlanWaitlistOverlay plan={plan} /> : null}
     </article>
   );
 }

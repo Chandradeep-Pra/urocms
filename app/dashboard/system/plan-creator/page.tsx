@@ -17,18 +17,21 @@ import { PlanCreatorHeader } from "@/components/dashboard/plan-creator/PlanCreat
 import { PlanFormCard } from "@/components/dashboard/plan-creator/PlanFormCard";
 import { PlanManualOverridePanel } from "@/components/dashboard/plan-creator/PlanManualOverridePanel";
 import { SavedPlansPanel } from "@/components/dashboard/plan-creator/SavedPlansPanel";
+import { WaitlistResponsesPanel } from "@/components/dashboard/plan-creator/WaitlistResponsesPanel";
 import type {
   CatalogResponse,
   PlanAccessScopes,
   PlanSelection,
   PricingCoupon,
   PricingPlan,
+  PricingPlanWaitlistResponse,
 } from "@/components/dashboard/plan-creator/types";
 
 export default function PlanCreatorPage() {
   const [catalog, setCatalog] = useState<CatalogResponse>(emptyCatalog);
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [coupons, setCoupons] = useState<PricingCoupon[]>([]);
+  const [waitlistResponses, setWaitlistResponses] = useState<PricingPlanWaitlistResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingCoupon, setSavingCoupon] = useState(false);
@@ -51,6 +54,7 @@ export default function PlanCreatorPage() {
       setCatalog(data.catalog);
       setPlans(data.plans || []);
       setCoupons(data.coupons || []);
+      setWaitlistResponses(data.waitlistResponses || []);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load pricing plans");
     } finally {
@@ -399,6 +403,8 @@ export default function PlanCreatorPage() {
           onImportPresets={importPresets}
           importingPresets={importingPresets}
         />
+
+        <WaitlistResponsesPanel responses={waitlistResponses} />
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">

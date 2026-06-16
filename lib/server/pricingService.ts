@@ -52,6 +52,13 @@ export type PricingCouponInput = {
   isActive: boolean;
 };
 
+export type PricingPlanWaitlistInput = {
+  planId: string;
+  name: string;
+  email: string;
+  institution: string;
+};
+
 export function normalizePlanSelection(selection: Partial<PlanSelection> | undefined): PlanSelection {
   return {
     chapterIds: Array.isArray(selection?.chapterIds) ? selection.chapterIds : [],
@@ -261,10 +268,44 @@ export function validatePricingCouponInput(input: PricingCouponInput) {
   return null;
 }
 
+export function parsePricingPlanWaitlistInput(body: any): PricingPlanWaitlistInput {
+  return {
+    planId: String(body?.planId ?? "").trim(),
+    name: String(body?.name ?? "").trim(),
+    email: String(body?.email ?? "").trim().toLowerCase(),
+    institution: String(body?.institution ?? "").trim(),
+  };
+}
+
+export function validatePricingPlanWaitlistInput(input: PricingPlanWaitlistInput) {
+  if (!input.planId) {
+    return "Plan is required";
+  }
+
+  if (!input.name || !input.email || !input.institution) {
+    return "Name, email, and institution are required";
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) {
+    return "Enter a valid email address";
+  }
+
+  return null;
+}
+
+function serializeDate(value: any) {
+  if (value?.toDate) {
+    return value.toDate().toISOString();
+  }
+
+  return typeof value === "string" ? value : null;
+}
+
 export async function loadPricingAdminData() {
   const [
     plansSnap,
     couponsSnap,
+    waitlistSnap,
     coursesSnap,
     chaptersSnap,
     videoSectionsSnap,
@@ -276,6 +317,7 @@ export async function loadPricingAdminData() {
   ] = await Promise.all([
     adminDb.collection("pricingPlans").orderBy("updatedAt", "desc").get(),
     adminDb.collection("pricingCoupons").orderBy("updatedAt", "desc").get(),
+    adminDb.collection("pricingPlanWaitlist").orderBy("createdAt", "desc").limit(100).get(),
     adminDb.collection("courses").orderBy("createdAt", "asc").get(),
     adminDb.collection("chapters").where("isActive", "==", true).get(),
     adminDb.collection("videoSections").get(),
@@ -347,6 +389,20 @@ export async function loadPricingAdminData() {
     id: doc.id,
     ...doc.data(),
   }));
+
+  const waitlistResponses = waitlistSnap.docs.map((doc) => {
+    const data = doc.data();
+
+    return {
+      id: doc.id,
+      planId: String(data.planId ?? ""),
+      planName: String(data.planName ?? "Unknown plan"),
+      name: String(data.name ?? ""),
+      email: String(data.email ?? ""),
+      institution: String(data.institution ?? ""),
+      createdAt: serializeDate(data.createdAt),
+    };
+  });
 
   const catalog = {
     courses: coursesSnap.docs.map((doc) => {
@@ -432,7 +488,33 @@ export async function loadPricingAdminData() {
     }),
   };
 
-  return { plans, coupons, catalog };
+  return { plans, coupons, catalog, waitlistResponses };
+}
+
+export async function createPricingPlanWaitlistEntry(input: PricingPlanWaitlistInput) {
+  const planDoc = await adminDb.collection("pricingPlans").doc(input.planId).get();
+
+  if (!planDoc.exists) {
+    throw new Error("Plan not found");
+  }
+
+  const plan = planDoc.data() ?? {};
+
+  if (plan.isActive !== false) {
+    throw new Error("Waitlist is only available for coming soon plans");
+  }
+
+  const docRef = await adminDb.collection("pricingPlanWaitlist").add({
+    planId: planDoc.id,
+    planName: String(plan.name ?? "Untitled Plan"),
+    name: input.name,
+    email: input.email,
+    institution: input.institution,
+    source: "pricing-page",
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  return docRef.id;
 }
 
 export async function createPricingPlan(input: PricingPlanInput) {
