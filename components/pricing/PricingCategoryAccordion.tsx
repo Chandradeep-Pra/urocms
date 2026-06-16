@@ -98,7 +98,7 @@ function AccessLine({ text, meta }: { text: string; meta?: string }) {
   );
 }
 
-function PlanWaitlistOverlay({ plan }: { plan: PricingPlanCard }) {
+function PlanWaitlistButton({ plan }: { plan: PricingPlanCard }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -140,20 +140,13 @@ function PlanWaitlistOverlay({ plan }: { plan: PricingPlanCard }) {
 
   return (
     <>
-      <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/10 p-6 backdrop-blur-[2px]">
-        <div className="max-w-sm rounded-[28px] border border-white/70 bg-white/95 p-5 text-center shadow-[0_18px_50px_rgba(7,16,20,0.16)]">
-          <p className="text-lg font-semibold tracking-[-0.03em] text-[#071014]">
-            This plan is coming soon, please join the waitlist
-          </p>
-          <Button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="mt-4 rounded-full bg-[#0f7896] px-6 text-white hover:bg-[#0b647d]"
-          >
-            Join Waitlist
-          </Button>
-        </div>
-      </div>
+      <Button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-4 w-full rounded-full bg-slate-800 text-white hover:bg-slate-950"
+      >
+        Join Waitlist
+      </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-[28px] border border-[#0f7896]/14 bg-white p-6 shadow-[0_24px_70px_rgba(15,120,150,0.18)] sm:max-w-md">
@@ -240,7 +233,7 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
     <article
       className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border p-6 transition duration-300 ${
         isComingSoon
-          ? "border-slate-200 bg-slate-100 shadow-[0_16px_38px_rgba(7,16,20,0.04)]"
+          ? "border-slate-300 bg-slate-100 text-slate-700 shadow-[0_16px_38px_rgba(7,16,20,0.04)]"
           : "border-[#0f7896]/12 bg-white shadow-[0_16px_38px_rgba(15,120,150,0.08)] hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(15,120,150,0.14)]"
       }`}
       aria-disabled={isComingSoon}
@@ -256,6 +249,11 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
             {plan.tag ? (
               <span className="inline-flex rounded-full bg-[#0f7896]/10 px-3 py-1 text-xs font-semibold text-[#0f7896]">
                 {plan.tag}
+              </span>
+            ) : null}
+            {isComingSoon ? (
+              <span className="inline-flex rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+                Coming soon
               </span>
             ) : null}
           </div>
@@ -394,14 +392,19 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
             Coupon applied: {activeVersion.couponCode}
           </p>
         ) : null}
-        <Button
-          asChild={!isComingSoon && Boolean(activeVersion.embeddedLink || plan.embeddedLink)}
-          disabled={isComingSoon}
-          className="mt-4 w-full rounded-full bg-[#0f7896] text-white hover:bg-[#0b647d]"
-        >
-          {isComingSoon ? (
-            <span>Coming Soon</span>
-          ) : activeVersion.embeddedLink || plan.embeddedLink ? (
+        {isComingSoon ? (
+          <>
+            <div className="mt-4 rounded-2xl border border-slate-300 bg-white/80 px-4 py-3 text-center text-sm font-medium leading-6 text-slate-700">
+              This plan is coming soon, please join the waitlist.
+            </div>
+            <PlanWaitlistButton plan={plan} />
+          </>
+        ) : (
+          <Button
+            asChild={Boolean(activeVersion.embeddedLink || plan.embeddedLink)}
+            className="mt-4 w-full rounded-full bg-[#0f7896] text-white hover:bg-[#0b647d]"
+          >
+            {activeVersion.embeddedLink || plan.embeddedLink ? (
             <a
               href={activeVersion.embeddedLink || plan.embeddedLink}
               target="_blank"
@@ -412,9 +415,9 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
           ) : (
             <span>Register Now</span>
           )}
-        </Button>
+          </Button>
+        )}
       </div>
-      {isComingSoon ? <PlanWaitlistOverlay plan={plan} /> : null}
     </article>
   );
 }

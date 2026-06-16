@@ -232,7 +232,7 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
   const planCourseIds = toSet(entitlements.courses);
   const freeCourseIds = new Set(
     courses
-      .filter((course) => course.accessTier === "free" && isSignedIn(user))
+      .filter((course) => course.accessTier === "free")
       .map((course) => course.id)
   );
   const userSectionGrantMap = new Map(
@@ -411,7 +411,7 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
       };
     }
 
-    if (!courseIds.length && normalizeString(input.effectiveAccessTier || input.accessTier) !== "paid" && isSignedIn(user)) {
+    if (!courseIds.length && normalizeString(input.effectiveAccessTier || input.accessTier) !== "paid") {
       return {
         allowed: true,
         mode: "full",
