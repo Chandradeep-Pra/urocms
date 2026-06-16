@@ -73,7 +73,7 @@ export default function AddVideoDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:!max-w-3xl rounded-3xl border border-slate-200 p-0 overflow-hidden">
+      <DialogContent className="flex max-h-[80vh] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 p-0 sm:!max-w-3xl">
         <div className="border-b bg-slate-50 px-8 py-6">
           <DialogHeader className="space-y-2">
             <DialogTitle className="text-2xl font-semibold">Add Video</DialogTitle>
@@ -83,7 +83,7 @@ export default function AddVideoDialog({
           </DialogHeader>
         </div>
 
-        <div className="space-y-7 px-8 py-7">
+        <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-8 py-7">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center gap-3">

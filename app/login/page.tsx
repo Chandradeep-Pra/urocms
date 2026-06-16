@@ -353,11 +353,6 @@ export default function LoginPage() {
       return
     }
 
-    if (getPhoneDigits(phone).length !== 10) {
-      setError("Phone number should be exactly 10 digits")
-      return
-    }
-
     try {
       setLoading(true)
       signupInProgressRef.current = true
