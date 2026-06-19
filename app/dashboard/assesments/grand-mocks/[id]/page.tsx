@@ -404,9 +404,7 @@ export default function GrandMockDetailsPage() {
           <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-zinc-900">Attempts</h2>
-              <p className="mt-1 text-sm text-zinc-500">
-                Attempt records should come from the real student submission flow. This page shows the submitted candidates and marks.
-              </p>
+              
             </div>
 
             <div className="mt-6 space-y-3">

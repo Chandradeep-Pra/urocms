@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
+import { getMockAttemptsCollection } from "@/lib/server/candidateProgress";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(
@@ -17,11 +18,11 @@ export async function GET(
 
     const mockData = mockDoc.data() ?? {};
     const isPublic = String(mockData.accessType || "restricted") === "public";
-    const appAuth = isPublic ? null : await requireAppUser(req);
-    if (appAuth && "response" in appAuth) return appAuth.response;
-    const authUser = appAuth?.user ?? null;
+    const appAuth = await requireAppUser(req);
+    if ("response" in appAuth) return appAuth.response;
+    const authUser = appAuth.user;
 
-    const accessContext = isPublic ? null : await buildAppContentAccessContext(authUser);
+    const accessContext = await buildAppContentAccessContext(authUser);
     const mockAccess = isPublic
       ? {
           allowed: true,
@@ -125,6 +126,29 @@ export async function GET(
     }
 
     const { attempts, ...safeMockData } = mockData as Record<string, any>;
+    const userAttemptSnapshot = await getMockAttemptsCollection(authUser.uid)
+      .where("mockId", "==", id)
+      .limit(1)
+      .get();
+    const legacyAttempt = Array.isArray(attempts)
+      ? attempts.find(
+          (attempt: any) =>
+            String(attempt?.candidate?.email || "").trim().toLowerCase() ===
+            String(authUser.email || "").trim().toLowerCase()
+        )
+      : null;
+    const userAttempt = !userAttemptSnapshot.empty
+      ? {
+          id: userAttemptSnapshot.docs[0].id,
+          ...userAttemptSnapshot.docs[0].data(),
+        }
+      : legacyAttempt
+        ? {
+            score: Number(legacyAttempt.marks ?? 0),
+            marks: Number(legacyAttempt.marks ?? 0),
+            submittedAt: legacyAttempt.createdAt ?? null,
+          }
+        : null;
 
     return NextResponse.json({
       mock: {
@@ -136,6 +160,8 @@ export async function GET(
         attemptsCount: Array.isArray(mockData?.attempts)
           ? mockData.attempts.length
           : mockData?.attemptsCount ?? 0,
+        hasAttempted: Boolean(userAttempt),
+        userAttempt,
         quiz: {
           id: quizDoc.id,
           ...quizData,
