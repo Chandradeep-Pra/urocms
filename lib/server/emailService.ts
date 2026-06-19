@@ -1,5 +1,8 @@
 import nodemailer from "nodemailer";
 
+let cachedTransporter: ReturnType<typeof nodemailer.createTransport> | null = null;
+let cachedTransporterUser = "";
+
 function getEmailConfig() {
   const user = process.env.EMAIL_USER?.trim();
   const pass = process.env.EMAIL_PASS?.trim();
@@ -11,19 +14,41 @@ function getEmailConfig() {
   return { user, pass };
 }
 
+function createEmailTransporter() {
+  const { user, pass } = getEmailConfig();
+
+  if (!cachedTransporter || cachedTransporterUser !== user) {
+    cachedTransporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user,
+        pass,
+      },
+    });
+    cachedTransporterUser = user;
+  }
+
+  return {
+    user,
+    transporter: cachedTransporter,
+  };
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export async function sendBrandedPasswordResetEmail(params: {
   to: string;
   resetLink: string;
 }) {
-  const { user, pass } = getEmailConfig();
+  const { user, transporter } = createEmailTransporter();
   const appUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://urologics.co.uk";
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user,
-      pass,
-    },
-  });
 
   await transporter.sendMail({
     from: `"Urologics" <${user}>`,
@@ -54,16 +79,9 @@ export async function sendBrandedPasswordResetEmail(params: {
 }
 
 export async function sendWelcomeEmail(params: { to: string; name?: string | null }) {
-  const { user, pass } = getEmailConfig();
+  const { user, transporter } = createEmailTransporter();
   const appUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://urologics.co.uk";
   const learnerName = params.name?.trim() || "there";
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user,
-      pass,
-    },
-  });
 
   await transporter.sendMail({
     from: `"Urologics" <${user}>`,
@@ -98,6 +116,58 @@ Visit Urologics: ${appUrl}`,
             <a href="${appUrl}" style="display:block;margin:26px 0 22px;padding:16px 22px;border-radius:18px;background:#0f7896;color:#ffffff;text-align:center;text-decoration:none;font-weight:800;font-size:15px;">Open Urologics</a>
             <p style="margin:0;color:rgba(7,16,20,0.62);font-size:15px;line-height:1.75;">Wish you all the best!<br />Happy learning!!</p>
             <div style="margin-top:24px;border-top:1px solid rgba(15,120,150,0.14);padding-top:18px;color:rgba(7,16,20,0.72);font-size:14px;line-height:1.7;">
+              <strong style="color:#071014;">Dr Ankit Goel</strong><br />
+              FRCS Urology (Gold Medal)<br />
+              Founder Urologics and Mentor FRCS Urology
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+}
+
+export async function sendAnnouncementEmail(params: {
+  to: string;
+  name?: string | null;
+  title: string;
+  description: string;
+}) {
+  const { user, transporter } = createEmailTransporter();
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://urologics.co.uk";
+  const memberName = params.name?.trim() || "Member";
+  const safeName = escapeHtml(memberName);
+  const safeTitle = escapeHtml(params.title);
+  const safeDescription = escapeHtml(params.description).replace(/\r?\n/g, "<br />");
+
+  await transporter.sendMail({
+    from: `"Urologics" <${user}>`,
+    to: params.to,
+    subject: "Urologics Announcement 📣",
+    text: `Dear ${memberName},
+
+${params.title}
+
+${params.description}
+
+Visit Urologics: ${appUrl}
+
+Dr Ankit Goel
+FRCS Urology (Gold Medal)
+Founder Urologics and Mentor FRCS Urology`,
+    html: `
+      <div style="margin:0;background:#eefbff;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;color:#071014;">
+        <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid rgba(15,120,150,0.14);border-radius:30px;overflow:hidden;box-shadow:0 18px 50px rgba(15,120,150,0.14);">
+          <div style="padding:30px 28px 20px;text-align:center;background:linear-gradient(135deg,#f0fdff,#ffffff);">
+            <img src="${appUrl}/logo.webp" alt="Urologics" width="76" height="76" style="display:block;margin:0 auto 16px;border-radius:20px;object-fit:contain;" />
+            <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;font-weight:800;color:#0f7896;">Urologics Announcement &#128227;</div>
+          </div>
+          <div style="padding:18px 30px 32px;">
+            <p style="margin:0 0 20px;color:rgba(7,16,20,0.72);font-size:16px;line-height:1.75;">Dear ${safeName},</p>
+            <h1 style="margin:0 0 18px;font-size:26px;line-height:1.3;letter-spacing:-0.035em;color:#071014;">${safeTitle}</h1>
+            <div style="margin:0;color:rgba(7,16,20,0.68);font-size:15px;line-height:1.8;">${safeDescription}</div>
+            <a href="${appUrl}" style="display:block;margin:28px 0 24px;padding:16px 22px;border-radius:18px;background:#0f7896;color:#ffffff;text-align:center;text-decoration:none;font-weight:800;font-size:15px;">Visit Urologics</a>
+            <div style="border-top:1px solid rgba(15,120,150,0.14);padding-top:18px;color:rgba(7,16,20,0.72);font-size:14px;line-height:1.7;">
               <strong style="color:#071014;">Dr Ankit Goel</strong><br />
               FRCS Urology (Gold Medal)<br />
               Founder Urologics and Mentor FRCS Urology

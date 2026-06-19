@@ -28,6 +28,17 @@ interface ActiveAnnouncement {
   subtitle?: string;
 }
 
+type BroadcastEvent = {
+  type: "start" | "sending" | "sent" | "failed" | "complete" | "error";
+  total?: number;
+  sent?: number;
+  failed?: number;
+  name?: string;
+  email?: string;
+  index?: number;
+  message?: string;
+};
+
 export default function AnnouncementManager() {
   const [form, setForm] = useState<AnnouncementForm>({
     title: "",
@@ -41,6 +52,7 @@ export default function AnnouncementManager() {
 
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [sendOverEmail, setSendOverEmail] = useState(false);
   const [activeAnnouncements, setActiveAnnouncements] = useState<ActiveAnnouncement[]>([]);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -64,6 +76,85 @@ export default function AnnouncementManager() {
   useEffect(() => {
     void loadActiveAnnouncements();
   }, []);
+
+  async function broadcastAnnouncement(
+    announcementId: string,
+    toastId: string | number
+  ) {
+    const response = await adminFetch(
+      `/api/announcements/${encodeURIComponent(announcementId)}/broadcast`,
+      { method: "POST" }
+    );
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw new Error(data?.error || "Failed to send announcement emails");
+    }
+
+    if (!response.body) {
+      throw new Error("Email progress stream was unavailable");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let completed = false;
+
+    const processEvent = (event: BroadcastEvent) => {
+      if (event.type === "start") {
+        toast.loading(`Preparing to email ${event.total ?? 0} users...`, {
+          id: toastId,
+        });
+      }
+
+      if (event.type === "sending") {
+        const recipient = event.name || event.email || "Member";
+        toast.loading(
+          `Sending to ${recipient} (${event.index ?? 0}/${event.total ?? 0})`,
+          { id: toastId }
+        );
+      }
+
+      if (event.type === "complete") {
+        completed = true;
+        const message = `Report: sent to ${event.sent ?? 0} users and failed to send ${event.failed ?? 0} users.`;
+
+        if ((event.failed ?? 0) > 0) {
+          toast.warning(message, { id: toastId, duration: 8000 });
+        } else {
+          toast.success(message, { id: toastId, duration: 8000 });
+        }
+      }
+
+      if (event.type === "error") {
+        throw new Error(event.message || "Email broadcast failed");
+      }
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      buffer += decoder.decode(value, { stream: !done });
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        if (line.trim()) {
+          processEvent(JSON.parse(line) as BroadcastEvent);
+        }
+      }
+
+      if (done) break;
+    }
+
+    if (buffer.trim()) {
+      processEvent(JSON.parse(buffer) as BroadcastEvent);
+    }
+
+    if (!completed) {
+      throw new Error("Email broadcast ended before the final report");
+    }
+  }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -105,6 +196,9 @@ export default function AnnouncementManager() {
       return;
     }
 
+    const toastId = toast.loading("Publishing announcement...");
+    let announcementPublished = false;
+
     try {
       setLoading(true);
 
@@ -119,7 +213,21 @@ export default function AnnouncementManager() {
         throw new Error(data?.error || "Failed to publish");
       }
 
-      toast.success("Announcement published");
+      if (sendOverEmail && !data?.id) {
+        throw new Error("Announcement was published without an email broadcast id");
+      }
+
+      announcementPublished = true;
+
+      if (sendOverEmail) {
+        toast.loading("Announcement published. Preparing email broadcast...", {
+          id: toastId,
+        });
+        await broadcastAnnouncement(data.id, toastId);
+      } else {
+        toast.success("Announcement published", { id: toastId });
+      }
+
       await loadActiveAnnouncements();
 
       setForm({
@@ -131,8 +239,20 @@ export default function AnnouncementManager() {
         mediaType: null,
         mediaSrc: "",
       });
+      setSendOverEmail(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to publish");
+      toast.error(
+        announcementPublished
+          ? `Announcement published, but ${error instanceof Error ? error.message : "email broadcast failed"}`
+          : error instanceof Error
+            ? error.message
+            : "Failed to publish",
+        { id: toastId, duration: 8000 }
+      );
+
+      if (announcementPublished) {
+        await loadActiveAnnouncements();
+      }
     } finally {
       setLoading(false);
     }
@@ -162,7 +282,7 @@ export default function AnnouncementManager() {
         <div>
           <h2 className="text-lg font-semibold">Create Announcement</h2>
           <p className="text-sm text-muted-foreground">
-            Push up to 3 active updates directly to the mobile app.
+            Push up to 6 active updates directly to the mobile app.
           </p>
         </div>
 
@@ -170,7 +290,7 @@ export default function AnnouncementManager() {
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-medium">Active announcements</p>
             <span className="rounded-full bg-background px-3 py-1 text-xs font-semibold">
-              {activeAnnouncements.length}/3
+              {activeAnnouncements.length}/6
             </span>
           </div>
           {activeAnnouncements.length > 0 ? (
@@ -325,12 +445,34 @@ export default function AnnouncementManager() {
           </div>
         ) : null}
 
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border bg-muted/30 p-4">
+          <input
+            type="checkbox"
+            checked={sendOverEmail}
+            onChange={(event) => setSendOverEmail(event.target.checked)}
+            disabled={loading}
+            className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+          />
+          <span>
+            <span className="block text-sm font-medium">
+              Send this announcement over mail
+            </span>
+            <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+              Email this announcement to every user with a valid email address.
+            </span>
+          </span>
+        </label>
+
         <Button
           onClick={publishAnnouncement}
-          disabled={loading || activeAnnouncements.length >= 3}
+          disabled={loading || activeAnnouncements.length >= 6}
           className="w-full"
         >
-          {loading ? "Publishing..." : "Publish Announcement"}
+          {loading
+            ? sendOverEmail
+              ? "Publishing and emailing..."
+              : "Publishing..."
+            : "Publish Announcement"}
         </Button>
       </CardContent>
     </Card>

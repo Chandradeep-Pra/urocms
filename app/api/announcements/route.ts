@@ -5,7 +5,7 @@ import { publishNotification } from "@/lib/server/notificationService";
 
 type AnnouncementMediaType = "youtube" | "image";
 type AnnouncementKind = "general" | "grand-mock";
-const MAX_ACTIVE_ANNOUNCEMENTS = 3;
+const MAX_ACTIVE_ANNOUNCEMENTS = 6;
 
 function extractYoutubeId(input: string): string | null {
   if (!input) return null;
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
 
     if (activeSnapshot.size >= MAX_ACTIVE_ANNOUNCEMENTS) {
       return NextResponse.json(
-        { error: "You can publish at most 3 active announcements at once." },
+        { error: "You can publish at most 6 active announcements at once." },
         { status: 400 }
       );
     }
@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
       audience: "all",
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, id: announcementRef.id });
   } catch (error) {
     console.error("Announcement POST error:", error);
     return NextResponse.json(
