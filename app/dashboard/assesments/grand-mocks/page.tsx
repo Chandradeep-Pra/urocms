@@ -6,6 +6,7 @@ import {
   Clock,
   FileText,
   Plus,
+  Trash2,
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -79,6 +80,7 @@ export default function GrandMockPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [mocks, setMocks] = useState<MockEvent[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deletingMockId, setDeletingMockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -165,6 +167,35 @@ export default function GrandMockPage() {
       loadMocks();
     } catch {
       toast.error("Failed to create mock");
+    }
+  };
+
+  const handleDeleteMock = async (mock: MockEvent) => {
+    const confirmed = window.confirm(
+      `Delete "${mock.title}"? This will remove the scheduled grand mock.`
+    );
+
+    if (!confirmed) return;
+
+    setDeletingMockId(mock.id);
+
+    try {
+      const res = await adminFetch(`/api/mocks/${mock.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Failed to delete mock");
+      }
+
+      setMocks((prev) => prev.filter((item) => item.id !== mock.id));
+      toast.success("Mock deleted");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete mock";
+      toast.error(message);
+    } finally {
+      setDeletingMockId(null);
     }
   };
 
@@ -349,6 +380,20 @@ export default function GrandMockPage() {
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">
                       Attempts
                     </p>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="mt-3"
+                      disabled={deletingMockId === mock.id}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeleteMock(mock);
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {deletingMockId === mock.id ? "Deleting..." : "Delete"}
+                    </Button>
                   </div>
                 </div>
               </div>
