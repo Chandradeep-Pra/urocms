@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser } from "@/lib/server/appSession";
+import { privateJsonResponse } from "@/lib/server/apiMetrics";
 
 export async function GET(req: NextRequest) {
+  const startedAt = performance.now();
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
 
@@ -61,12 +63,30 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({
-      tier: auth.user.tier,
-      quizzes,
-    });
+    return privateJsonResponse(
+      {
+        tier: auth.user.tier,
+        quizzes,
+      },
+      {
+        route: "/api/app/quizzes",
+        method: "GET",
+        startedAt,
+        userId: auth.user.uid,
+        itemCount: quizzes.length,
+      }
+    );
   } catch (error) {
     console.error("App quizzes fetch error:", error);
-    return NextResponse.json({ error: "Failed to fetch quizzes" }, { status: 500 });
+    return privateJsonResponse(
+      { error: "Failed to fetch quizzes" },
+      {
+        status: 500,
+        route: "/api/app/quizzes",
+        method: "GET",
+        startedAt,
+        userId: auth.user.uid,
+      }
+    );
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import { publishNotification } from "@/lib/server/notificationService";
+import { CACHE_HEADERS, jsonWithApiMetrics, publicJsonResponse } from "@/lib/server/apiMetrics";
 
 type AnnouncementMediaType = "youtube" | "image";
 type AnnouncementKind = "general" | "grand-mock";
@@ -200,6 +201,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const startedAt = performance.now();
   try {
     const snapshot = await adminDb
       .collection("announcements")
@@ -212,15 +214,31 @@ export async function GET() {
       .slice(0, MAX_ACTIVE_ANNOUNCEMENTS)
       .map((item) => serializeAnnouncement(item.id, item.data));
 
-    return NextResponse.json({
-      announcement: announcements[0] ?? null,
-      announcements,
-    });
+    return publicJsonResponse(
+      {
+        announcement: announcements[0] ?? null,
+        announcements,
+      },
+      {
+        route: "/api/announcements",
+        method: "GET",
+        startedAt,
+        itemCount: announcements.length,
+      }
+    );
   } catch (error) {
     console.error("Announcement GET error:", error);
-    return NextResponse.json(
+    return jsonWithApiMetrics(
       { error: "Failed to fetch announcement" },
-      { status: 500 }
+      {
+        status: 500,
+        route: "/api/announcements",
+        method: "GET",
+        startedAt,
+        headers: {
+          "Cache-Control": CACHE_HEADERS.privateNoStore,
+        },
+      }
     );
   }
 }

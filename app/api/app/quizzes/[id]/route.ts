@@ -1,13 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
 import { formatQuestionsForApp, getQuestionsForQuiz } from "@/lib/server/quizContent";
+import { privateJsonResponse } from "@/lib/server/apiMetrics";
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const startedAt = performance.now();
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
 
@@ -17,7 +19,16 @@ export async function GET(
     const doc = await adminDb.collection("quizzes").doc(id).get();
 
     if (!doc.exists) {
-      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+      return privateJsonResponse(
+        { error: "Quiz not found" },
+        {
+          status: 404,
+          route: "/api/app/quizzes/[id]",
+          method: "GET",
+          startedAt,
+          userId: auth.user.uid,
+        }
+      );
     }
 
     const quizData = doc.data() ?? {};
@@ -53,23 +64,41 @@ export async function GET(
         ? questions.slice(0, access.previewLimit)
         : questions;
 
-    return NextResponse.json({
-      quiz: {
-        id: doc.id,
-        ...quizData,
-        questions: formatQuestionsForApp(visibleQuestions),
+    return privateJsonResponse(
+      {
+        quiz: {
+          id: doc.id,
+          ...quizData,
+          questions: formatQuestionsForApp(visibleQuestions),
+        },
+        access: {
+          tier: auth.user.tier,
+          allowed: true,
+          mode: access.mode,
+          previewLimit: access.previewLimit,
+          totalQuestionCount,
+          returnedQuestionCount: visibleQuestions.length,
+        },
       },
-      access: {
-        tier: auth.user.tier,
-        allowed: true,
-        mode: access.mode,
-        previewLimit: access.previewLimit,
-        totalQuestionCount,
-        returnedQuestionCount: visibleQuestions.length,
-      },
-    });
+      {
+        route: "/api/app/quizzes/[id]",
+        method: "GET",
+        startedAt,
+        userId: auth.user.uid,
+        itemCount: visibleQuestions.length,
+      }
+    );
   } catch (error) {
     console.error("App quiz fetch error:", error);
-    return NextResponse.json({ error: "Failed to load quiz" }, { status: 500 });
+    return privateJsonResponse(
+      { error: "Failed to load quiz" },
+      {
+        status: 500,
+        route: "/api/app/quizzes/[id]",
+        method: "GET",
+        startedAt,
+        userId: auth.user.uid,
+      }
+    );
   }
 }

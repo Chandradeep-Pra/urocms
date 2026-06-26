@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser } from "@/lib/server/appSession";
+import { privateJsonResponse } from "@/lib/server/apiMetrics";
 
 function normalizeSortOrder(value: unknown, fallback: number) {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -19,6 +20,7 @@ function normalizeSortOrder(value: unknown, fallback: number) {
 }
 
 export async function GET(req: NextRequest) {
+  const startedAt = performance.now();
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
 
@@ -26,6 +28,7 @@ export async function GET(req: NextRequest) {
     const accessContext = await buildAppContentAccessContext(auth.user);
     const { searchParams } = new URL(req.url);
     const sectionId = searchParams.get("sectionId");
+    const includeVideos = searchParams.get("includeVideos") !== "0";
 
     let query = adminDb.collection("videoItems");
 
@@ -140,7 +143,7 @@ export async function GET(req: NextRequest) {
             return { allowed: false, mode: "locked" as const };
           })(),
           videoCount: sectionVideos.length,
-          videos: sectionVideos,
+          videos: includeVideos ? sectionVideos : [],
         };
       })
       .filter((section) => (sectionId ? section.id === sectionId : true))
@@ -153,22 +156,33 @@ export async function GET(req: NextRequest) {
         return a.title.localeCompare(b.title);
       });
 
-    return NextResponse.json(
+    return privateJsonResponse(
       {
         tier: auth.user.tier,
         sectionCount: sections.length,
         videoCount: videos.length,
         sections,
-        videos,
+        videos: includeVideos ? videos : [],
       },
       {
-        headers: {
-          "Cache-Control": "no-store",
-        },
+        route: "/api/app/videos/library",
+        method: "GET",
+        startedAt,
+        userId: auth.user.uid,
+        itemCount: videos.length,
       }
     );
   } catch (error) {
     console.error("App video library error:", error);
-    return NextResponse.json({ error: "Failed to load library" }, { status: 500 });
+    return privateJsonResponse(
+      { error: "Failed to load library" },
+      {
+        status: 500,
+        route: "/api/app/videos/library",
+        method: "GET",
+        startedAt,
+        userId: auth.user.uid,
+      }
+    );
   }
 }

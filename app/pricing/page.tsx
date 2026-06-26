@@ -14,7 +14,7 @@ import { PricingCategoryAccordion } from "@/components/pricing/PricingCategoryAc
 import { adminDb } from "@/lib/firebaseAdmin";
 import { absoluteUrl, siteConfig } from "@/lib/site";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Pricing",

@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { CACHE_HEADERS, jsonWithApiMetrics, publicJsonResponse } from "@/lib/server/apiMetrics";
 
 function normalizeSortOrder(value: unknown, fallback: number) {
   const parsed = Number(value);
@@ -11,9 +12,11 @@ function normalizeTier(value: unknown) {
 }
 
 export async function GET(req: NextRequest) {
+  const startedAt = performance.now();
   try {
     const { searchParams } = new URL(req.url);
     const sectionId = searchParams.get("sectionId");
+    const includeVideos = searchParams.get("includeVideos") !== "0";
     let query = adminDb.collection("videoItems");
 
     if (sectionId) {
@@ -95,7 +98,7 @@ export async function GET(req: NextRequest) {
             mode: sectionVideos.some((video) => video.access?.mode === "full") ? "partial" : "locked",
           },
           videoCount: sectionVideos.length,
-          videos: sectionVideos,
+          videos: includeVideos ? sectionVideos : [],
         };
       })
       .filter((section) => (sectionId ? section.id === sectionId : true))
@@ -105,22 +108,34 @@ export async function GET(req: NextRequest) {
         return a.title.localeCompare(b.title);
       });
 
-    return NextResponse.json(
+    return publicJsonResponse(
       {
         tier: "public",
         sectionCount: sections.length,
         videoCount: videos.length,
         sections,
-        videos,
+        videos: includeVideos ? videos : [],
       },
       {
-        headers: {
-          "Cache-Control": "no-store",
-        },
+        route: "/api/public/videos/library",
+        method: "GET",
+        startedAt,
+        itemCount: videos.length,
       }
     );
   } catch (error) {
     console.error("Public video library error:", error);
-    return NextResponse.json({ error: "Failed to load public video library" }, { status: 500 });
+    return jsonWithApiMetrics(
+      { error: "Failed to load public video library" },
+      {
+        status: 500,
+        route: "/api/public/videos/library",
+        method: "GET",
+        startedAt,
+        headers: {
+          "Cache-Control": CACHE_HEADERS.privateNoStore,
+        },
+      }
+    );
   }
 }

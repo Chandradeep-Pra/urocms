@@ -1,19 +1,29 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { getMockAttemptsCollection } from "@/lib/server/candidateProgress";
 import { requireAppUser } from "@/lib/server/appSession";
+import { privateJsonResponse } from "@/lib/server/apiMetrics";
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const startedAt = performance.now();
   try {
     const { id } = await context.params;
     const mockDoc = await adminDb.collection("mocks").doc(id).get();
 
     if (!mockDoc.exists) {
-      return NextResponse.json({ error: "Mock not found" }, { status: 404 });
+      return privateJsonResponse(
+        { error: "Mock not found" },
+        {
+          status: 404,
+          route: "/api/app/mocks/[id]",
+          method: "GET",
+          startedAt,
+        }
+      );
     }
 
     const mockData = mockDoc.data() ?? {};
@@ -38,7 +48,7 @@ export async function GET(
         });
 
     if (!mockAccess.allowed || mockAccess.mode === "locked") {
-      return NextResponse.json(
+      return privateJsonResponse(
         {
           error:
             mockAccess.reason ||
@@ -53,14 +63,29 @@ export async function GET(
             courseIds: mockAccess.courseIds,
           },
         },
-        { status: 403 }
+        {
+          status: 403,
+          route: "/api/app/mocks/[id]",
+          method: "GET",
+          startedAt,
+          userId: authUser.uid,
+        }
       );
     }
 
     const quizDoc = await adminDb.collection("quizzes").doc(String(mockData.quizId || "")).get();
 
     if (!quizDoc.exists) {
-      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+      return privateJsonResponse(
+        { error: "Quiz not found" },
+        {
+          status: 404,
+          route: "/api/app/mocks/[id]",
+          method: "GET",
+          startedAt,
+          userId: authUser.uid,
+        }
+      );
     }
 
     const quizData = quizDoc.data();
@@ -150,28 +175,45 @@ export async function GET(
           }
         : null;
 
-    return NextResponse.json({
-      mock: {
-        id: mockDoc.id,
-        ...safeMockData,
-        accessType: isPublic ? "public" : String(mockData.accessType || "restricted"),
-        startTime: mockData?.startTime?.toDate?.()?.toISOString?.() ?? mockData?.startTime ?? null,
-        endTime: mockData?.endTime?.toDate?.()?.toISOString?.() ?? mockData?.endTime ?? null,
-        attemptsCount: Array.isArray(mockData?.attempts)
-          ? mockData.attempts.length
-          : mockData?.attemptsCount ?? 0,
-        hasAttempted: Boolean(userAttempt),
-        userAttempt,
-        quiz: {
-          id: quizDoc.id,
-          ...quizData,
+    return privateJsonResponse(
+      {
+        mock: {
+          id: mockDoc.id,
+          ...safeMockData,
+          accessType: isPublic ? "public" : String(mockData.accessType || "restricted"),
+          startTime: mockData?.startTime?.toDate?.()?.toISOString?.() ?? mockData?.startTime ?? null,
+          endTime: mockData?.endTime?.toDate?.()?.toISOString?.() ?? mockData?.endTime ?? null,
+          attemptsCount: Array.isArray(mockData?.attempts)
+            ? mockData.attempts.length
+            : mockData?.attemptsCount ?? 0,
+          hasAttempted: Boolean(userAttempt),
+          userAttempt,
+          quiz: {
+            id: quizDoc.id,
+            ...quizData,
+          },
+          questions: visibleQuestions,
         },
-        questions: visibleQuestions,
+        access: accessPayload,
       },
-      access: accessPayload,
-    });
+      {
+        route: "/api/app/mocks/[id]",
+        method: "GET",
+        startedAt,
+        userId: authUser.uid,
+        itemCount: visibleQuestions.length,
+      }
+    );
   } catch (error) {
     console.error("App mock fetch error:", error);
-    return NextResponse.json({ error: "Failed to load mock" }, { status: 500 });
+    return privateJsonResponse(
+      { error: "Failed to load mock" },
+      {
+        status: 500,
+        route: "/api/app/mocks/[id]",
+        method: "GET",
+        startedAt,
+      }
+    );
   }
 }

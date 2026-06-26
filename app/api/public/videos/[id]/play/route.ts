@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { playVideoFromFirestore } from "@/lib/server/firestoreVideoService";
+import { privateJsonResponse } from "@/lib/server/apiMetrics";
 
 function normalizeTier(value: unknown) {
   return value === "paid" ? "paid" : "free";
@@ -10,12 +11,21 @@ export async function GET(
   _req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const startedAt = performance.now();
   try {
     const { id } = await context.params;
     const videoDoc = await adminDb.collection("videoItems").doc(id).get();
 
     if (!videoDoc.exists) {
-      return NextResponse.json({ error: "Video not found" }, { status: 404 });
+      return privateJsonResponse(
+        { error: "Video not found" },
+        {
+          status: 404,
+          route: "/api/public/videos/[id]/play",
+          method: "GET",
+          startedAt,
+        }
+      );
     }
 
     const video = videoDoc.data() ?? {};
@@ -32,7 +42,15 @@ export async function GET(
         : "free";
 
     if (effectiveAccessTier !== "free") {
-      return NextResponse.json({ error: "Paid access required" }, { status: 403 });
+      return privateJsonResponse(
+        { error: "Paid access required" },
+        {
+          status: 403,
+          route: "/api/public/videos/[id]/play",
+          method: "GET",
+          startedAt,
+        }
+      );
     }
 
     const result = await playVideoFromFirestore({
@@ -40,12 +58,24 @@ export async function GET(
       mode: "app",
     });
 
-    return NextResponse.json(result);
+    return privateJsonResponse(result, {
+      route: "/api/public/videos/[id]/play",
+      method: "GET",
+      startedAt,
+    });
   } catch (error: any) {
     const message = error.message || "Failed to prepare public video playback";
     const status = message === "Video not found" ? 404 : error.status || 500;
 
     console.error("Public video play error:", error);
-    return NextResponse.json({ error: message }, { status });
+    return privateJsonResponse(
+      { error: message },
+      {
+        status,
+        route: "/api/public/videos/[id]/play",
+        method: "GET",
+        startedAt,
+      }
+    );
   }
 }
