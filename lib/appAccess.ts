@@ -46,8 +46,28 @@ export function canAccessViva(tier: AppTier) {
   return tier === "free" || tier === "paid";
 }
 
+function normalizeQuizType(quizType: QuizType) {
+  return String(quizType ?? "").trim().toLowerCase().replace(/[_\s]+/g, "-");
+}
+
+function isPreviewableQuizType(quizType: QuizType) {
+  const normalized = normalizeQuizType(quizType);
+
+  return (
+    normalized === "chapter" ||
+    normalized === "quiz" ||
+    normalized === "chapter-quiz" ||
+    normalized === "chapter-wise" ||
+    normalized === "chapter-wise-test" ||
+    normalized === "chapterwise" ||
+    normalized.includes("chapter")
+  );
+}
+
 export function getQuizAccess(tier: AppTier, quizType: QuizType) {
-  if (quizType === "mock" || quizType === "grand-mock") {
+  const normalizedQuizType = normalizeQuizType(quizType);
+
+  if (normalizedQuizType === "mock" || normalizedQuizType === "grand-mock") {
     if (tier === "paid") {
       return {
         allowed: true,
@@ -65,6 +85,19 @@ export function getQuizAccess(tier: AppTier, quizType: QuizType) {
         tier === "guest"
           ? "Complete your profile to unlock chapter quiz previews."
           : "Mocks and grand mocks unlock through a paid plan or course assignment.",
+    };
+  }
+
+  if (!isPreviewableQuizType(quizType)) {
+    return {
+      allowed: false,
+      mode: "locked" as const,
+      previewLimit: null,
+      requiredTier: tier === "guest" ? ("free" as const) : ("paid" as const),
+      reason:
+        tier === "guest"
+          ? "Complete your profile to unlock the free chapter quiz preview."
+          : "This quiz is locked until it is included in your active plan.",
     };
   }
 

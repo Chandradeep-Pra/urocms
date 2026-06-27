@@ -117,8 +117,12 @@ function isSignedIn(user: AppUserSession) {
   return user.tier !== "guest";
 }
 
+function normalizeQuizType(type: QuizType) {
+  return String(type ?? "").trim().toLowerCase().replace(/[_\s]+/g, "-");
+}
+
 function isPreviewableQuizType(type: QuizType) {
-  const normalized = String(type ?? "").trim().toLowerCase();
+  const normalized = normalizeQuizType(type);
 
   return (
     normalized === "chapter" ||
@@ -126,6 +130,7 @@ function isPreviewableQuizType(type: QuizType) {
     normalized === "chapter-quiz" ||
     normalized === "chapter-wise" ||
     normalized === "chapter-wise-test" ||
+    normalized === "chapterwise" ||
     normalized.includes("chapter")
   );
 }
@@ -521,7 +526,10 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
       allowed: false,
       mode: "locked",
       previewLimit: null,
-      reason: "Please complete your profile to access preview.",
+      reason:
+        user.tier === "guest"
+          ? "Complete your profile to unlock the free chapter quiz preview."
+          : "This quiz is locked until it is included in your active plan.",
       courseIds,
       source: "locked",
     };
