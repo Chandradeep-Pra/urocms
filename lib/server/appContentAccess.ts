@@ -118,11 +118,20 @@ function isSignedIn(user: AppUserSession) {
 }
 
 function isPreviewableQuizType(type: QuizType) {
-  return type === "chapter";
+  const normalized = String(type ?? "").trim().toLowerCase();
+
+  return (
+    normalized === "chapter" ||
+    normalized === "quiz" ||
+    normalized === "chapter-quiz" ||
+    normalized === "chapter-wise" ||
+    normalized === "chapter-wise-test" ||
+    normalized.includes("chapter")
+  );
 }
 
 function getPreviewLimit(type: QuizType) {
-  return type === "chapter" ? FREE_CHAPTER_PREVIEW_LIMIT : 0;
+  return isPreviewableQuizType(type) ? FREE_CHAPTER_PREVIEW_LIMIT : 0;
 }
 
 async function loadVisibleCourses() {
@@ -497,7 +506,7 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
       };
     }
 
-    if (type === "chapter" && user.tier === "free" && isPreviewableQuizType(type)) {
+    if (user.tier === "free" && isPreviewableQuizType(type)) {
       return {
         allowed: true,
         mode: "preview",
