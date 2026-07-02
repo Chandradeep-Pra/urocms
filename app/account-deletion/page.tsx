@@ -74,17 +74,34 @@ export default function AccountDeletionPage() {
                   <p className="mt-2 text-sm leading-6 text-[#071014]/72">
                     Account deletion removes your Firebase sign-in account, Urologics profile,
                     saved items, device records, learning progress, quiz attempts, mock attempts,
-                    viva attempts, and related account statistics. Some records may be retained
-                    only where required for legal, security, payment, or audit obligations.
+                    viva attempts, and related account statistics from active user-facing systems
+                    where technically and legally possible.
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="rounded-3xl border border-[#0f7896]/12 p-5">
-              <h2 className="text-lg font-bold">Cannot access the app?</h2>
+              <h2 className="text-lg font-bold">What may be retained</h2>
               <p className="mt-2 text-sm leading-6 text-[#071014]/72">
-                Email us from the address linked to your Urologics account and request deletion.
+                Some limited records may be retained where required for legal, tax, accounting,
+                payment, refund, fraud-prevention, security, dispute, audit, backup, or platform
+                integrity reasons. Retained records are kept only for as long as reasonably needed
+                for those purposes and may not remain visible in the app after deletion.
+              </p>
+              <p className="mt-3 text-sm leading-6 text-[#071014]/72">
+                If you purchased access through a third-party payment provider or app store, their
+                own transaction, refund, and account records may be retained according to their
+                policies.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-[#0f7896]/12 p-5">
+              <h2 className="text-lg font-bold">If the app is inaccessible</h2>
+              <p className="mt-2 text-sm leading-6 text-[#071014]/72">
+                If you cannot open the app, cannot sign in, or cannot access the profile deletion
+                control, email us from the address linked to your Urologics account. We may ask for
+                reasonable verification before deleting or disclosing account data.
               </p>
               <a
                 href={deletionMailUrl}
@@ -94,6 +111,21 @@ export default function AccountDeletionPage() {
                 Request Account Deletion
               </a>
             </div>
+
+            <div className="rounded-3xl border border-[#0f7896]/12 p-5">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 h-5 w-5 text-[#0f7896]" />
+                <div>
+                  <h2 className="text-lg font-bold">Deletion confirmation</h2>
+                  <p className="mt-2 text-sm leading-6 text-[#071014]/72">
+                    Once your request is verified and processed, we will confirm deletion or explain
+                    if any limited information must be retained for legal, security, payment, or
+                    audit reasons.
+                  </p>
+                </div>
+              </div>
+            </div>
+
           </div>
         </section>
       </div>

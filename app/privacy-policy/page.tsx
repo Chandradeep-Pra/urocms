@@ -30,7 +30,14 @@ export const metadata: Metadata = {
 
 const sections = [
   {
-    title: "1. Information We Collect",
+    title: "1. Data Controller and Contact",
+    body: [
+      "For privacy and data protection purposes, Urologics is the controller of personal information collected through the Urologics website, mobile app, admin systems, and learner platforms.",
+      `You can contact us about privacy, GDPR, UK GDPR, account deletion, data access, correction, or portability requests at ${contactEmail}.`,
+    ],
+  },
+  {
+    title: "2. Information We Collect",
     body: [
       "Account information such as your name, email address, login provider, user ID, and guest access email when you choose to continue as a guest.",
       "Profile information such as your display name, profile photo, country, phone number, and other details you choose to add.",
@@ -40,7 +47,7 @@ const sections = [
     ],
   },
   {
-    title: "2. How We Use Information",
+    title: "3. How We Use Information",
     body: [
       "To create and manage your account, authenticate access, and provide guest access where available.",
       "To deliver courses, videos, chapter quizzes, mocks, AI viva sessions, feedback, scoring, bookmarks, and progress tracking.",
@@ -50,7 +57,16 @@ const sections = [
     ],
   },
   {
-    title: "3. AI Viva, Microphone, and Camera",
+    title: "4. Lawful Basis for Processing",
+    body: [
+      "Where EU or UK data protection law applies, we process account, access, course, payment, and learning data where necessary to provide the Urologics service or perform a contract with you.",
+      "We process security, fraud prevention, diagnostics, service reliability, and abuse-prevention data based on our legitimate interests in operating and protecting Urologics.",
+      "We process certain communications, optional device permissions, marketing preferences, or optional profile information based on consent where required. You may withdraw consent where processing is based on consent.",
+      "We may process limited records where necessary to comply with legal, tax, accounting, payment, regulatory, dispute, or safety obligations.",
+    ],
+  },
+  {
+    title: "5. AI Viva, Microphone, and Camera",
     body: [
       "AI Viva uses your spoken responses and viva session activity to generate follow-up questions, feedback, scoring, and reports.",
       "Microphone access is requested only when needed for viva or voice-based features. Camera access may be requested for viva-related setup or experience checks.",
@@ -58,49 +74,68 @@ const sections = [
     ],
   },
   {
-    title: "4. Third-Party Services",
+    title: "6. Third-Party Processors and Service Providers",
     body: [
-      "We may use trusted service providers for authentication, cloud database, file storage, push notifications, app hosting, analytics, video playback, image hosting, payments, and AI processing.",
-      "These providers may include services such as Firebase or Google Cloud, Cloudinary, Expo, YouTube or other video providers, payment providers, hosting providers, and AI service providers used to deliver the app features.",
-      "These services process information only as needed to provide, secure, and improve Urologics.",
+      "We may use trusted processors and service providers to operate Urologics, including Firebase Authentication, Firestore, Firebase Admin SDK, Google Cloud, Google Cloud Storage, Cloudinary, Expo, Sentry or similar diagnostics services, AI providers, payment providers, video providers, hosting providers, email providers, and notification services.",
+      "These providers may process information only as needed to provide authentication, cloud database, storage, app hosting, diagnostics, push notifications, image hosting, video playback, payment support, AI Viva processing, email delivery, security, and support features.",
+      "We do not sell personal information. We require service providers to process information for Urologics-related purposes and apply appropriate security and confidentiality measures.",
     ],
   },
   {
-    title: "5. Sharing of Information",
+    title: "7. International Data Transfers",
+    body: [
+      "Urologics and its processors may store or process information in countries outside your country of residence, including countries outside the UK or European Economic Area.",
+      "Where required, we use appropriate safeguards for international transfers, such as contractual protections, processor commitments, and technical and organisational security measures.",
+      "By using Urologics, you understand that cloud services, AI services, hosting, support, and payment-related providers may process information internationally where necessary to deliver the service.",
+    ],
+  },
+  {
+    title: "8. Sharing of Information",
     body: [
       "We do not sell your personal information.",
       "We may share information with service providers that help operate the app, comply with law, prevent fraud or abuse, process payments, provide support, or protect the rights and safety of Urologics and its users.",
     ],
   },
   {
-    title: "6. Data Retention",
+    title: "9. Data Retention",
     body: [
-      "We keep account, learning, quiz, mock, and viva data for as long as your account is active or as long as needed to provide the service, meet legal requirements, resolve disputes, and maintain security.",
-      "You can initiate account deletion inside the Urologics mobile app from Profile > Delete Account. If you cannot access the app, you may request deletion from the account deletion page or by contacting us. Some information may be retained where required for legal, security, payment, or audit reasons.",
+      "Account and profile data is generally kept while your account remains active and for a reasonable period after closure where needed for legal, security, payment, audit, dispute, or operational reasons.",
+      "Learning data such as course progress, quiz attempts, mock attempts, bookmarks, viva attempts, and feedback reports may be retained while the account is active so that you can access progress history and learning records.",
+      "Payment, invoice, support, fraud-prevention, security, and audit records may be retained for longer where required by law, accounting rules, tax obligations, dispute resolution, platform safety, or legitimate business records.",
+      "Push notification tokens, device records, diagnostics, and temporary logs are retained only for as long as reasonably needed to operate, secure, debug, or improve the service.",
+      "You can initiate account deletion inside the Urologics mobile app from Profile > Delete Account. If you cannot access the app, you may request deletion from the account deletion page or by contacting us. Some information may be retained where required for legal, security, payment, fraud-prevention, or audit reasons.",
     ],
   },
   {
-    title: "7. Your Choices and Rights",
+    title: "10. EU and UK User Rights",
     body: [
-      "You can update your profile information in the app where supported.",
-      "You can disable push notifications, microphone, camera, or photo permissions from your device settings.",
-      "You can request access, correction, or deletion of your personal data by contacting us at the email below.",
+      "Where EU or UK data protection law applies, you may have rights to request access to your personal data, correction of inaccurate data, deletion, restriction of processing, objection to certain processing, data portability, and withdrawal of consent where consent is the lawful basis.",
+      "You can update some profile information in the app where supported and can disable push notifications, microphone, camera, or photo permissions from your device settings.",
+      "You can request access, correction, deletion, restriction, objection, portability, or consent withdrawal by contacting us at the email below or using the Data Rights page.",
+      "We may need to verify your identity before acting on a data rights request, and some requests may be limited where retention is required for legal, payment, security, fraud-prevention, dispute, or audit reasons.",
     ],
   },
   {
-    title: "8. Children",
+    title: "11. Essential Cookies and Local Storage",
+    body: [
+      "The Urologics website and app may use essential cookies, local storage, authentication tokens, or similar technologies to keep users signed in, protect sessions, remember basic preferences, and operate secure platform features.",
+      "We do not currently describe the use of separate marketing or advertising cookies on this website. If analytics, advertising pixels, or marketing cookies are added in the future, we will update this policy and, where required, provide appropriate cookie notice or consent controls.",
+    ],
+  },
+  {
+    title: "12. Children",
     body: [
       "Urologics is designed for medical professionals and candidates preparing for postgraduate urology exams. It is not intended for children under 13 years of age.",
     ],
   },
   {
-    title: "9. Security",
+    title: "13. Security",
     body: [
       "We use reasonable technical and organisational measures to protect information. However, no internet or mobile app service can be guaranteed to be completely secure.",
     ],
   },
   {
-    title: "10. Changes to This Policy",
+    title: "14. Changes to This Policy",
     body: [
       "We may update this Privacy Policy from time to time. The updated version will be posted on this page with a revised date.",
     ],
@@ -127,7 +162,7 @@ export default function PrivacyPolicyPage() {
             Privacy Policy
           </h1>
           <p className="mt-4 text-sm font-medium text-[#071014]/55">
-            Last updated: June 1, 2026
+            Last updated: July 2, 2026
           </p>
           <p className="mt-6 text-base leading-8 text-[#071014]/70">
             Urologics is an FRCS and postgraduate urology preparation platform

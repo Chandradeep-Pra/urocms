@@ -46,7 +46,7 @@ export function LandingFooter() {
               <a className="rounded-xl border border-[#0f7896]/14 p-2 text-[#0f7896] hover:bg-[#0f7896] hover:text-white transition" href="https://www.youtube.com/@ankitgoel2863" target="_blank" rel="noopener noreferrer">
                 <Youtube className="h-4 w-4" />
               </a>
-              <a className="rounded-xl border border-[#0f7896]/14 p-2 text-[#0f7896] hover:bg-[#0f7896] hover:text-white transition" href="mailto:ankitgoel402@gmail.com" target="_blank" rel="noopener noreferrer">
+              <a className="rounded-xl border border-[#0f7896]/14 p-2 text-[#0f7896] hover:bg-[#0f7896] hover:text-white transition" href="mailto:ankitgoel042@gmail.com" target="_blank" rel="noopener noreferrer">
                 <Mail className="h-4 w-4" />
               </a>
             </div>
@@ -90,6 +90,9 @@ export function LandingFooter() {
               <Link href="/account-deletion" className="block hover:text-[#0f7896]">
                 Delete Account
               </Link>
+              <Link href="/data-rights" className="block hover:text-[#0f7896]">
+                Data Rights / Download My Data
+              </Link>
             </div>
           </div>
 
@@ -111,6 +114,12 @@ export function LandingFooter() {
               </a>
               <Link href="/privacy-policy" className="block hover:text-[#0f7896]">
                 Privacy Policy
+              </Link>
+              <Link href="/terms" className="block hover:text-[#0f7896]">
+                Terms & Conditions
+              </Link>
+              <Link href="/medical-disclaimer" className="block hover:text-[#0f7896]">
+                Medical Disclaimer
               </Link>
 
             </div>
