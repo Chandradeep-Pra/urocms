@@ -234,14 +234,22 @@ async function notifyCourseAssignedUsers(params: {
   users: CourseMemberUser[];
   courseName: string;
 }) {
-  if (!params.userIds.length) return;
+  if (!params.userIds.length) {
+    return { attempted: 0, sent: 0, failed: 0, skipped: 0 };
+  }
 
   const userLookup = new Map(params.users.map((user) => [user.id, user]));
+  let sent = 0;
+  let failed = 0;
+  let skipped = 0;
 
   await Promise.all(
     params.userIds.map(async (userId) => {
       const user = userLookup.get(userId);
-      if (!user?.email) return;
+      if (!user?.email) {
+        skipped += 1;
+        return;
+      }
 
       try {
         await sendCourseAssignedEmail({
@@ -249,7 +257,9 @@ async function notifyCourseAssignedUsers(params: {
           name: user.name,
           courseName: params.courseName,
         });
+        sent += 1;
       } catch (error) {
+        failed += 1;
         console.error("Course assignment email failed:", {
           userId,
           email: user.email,
@@ -259,6 +269,13 @@ async function notifyCourseAssignedUsers(params: {
       }
     })
   );
+
+  return {
+    attempted: params.userIds.length,
+    sent,
+    failed,
+    skipped,
+  };
 }
 
 export async function updateCourse(
@@ -364,11 +381,13 @@ export async function updateCourse(
     }),
   ]);
 
-  await notifyCourseAssignedUsers({
+  const assignmentEmailReport = await notifyCourseAssignedUsers({
     userIds: addedUserIds,
     users: assignmentEmailUsers,
     courseName: input.title,
   });
+
+  return { assignmentEmailReport };
 }
 
 export async function deleteCourse(id: string) {

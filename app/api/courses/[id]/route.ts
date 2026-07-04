@@ -44,8 +44,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Course title is required" }, { status: 400 });
     }
 
-    await updateCourse(id, input);
-    return NextResponse.json({ success: true });
+    const result = await updateCourse(id, input);
+    return NextResponse.json({ success: true, ...result });
   } catch (error) {
     if (error instanceof Error && error.message === "Course not found") {
       return NextResponse.json({ error: error.message }, { status: 404 });

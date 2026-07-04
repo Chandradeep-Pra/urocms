@@ -139,7 +139,18 @@ export default function CourseDetailPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to update course");
       setCourse(nextCourse);
-      toast.success("Course updated");
+      const report = data.assignmentEmailReport;
+      if (report?.sent > 0 && report?.failed > 0) {
+        toast.warning(`Course updated. Sent ${report.sent} assignment email(s), ${report.failed} failed.`);
+      } else if (report?.sent > 0) {
+        toast.success(`Course updated. Sent ${report.sent} assignment email(s).`);
+      } else if (report?.failed > 0) {
+        toast.warning(`Course updated, but ${report.failed} assignment email(s) failed.`);
+      } else if (report?.skipped > 0) {
+        toast.warning("Course updated, but assignment email was skipped because the user has no email.");
+      } else {
+        toast.success("Course updated");
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to update course");
     } finally {
