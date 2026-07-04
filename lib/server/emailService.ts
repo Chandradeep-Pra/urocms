@@ -127,6 +127,55 @@ Visit Urologics: ${appUrl}`,
   });
 }
 
+export async function sendCourseAssignedEmail(params: {
+  to: string;
+  name?: string | null;
+  courseName: string;
+}) {
+  const { user, transporter } = createEmailTransporter();
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://urologics.co.uk";
+  const memberName = params.name?.trim() || "Member";
+  const courseName = params.courseName.replace(/\r?\n/g, " ").trim() || "your course";
+  const safeName = escapeHtml(memberName);
+  const safeCourseName = escapeHtml(courseName);
+
+  await transporter.sendMail({
+    from: `"Urologics" <${user}>`,
+    to: params.to,
+    subject: `You have been assigned to ${courseName}`,
+    text: `Dear ${memberName},
+
+You have been assigned to ${courseName}
+
+Visit Urologics: ${appUrl}
+
+Dr Ankit Goel
+FRCS Urology (Gold Medal)
+Founder Urologics and Mentor FRCS Urology`,
+    html: `
+      <div style="margin:0;background:#eefbff;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;color:#071014;">
+        <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid rgba(15,120,150,0.14);border-radius:30px;overflow:hidden;box-shadow:0 18px 50px rgba(15,120,150,0.14);">
+          <div style="padding:30px 28px 20px;text-align:center;background:linear-gradient(135deg,#f0fdff,#ffffff);">
+            <img src="${appUrl}/logo.webp" alt="Urologics" width="76" height="76" style="display:block;margin:0 auto 16px;border-radius:20px;object-fit:contain;" />
+            <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;font-weight:800;color:#0f7896;">Course Access Assigned</div>
+          </div>
+          <div style="padding:18px 30px 32px;">
+            <p style="margin:0 0 18px;color:rgba(7,16,20,0.72);font-size:16px;line-height:1.75;">Dear ${safeName},</p>
+            <h1 style="margin:0 0 18px;font-size:28px;line-height:1.25;letter-spacing:-0.035em;color:#071014;">You have been assigned to ${safeCourseName}</h1>
+            <p style="margin:0;color:rgba(7,16,20,0.68);font-size:15px;line-height:1.75;">Your Urologics course access is now active. You can open the platform and start learning from your assigned course.</p>
+            <a href="${appUrl}/web" style="display:block;margin:28px 0 24px;padding:16px 22px;border-radius:18px;background:#0f7896;color:#ffffff;text-align:center;text-decoration:none;font-weight:800;font-size:15px;">Open Urologics Platform</a>
+            <div style="border-top:1px solid rgba(15,120,150,0.14);padding-top:18px;color:rgba(7,16,20,0.72);font-size:14px;line-height:1.7;">
+              <strong style="color:#071014;">Dr Ankit Goel</strong><br />
+              FRCS Urology (Gold Medal)<br />
+              Founder Urologics and Mentor FRCS Urology
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+}
+
 export async function sendAnnouncementEmail(params: {
   to: string;
   name?: string | null;

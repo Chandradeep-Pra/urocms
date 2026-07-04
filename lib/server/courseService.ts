@@ -2,6 +2,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebaseAdmin";
 import type { AppUserSession } from "@/lib/server/appSession";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
+import { sendCourseAssignedEmail } from "@/lib/server/emailService";
 import { syncCourseVivaAllowedUsers } from "@/lib/server/vivaService";
 import { isVisibleUserDoc, normalizeEmail } from "@/lib/server/userIdentity";
 
@@ -228,6 +229,38 @@ async function resolveCourseMemberUsers(memberUserIds: string[]) {
   return users.filter(Boolean) as CourseMemberUser[];
 }
 
+async function notifyCourseAssignedUsers(params: {
+  userIds: string[];
+  users: CourseMemberUser[];
+  courseName: string;
+}) {
+  if (!params.userIds.length) return;
+
+  const userLookup = new Map(params.users.map((user) => [user.id, user]));
+
+  await Promise.all(
+    params.userIds.map(async (userId) => {
+      const user = userLookup.get(userId);
+      if (!user?.email) return;
+
+      try {
+        await sendCourseAssignedEmail({
+          to: user.email,
+          name: user.name,
+          courseName: params.courseName,
+        });
+      } catch (error) {
+        console.error("Course assignment email failed:", {
+          userId,
+          email: user.email,
+          courseName: params.courseName,
+          error,
+        });
+      }
+    })
+  );
+}
+
 export async function updateCourse(
   id: string,
   input: ReturnType<typeof parseUpdateCourseInput>
@@ -260,6 +293,22 @@ export async function updateCourse(
       sectionGrants: grant.sectionGrants,
     };
   });
+  const assignmentEmailUsers = Array.from(
+    new Map<string, CourseMemberUser>([
+      ...memberUsers.map((user) => [user.id, user] as [string, CourseMemberUser]),
+      ...memberAccessGrants.map(
+        (grant) =>
+          [
+            grant.userId,
+            {
+              id: grant.userId,
+              name: grant.name,
+              email: grant.email,
+            },
+          ] as [string, CourseMemberUser]
+      ),
+    ]).values()
+  );
   const nextAccessibleUserIds = Array.from(
     new Set([...input.memberUserIds, ...memberAccessGrants.map((grant) => grant.userId)])
   );
@@ -314,6 +363,12 @@ export async function updateCourse(
       memberAccessGrants,
     }),
   ]);
+
+  await notifyCourseAssignedUsers({
+    userIds: addedUserIds,
+    users: assignmentEmailUsers,
+    courseName: input.title,
+  });
 }
 
 export async function deleteCourse(id: string) {
