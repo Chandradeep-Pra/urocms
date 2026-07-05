@@ -39,7 +39,6 @@ export async function POST(
 
     const mockData = mockDoc.data();
     const isPublic = String(mockData?.accessType || "restricted") === "public";
-    const existingAttempts = Array.isArray(mockData?.attempts) ? mockData.attempts : [];
     const normalizedMarks = typeof marks === "number" ? marks : Number(marks);
     const accessContext = await buildAppContentAccessContext(auth.user);
     const mockAccess = isPublic
@@ -67,38 +66,6 @@ export async function POST(
           mockAccess.reason ||
           "This mock is locked until the matching course or section is unlocked.",
       });
-    }
-
-    const existingUserAttemptSnapshot = await getMockAttemptsCollection(auth.user.uid)
-      .where("mockId", "==", id)
-      .limit(1)
-      .get();
-    const existingEmailAttempt = existingAttempts.find(
-      (attempt: any) =>
-        String(attempt?.candidate?.email || "").trim().toLowerCase() ===
-        String(auth.user.email || "").trim().toLowerCase()
-    );
-
-    if (!existingUserAttemptSnapshot.empty || existingEmailAttempt) {
-      const storedAttempt = !existingUserAttemptSnapshot.empty
-        ? {
-            id: existingUserAttemptSnapshot.docs[0].id,
-            ...existingUserAttemptSnapshot.docs[0].data(),
-          }
-        : {
-            score: Number(existingEmailAttempt?.marks ?? 0),
-            marks: Number(existingEmailAttempt?.marks ?? 0),
-            submittedAt: existingEmailAttempt?.createdAt ?? null,
-          };
-
-      return NextResponse.json(
-        {
-          error: "You have already attended this test",
-          hasAttempted: true,
-          attempt: storedAttempt,
-        },
-        { status: 409 }
-      );
     }
 
     const attemptType =
@@ -133,28 +100,20 @@ export async function POST(
         : [];
       const latestEmailAttempt = latestAttempts.find(
         (attempt: any) =>
+          String(attempt?.candidate?.uid || "").trim() === auth.user.uid ||
           String(attempt?.candidate?.email || "").trim().toLowerCase() ===
           String(auth.user.email || "").trim().toLowerCase()
       );
-
-      if (deterministicAttemptDoc.exists || latestEmailAttempt) {
-        return {
-          duplicate: true,
-          attemptsCount: latestAttempts.length,
-          attempt: deterministicAttemptDoc.exists
-            ? {
-                id: deterministicAttemptDoc.id,
-                ...deterministicAttemptDoc.data(),
-              }
-            : {
-                score: Number(latestEmailAttempt?.marks ?? 0),
-                marks: Number(latestEmailAttempt?.marks ?? 0),
-                submittedAt: latestEmailAttempt?.createdAt ?? null,
-              },
-        };
-      }
-
-      const attempts = [...latestAttempts, nextAttempt];
+      const replacedExisting = deterministicAttemptDoc.exists || Boolean(latestEmailAttempt);
+      const attempts = [
+        ...latestAttempts.filter(
+          (attempt: any) =>
+            String(attempt?.candidate?.uid || "").trim() !== auth.user.uid &&
+            String(attempt?.candidate?.email || "").trim().toLowerCase() !==
+              String(auth.user.email || "").trim().toLowerCase()
+        ),
+        nextAttempt,
+      ];
       transaction.update(mockRef, {
         attempts,
         attemptsCount: attempts.length,
@@ -175,44 +134,41 @@ export async function POST(
       });
 
       return {
-        duplicate: false,
+        replacedExisting,
         attemptsCount: attempts.length,
         attempt: nextAttempt,
       };
     });
 
-    if (transactionResult.duplicate) {
-      return NextResponse.json(
-        {
-          error: "You have already attended this test",
-          hasAttempted: true,
-          attempt: transactionResult.attempt,
-        },
-        { status: 409 }
-      );
-    }
-
-    await updateUserStats(auth.user.uid, (current) => {
-      const attemptCountBase = current.mocksAttempted + current.grandMocksAttempted;
-      return {
-        mocksAttempted:
-          current.mocksAttempted + (attemptType === "mock" ? 1 : 0),
-        grandMocksAttempted:
-          current.grandMocksAttempted + (attemptType === "grand-mock" ? 1 : 0),
-        averageMockScore: averageWithNext(
-          current.averageMockScore,
-          attemptCountBase,
-          normalizedMarks
-        ),
+    if (transactionResult.replacedExisting) {
+      await updateUserStats(auth.user.uid, (current) => ({
         bestMockScore: Math.max(current.bestMockScore, normalizedMarks),
         lastActivityAt: createdAt,
-      };
-    });
+      }));
+    } else {
+      await updateUserStats(auth.user.uid, (current) => {
+        const attemptCountBase = current.mocksAttempted + current.grandMocksAttempted;
+        return {
+          mocksAttempted:
+            current.mocksAttempted + (attemptType === "mock" ? 1 : 0),
+          grandMocksAttempted:
+            current.grandMocksAttempted + (attemptType === "grand-mock" ? 1 : 0),
+          averageMockScore: averageWithNext(
+            current.averageMockScore,
+            attemptCountBase,
+            normalizedMarks
+          ),
+          bestMockScore: Math.max(current.bestMockScore, normalizedMarks),
+          lastActivityAt: createdAt,
+        };
+      });
+    }
 
     return NextResponse.json({
       success: true,
       attemptsCount: transactionResult.attemptsCount,
       attempt: nextAttempt,
+      replacedExisting: transactionResult.replacedExisting,
     });
   } catch (error) {
     console.error("App mock attempt submit error:", error);
