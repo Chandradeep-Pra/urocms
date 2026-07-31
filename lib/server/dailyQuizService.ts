@@ -1,5 +1,5 @@
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { getGeminiModel } from "@/lib/gemini";
 import { publishNotification } from "@/lib/server/notificationService";
 
@@ -16,7 +16,9 @@ type DailyQuizTopicPick = {
   examTrack: "FRCS" | "FEBU";
 };
 
-const LIVE_POINTER_DOC = adminDb.collection("systemState").doc("dailyQuizLive");
+function getLivePointerDoc() {
+  return getAdminDb().collection("systemState").doc("dailyQuizLive");
+}
 
 function createDailyQuizId() {
   return `daily-quiz-${Date.now()}`;
@@ -65,11 +67,11 @@ function isQuizExpired(expiresAt?: { _seconds?: number; toDate?: () => Date } | 
 }
 
 async function getCurrentLiveQuizDoc() {
-  const pointerSnap = await LIVE_POINTER_DOC.get();
+  const pointerSnap = await getLivePointerDoc().get();
   const activeQuizId = String(pointerSnap.data()?.activeQuizId || "").trim();
 
   if (activeQuizId) {
-    const quizSnap = await adminDb.collection("dailyQuizzes").doc(activeQuizId).get();
+    const quizSnap = await getAdminDb().collection("dailyQuizzes").doc(activeQuizId).get();
     if (quizSnap.exists) {
       return {
         id: quizSnap.id,
@@ -78,7 +80,7 @@ async function getCurrentLiveQuizDoc() {
     }
   }
 
-  const liveSnapshot = await adminDb
+  const liveSnapshot = await getAdminDb()
     .collection("dailyQuizzes")
     .where("isLive", "==", true)
     .orderBy("createdAt", "desc")
@@ -99,7 +101,7 @@ async function getCurrentLiveQuizDoc() {
 async function markPreviousLiveQuizInactive(previousId?: string | null) {
   if (!previousId) return;
 
-  await adminDb.collection("dailyQuizzes").doc(previousId).set(
+  await getAdminDb().collection("dailyQuizzes").doc(previousId).set(
     {
       isLive: false,
       updatedAt: FieldValue.serverTimestamp(),
@@ -114,7 +116,7 @@ async function createAndActivateDailyQuiz(params: {
   topic?: string;
   examTrack?: "FRCS" | "FEBU";
 }) {
-  const docRef = adminDb.collection("dailyQuizzes").doc(createDailyQuizId());
+  const docRef = getAdminDb().collection("dailyQuizzes").doc(createDailyQuizId());
   const previousLive = await getCurrentLiveQuizDoc();
 
   await markPreviousLiveQuizInactive(previousLive?.id);
@@ -135,7 +137,7 @@ async function createAndActivateDailyQuiz(params: {
     isLive: true,
   });
 
-  await LIVE_POINTER_DOC.set(
+  await getLivePointerDoc().set(
     {
       activeQuizId: docRef.id,
       updatedAt: FieldValue.serverTimestamp(),
@@ -155,7 +157,7 @@ async function createAndActivateDailyQuiz(params: {
 }
 
 async function getRecentTopicHistory(limit = 12) {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("dailyQuizzes")
     .orderBy("createdAt", "desc")
     .limit(limit)
@@ -338,7 +340,7 @@ export async function getLiveDailyQuiz() {
 }
 
 export async function listDailyQuizHistory() {
-  const snapshot = await adminDb.collection("dailyQuizzes").get();
+  const snapshot = await getAdminDb().collection("dailyQuizzes").get();
 
   return snapshot.docs
     .map((doc) => ({
@@ -360,7 +362,7 @@ export async function listDailyQuizHistory() {
 }
 
 export async function getDailyQuizDetails(id: string) {
-  const quizRef = adminDb.collection("dailyQuizzes").doc(id);
+  const quizRef = getAdminDb().collection("dailyQuizzes").doc(id);
   const quizSnap = await quizRef.get();
 
   if (!quizSnap.exists) {
@@ -385,7 +387,7 @@ export async function getDailyQuizDetails(id: string) {
   );
   const users = await Promise.all(
     userIds.map(async (uid) => {
-      const userDoc = await adminDb.collection("users").doc(uid).get();
+      const userDoc = await getAdminDb().collection("users").doc(uid).get();
       return {
         uid,
         email: userDoc.exists ? userDoc.data()?.email || "" : "",
@@ -423,7 +425,7 @@ export async function submitTodayDailyQuizAttempt(params: {
     throw new Error("Quiz not found");
   }
 
-  const quizRef = adminDb.collection("dailyQuizzes").doc(String(liveQuiz.id));
+  const quizRef = getAdminDb().collection("dailyQuizzes").doc(String(liveQuiz.id));
   const attemptRef = quizRef.collection("attempts").doc(params.uid);
   const quizSnap = await quizRef.get();
 
@@ -439,7 +441,7 @@ export async function submitTodayDailyQuizAttempt(params: {
 
   const correct = params.selectedIndex === quizData.correctIndex;
 
-  await adminDb.runTransaction(async (transaction) => {
+  await getAdminDb().runTransaction(async (transaction) => {
     transaction.set(attemptRef, {
       uid: params.uid,
       selectedIndex: params.selectedIndex,

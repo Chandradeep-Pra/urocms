@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { isVisibleUserDoc, normalizeEmail } from "@/lib/server/userIdentity";
 
 export type UserTier = "guest" | "free" | "paid";
@@ -54,12 +54,12 @@ function normalizeUser(
 
 export async function getGuestUsers(): Promise<AdminUser[]> {
   const [snapshot, courseSnapshot] = await Promise.all([
-    adminDb
+    getAdminDb()
       .collection("users")
       .where("tier", "==", "guest")
       .orderBy("createdAt", "desc")
       .get(),
-    adminDb.collection("courses").get(),
+    getAdminDb().collection("courses").get(),
   ]);
 
   const courseTitleMap = Object.fromEntries(
@@ -73,8 +73,8 @@ export async function getGuestUsers(): Promise<AdminUser[]> {
 
 export async function getAllUsers(): Promise<AdminUser[]> {
   const [userSnapshot, courseSnapshot] = await Promise.all([
-    adminDb.collection("users").orderBy("createdAt", "desc").get(),
-    adminDb.collection("courses").get(),
+    getAdminDb().collection("users").orderBy("createdAt", "desc").get(),
+    getAdminDb().collection("courses").get(),
   ]);
 
   const courseTitleMap = Object.fromEntries(

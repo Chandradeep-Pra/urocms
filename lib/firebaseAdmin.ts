@@ -1,29 +1,62 @@
-// lib/firebaseAdmin.ts
-
-import { cert, getApps, initializeApp } from "firebase-admin/app";
+import {
+  cert,
+  getApps,
+  initializeApp,
+  type App,
+} from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { getStorage } from "firebase-admin/storage";
 import type { Bucket } from "@google-cloud/storage";
-import { normalizePrivateKey } from "@/lib/server/credentials";
 
-// Prevent reinitialization during hot reload (Next.js dev)
-if (!getApps().length) {
-  initializeApp({
+function normalizePrivateKey(value: string | undefined): string {
+  return value?.replace(/\\n/g, "\n") ?? "";
+}
+
+function getFirebaseAdminApp(): App {
+  const existingApp = getApps()[0];
+
+  if (existingApp) {
+    return existingApp;
+  }
+
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  const privateKey = normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+  const storageBucket = process.env.FIREBASE_STORAGE_BUCKET?.trim();
+
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error(
+      "Firebase Admin is not configured. Missing FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, or FIREBASE_PRIVATE_KEY.",
+    );
+  }
+
+  return initializeApp({
     credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY),
+      projectId,
+      clientEmail,
+      privateKey,
     }),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    ...(storageBucket ? { storageBucket } : {}),
   });
 }
 
-export const adminAuth = getAuth();
-export const adminDb = getFirestore();
-export const adminMessaging = getMessaging();
-export const adminStorage = getStorage().bucket();
+export function getAdminAuth() {
+  return getAuth(getFirebaseAdminApp());
+}
+
+export function getAdminDb() {
+  return getFirestore(getFirebaseAdminApp());
+}
+
+export function getAdminMessaging() {
+  return getMessaging(getFirebaseAdminApp());
+}
+
+export function getAdminStorage() {
+  return getStorage(getFirebaseAdminApp());
+}
 
 let resolvedAdminStorageBucketPromise: Promise<Bucket> | null = null;
 
@@ -38,12 +71,12 @@ export async function getResolvedAdminStorageBucket() {
             configuredBucket,
             projectId ? `${projectId}.firebasestorage.app` : "",
             projectId ? `${projectId}.appspot.com` : "",
-          ].filter(Boolean)
-        )
+          ].filter(Boolean),
+        ),
       );
 
       for (const name of candidates) {
-        const bucket = getStorage().bucket(name);
+        const bucket = getAdminStorage().bucket(name);
         try {
           const [exists] = await bucket.exists();
           if (exists) {
@@ -55,7 +88,7 @@ export async function getResolvedAdminStorageBucket() {
       }
 
       throw new Error(
-        `No Firebase Storage bucket found. Checked: ${candidates.join(", ") || "none"}. Update FIREBASE_STORAGE_BUCKET to an existing bucket.`
+        `No Firebase Storage bucket found. Checked: ${candidates.join(", ") || "none"}. Update FIREBASE_STORAGE_BUCKET to an existing bucket.`,
       );
     })();
   }

@@ -1,5 +1,5 @@
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export type DevicePlatform = "android" | "ios" | "web" | "unknown";
 
@@ -10,7 +10,7 @@ function normalizePlatform(value: unknown): DevicePlatform {
 }
 
 export function getAppDevicesCollection() {
-  return adminDb.collection("appDevices");
+  return getAdminDb().collection("appDevices");
 }
 
 export async function registerDeviceToken(params: {

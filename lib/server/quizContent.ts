@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export async function getQuestionsForQuiz(quizData: any) {
   let questions: any[] = [];
@@ -6,7 +6,7 @@ export async function getQuestionsForQuiz(quizData: any) {
   if (Array.isArray(quizData?.questionIds) && quizData.questionIds.length > 0) {
     const snapshots = await Promise.all(
       quizData.questionIds.map((questionId: string) =>
-        adminDb.collection("questions").doc(questionId).get()
+        getAdminDb().collection("questions").doc(questionId).get()
       )
     );
 
@@ -18,7 +18,7 @@ export async function getQuestionsForQuiz(quizData: any) {
       }));
   } else if (Array.isArray(quizData?.bankIds) && quizData.bankIds.length > 0) {
     for (const bankId of quizData.bankIds) {
-      const questionSnapshot = await adminDb
+      const questionSnapshot = await getAdminDb()
         .collection("questions")
         .where("bankId", "==", bankId)
         .where("isActive", "==", true)

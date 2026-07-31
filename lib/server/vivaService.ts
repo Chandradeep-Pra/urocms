@@ -4,7 +4,7 @@ type VivaCaseDocument = Record<string, unknown> & {
   folderId?: unknown;
   accessType?: unknown;
 };
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 type CourseSectionLike = {
   id?: unknown;
@@ -82,7 +82,7 @@ function extractAiVivaIdsFromSections(sections: unknown) {
 }
 
 export async function listVivaCases() {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("vivaCases")
     .where("isActive", "==", true)
     .orderBy("createdAt", "desc")
@@ -102,7 +102,7 @@ async function getAiVivaIdsForCourseIds(courseIds: string[]) {
   if (!uniqueCourseIds.length) return [];
 
   const docs = await Promise.all(
-    uniqueCourseIds.map((courseId) => adminDb.collection("courses").doc(courseId).get())
+    uniqueCourseIds.map((courseId) => getAdminDb().collection("courses").doc(courseId).get())
   );
 
   return Array.from(
@@ -118,7 +118,7 @@ export async function listVivaCasesForCourseIds(courseIds: string[]) {
 
   const cases = await Promise.all(
     allowedIds.map(async (caseId) => {
-      const doc = await adminDb.collection("vivaCases").doc(caseId).get();
+      const doc = await getAdminDb().collection("vivaCases").doc(caseId).get();
       if (!doc.exists) return null;
 
       const data = doc.data() ?? {};
@@ -151,7 +151,7 @@ export async function listVivaFoldersForCourseIds(courseIds: string[]) {
 
   const folders = await Promise.all(
     folderIds.map(async (folderId) => {
-      const doc = await adminDb.collection("vivaFolders").doc(folderId).get();
+      const doc = await getAdminDb().collection("vivaFolders").doc(folderId).get();
       if (!doc.exists) return null;
 
       return {
@@ -177,7 +177,7 @@ export async function createVivaCase(input: Record<string, unknown>) {
 
   const folder = normalizeVivaCaseFolder(input);
   const accessType = input.accessType === "public" ? "public" : "restricted";
-  const docRef = await adminDb.collection("vivaCases").add({
+  const docRef = await getAdminDb().collection("vivaCases").add({
     ...input,
     ...folder,
     accessType,
@@ -195,7 +195,7 @@ export async function createVivaCase(input: Record<string, unknown>) {
 }
 
 export async function getVivaCaseById(id: string): Promise<VivaCaseDocument & { id: string }> {
-  const doc = await adminDb.collection("vivaCases").doc(id).get();
+  const doc = await getAdminDb().collection("vivaCases").doc(id).get();
   if (!doc.exists) {
     throw new Error("Case not found");
   }
@@ -211,7 +211,7 @@ export async function updateVivaCase(id: string, input: Record<string, unknown>)
   const folder = normalizeVivaCaseFolder(input);
   const accessType = input.accessType === "public" ? "public" : "restricted";
 
-  await adminDb.collection("vivaCases").doc(id).update({
+  await getAdminDb().collection("vivaCases").doc(id).update({
     ...input,
     folderId: folder.folderId,
     folderName: folder.folderName,
@@ -223,7 +223,7 @@ export async function updateVivaCase(id: string, input: Record<string, unknown>)
 }
 
 export async function softDeleteVivaCase(id: string) {
-  await adminDb.collection("vivaCases").doc(id).update({
+  await getAdminDb().collection("vivaCases").doc(id).update({
     isActive: false,
     updatedAt: FieldValue.serverTimestamp(),
   });
@@ -232,7 +232,7 @@ export async function softDeleteVivaCase(id: string) {
 }
 
 export async function getPublicVivaCaseById(id: string) {
-  const doc = await adminDb.collection("vivaCases").doc(id).get();
+  const doc = await getAdminDb().collection("vivaCases").doc(id).get();
   if (!doc.exists) {
     throw new Error("Case not found");
   }
@@ -249,7 +249,7 @@ export async function getPublicVivaCaseById(id: string) {
 }
 
 export async function listVivaFolders() {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("vivaFolders")
     .orderBy("createdAt", "asc")
     .get();
@@ -266,7 +266,7 @@ export async function createVivaFolder(input: { title?: unknown; description?: u
     throw new Error("Folder title is required");
   }
 
-  const duplicate = await adminDb
+  const duplicate = await getAdminDb()
     .collection("vivaFolders")
     .where("title", "==", folder.title)
     .limit(1)
@@ -275,7 +275,7 @@ export async function createVivaFolder(input: { title?: unknown; description?: u
     throw new Error("Folder already exists");
   }
 
-  const docRef = await adminDb.collection("vivaFolders").add({
+  const docRef = await getAdminDb().collection("vivaFolders").add({
     title: folder.title,
     description: folder.description,
     createdAt: FieldValue.serverTimestamp(),
@@ -297,13 +297,13 @@ export async function deleteVivaFolder(id: string) {
     throw new Error("Folder id is required");
   }
 
-  const folderRef = adminDb.collection("vivaFolders").doc(folderId);
+  const folderRef = getAdminDb().collection("vivaFolders").doc(folderId);
   const folderDoc = await folderRef.get();
   if (!folderDoc.exists) {
     throw new Error("Folder not found");
   }
 
-  const linkedCasesSnap = await adminDb
+  const linkedCasesSnap = await getAdminDb()
     .collection("vivaCases")
     .where("folderId", "==", folderId)
     .get();
@@ -312,7 +312,7 @@ export async function deleteVivaFolder(id: string) {
   const batches = [];
 
   for (let index = 0; index < docsToUpdate.length; index += 450) {
-    const batch = adminDb.batch();
+    const batch = getAdminDb().batch();
     docsToUpdate.slice(index, index + 450).forEach((doc) => {
       batch.update(doc.ref, {
         folderId: "",
@@ -405,7 +405,7 @@ export async function syncCourseVivaAllowedUsers(params: {
 
   await Promise.all(
     targetVivaIds.map(async (vivaId) => {
-      const docRef = adminDb.collection("vivaCases").doc(vivaId);
+      const docRef = getAdminDb().collection("vivaCases").doc(vivaId);
       const doc = await docRef.get();
       if (!doc.exists) return;
 

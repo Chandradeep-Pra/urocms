@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import {
   getConfiguredDriveResourceIds,
   grantDriveAccessToEmail,
@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
     }
 
     const token = authHeader.split("Bearer ")[1];
-    const decoded = await adminAuth.verifyIdToken(token);
-    const userRef = adminDb.collection("users").doc(decoded.uid);
+    const decoded = await getAdminAuth().verifyIdToken(token);
+    const userRef = getAdminDb().collection("users").doc(decoded.uid);
     const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const premiumVideoSnap = await adminDb
+    const premiumVideoSnap = await getAdminDb()
       .collection("videoItems")
       .where("accessTier", "==", "paid")
       .where("provider", "==", "drive")

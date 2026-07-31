@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { CACHE_HEADERS, jsonWithApiMetrics, publicJsonResponse } from "@/lib/server/apiMetrics";
 import type { DocumentData, Query } from "firebase-admin/firestore";
 
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sectionId = searchParams.get("sectionId");
     const includeVideos = searchParams.get("includeVideos") !== "0";
-    let query: Query<DocumentData> = adminDb.collection("videoItems");
+    let query: Query<DocumentData> = getAdminDb().collection("videoItems");
 
     if (sectionId) {
       query = query.where("sectionId", "==", sectionId);
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     const [snapshot, sectionsSnapshot] = await Promise.all([
       query.get(),
-      adminDb.collection("videoSections").get(),
+      getAdminDb().collection("videoSections").get(),
     ]);
 
     const sectionMeta = new Map(

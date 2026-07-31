@@ -1,6 +1,6 @@
 // app/api/viva-attempts/route.ts
 
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Save attempt
-    await adminDb.collection("vivaAttempts").add({
+    await getAdminDb().collection("vivaAttempts").add({
       caseId,
       candidate,
       report,
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 🔥 increment attempt count (FAST dashboard metric)
-    await adminDb.collection("vivaCases").doc(caseId).update({
+    await getAdminDb().collection("vivaCases").doc(caseId).update({
       attemptsCount: FieldValue.increment(1),
     });
 

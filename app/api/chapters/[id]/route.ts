@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 
 export async function PUT(
@@ -10,7 +10,7 @@ export async function PUT(
     const { id } = await context.params;
     const body = await req.json();
 
-    await adminDb
+    await getAdminDb()
       .collection("chapters")
       .doc(id)
       .update({
@@ -35,7 +35,7 @@ export async function DELETE(
 ) {
   const { id } = await context.params;
 
-  await adminDb
+  await getAdminDb()
     .collection("chapters")
     .doc(id)
     .update({

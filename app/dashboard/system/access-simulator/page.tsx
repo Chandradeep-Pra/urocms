@@ -1,5 +1,5 @@
 import AccessSimulatorClient from "@/components/dashboard/AccessSimulatorClient";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
 
@@ -44,13 +44,13 @@ async function getSimulatorSnapshot(): Promise<SimulatorSnapshot> {
     freeUsersSnap,
     paidUsersSnap,
   ] = await Promise.all([
-    adminDb.collection("chapters").where("isActive", "==", true).get(),
-    adminDb.collection("questionBanks").where("isActive", "==", true).get(),
-    adminDb.collection("mocks").get(),
-    adminDb.collection("vivaCases").where("isActive", "==", true).get(),
-    adminDb.collection("users").where("tier", "==", "guest").get(),
-    adminDb.collection("users").where("tier", "==", "free").get(),
-    adminDb.collection("users").where("tier", "==", "paid").get(),
+    getAdminDb().collection("chapters").where("isActive", "==", true).get(),
+    getAdminDb().collection("questionBanks").where("isActive", "==", true).get(),
+    getAdminDb().collection("mocks").get(),
+    getAdminDb().collection("vivaCases").where("isActive", "==", true).get(),
+    getAdminDb().collection("users").where("tier", "==", "guest").get(),
+    getAdminDb().collection("users").where("tier", "==", "free").get(),
+    getAdminDb().collection("users").where("tier", "==", "paid").get(),
   ]);
 
   const chapters = chaptersSnap.docs

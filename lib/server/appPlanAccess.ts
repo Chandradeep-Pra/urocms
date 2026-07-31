@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { type AppTier } from "@/lib/appAccess";
 import {
   normalizePlanAccessScopes,
@@ -130,7 +130,7 @@ export async function resolveAppPlanAccess(user: AppPlanUserInput): Promise<AppP
     };
   }
 
-  const planDoc = await adminDb.collection("pricingPlans").doc(activePlanId).get();
+  const planDoc = await getAdminDb().collection("pricingPlans").doc(activePlanId).get();
   if (!planDoc.exists) {
     return {
       activePlanId,

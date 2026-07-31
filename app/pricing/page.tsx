@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PricingCategoryAccordion } from "@/components/pricing/PricingCategoryAccordion";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { absoluteUrl, siteConfig } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -127,13 +127,13 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
   try {
     const [snapshot, coursesSnap, chaptersSnap, videosSnap, quizzesSnap, mocksSnap, vivaSnap] =
       await Promise.all([
-        adminDb.collection("pricingPlans").get(),
-        adminDb.collection("courses").get(),
-        adminDb.collection("chapters").where("isActive", "==", true).get(),
-        adminDb.collection("videoItems").get(),
-        adminDb.collection("quizzes").where("isActive", "==", true).get(),
-        adminDb.collection("mocks").get(),
-        adminDb.collection("vivaCases").where("isActive", "==", true).get(),
+        getAdminDb().collection("pricingPlans").get(),
+        getAdminDb().collection("courses").get(),
+        getAdminDb().collection("chapters").where("isActive", "==", true).get(),
+        getAdminDb().collection("videoItems").get(),
+        getAdminDb().collection("quizzes").where("isActive", "==", true).get(),
+        getAdminDb().collection("mocks").get(),
+        getAdminDb().collection("vivaCases").where("isActive", "==", true).get(),
       ]);
 
     const titleMap = {

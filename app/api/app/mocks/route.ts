@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { getMockAttemptsCollection } from "@/lib/server/candidateProgress";
 import { requireAppUser } from "@/lib/server/appSession";
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   try {
     const accessContext = await buildAppContentAccessContext(auth.user);
     const [snapshot, attemptsSnapshot] = await Promise.all([
-      adminDb.collection("mocks").orderBy("createdAt", "desc").get(),
+      getAdminDb().collection("mocks").orderBy("createdAt", "desc").get(),
       getMockAttemptsCollection(auth.user.uid).orderBy("submittedAt", "desc").get(),
     ]);
     const attemptByMockId = new Map<string, Record<string, unknown>>();

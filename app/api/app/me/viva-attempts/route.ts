@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getVivaAttemptsCollection } from "@/lib/server/candidateProgress";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     const caseTitleMap = new Map<string, string>();
     await Promise.all(
       caseIds.map(async (caseId) => {
-        const doc = await adminDb.collection("vivaCases").doc(caseId).get();
+        const doc = await getAdminDb().collection("vivaCases").doc(caseId).get();
         const data = doc.data() ?? {};
         const title = String(data?.case?.title || data?.title || "").trim();
         if (title) {

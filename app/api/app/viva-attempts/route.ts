@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import {
   getVivaAttemptsCollection,
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "caseId is required" }, { status: 400 });
     }
 
-    const caseDoc = await adminDb.collection("vivaCases").doc(String(caseId)).get();
+    const caseDoc = await getAdminDb().collection("vivaCases").doc(String(caseId)).get();
     if (!caseDoc.exists) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     }
 
     await Promise.all([
-      adminDb.collection("vivaAttempts").add({
+      getAdminDb().collection("vivaAttempts").add({
         caseId,
         candidate,
         caseTitle,
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
         attemptsCount: FieldValue.increment(1),
       }),
       consumedMinutes > 0
-        ? adminDb.collection("users").doc(auth.user.uid).set(
+        ? getAdminDb().collection("users").doc(auth.user.uid).set(
             {
               vivaMinutesUsed: FieldValue.increment(consumedMinutes),
               updatedAt: submittedAt,

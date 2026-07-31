@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { buildDriveVideoStreamResponse } from "@/lib/server/videoStreamService";
 
 function normalizeTier(value: unknown) {
@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const videoDoc = await adminDb.collection("videoItems").doc(id).get();
+    const videoDoc = await getAdminDb().collection("videoItems").doc(id).get();
 
     if (!videoDoc.exists) {
       return NextResponse.json({ error: "Video not found" }, { status: 404 });
@@ -22,7 +22,7 @@ export async function GET(
     let sectionAccessTier = normalizeTier(video.sectionAccessTier);
 
     if (video.sectionId) {
-      const sectionDoc = await adminDb.collection("videoSections").doc(String(video.sectionId)).get();
+      const sectionDoc = await getAdminDb().collection("videoSections").doc(String(video.sectionId)).get();
       sectionAccessTier = normalizeTier(sectionDoc.data()?.accessTier || sectionAccessTier);
     }
 

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
 import { formatQuestionsForApp, getQuestionsForQuiz } from "@/lib/server/quizContent";
@@ -16,7 +16,7 @@ export async function GET(
   try {
     const accessContext = await buildAppContentAccessContext(auth.user);
     const { id } = await context.params;
-    const doc = await adminDb.collection("quizzes").doc(id).get();
+    const doc = await getAdminDb().collection("quizzes").doc(id).get();
 
     if (!doc.exists) {
       return privateJsonResponse(

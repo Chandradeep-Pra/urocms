@@ -1,5 +1,5 @@
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { normalizeEmail } from "@/lib/server/userIdentity";
 
 type UserTier = "guest" | "free" | "paid";
@@ -49,10 +49,10 @@ function resolveGuestIdentity(input: EnsureGuestInput) {
 export async function ensureGuestAppUser(input: EnsureGuestInput) {
   const now = new Date().toISOString();
   const identity = resolveGuestIdentity(input);
-  const userRef = adminDb.collection("users").doc(input.uid);
-  const usersCollection = adminDb.collection("users");
+  const userRef = getAdminDb().collection("users").doc(input.uid);
+  const usersCollection = getAdminDb().collection("users");
 
-  const result = await adminDb.runTransaction(async (transaction) => {
+  const result = await getAdminDb().runTransaction(async (transaction) => {
     const snapshot = await transaction.get(userRef);
     const current = snapshot.data() ?? {};
     const currentTier = normalizeTier(current.tier);
@@ -166,7 +166,7 @@ export async function ensureGuestAppUser(input: EnsureGuestInput) {
 
 export async function completeAppUserProfile(input: CompleteProfileInput) {
   const now = new Date().toISOString();
-  const userRef = adminDb.collection("users").doc(input.uid);
+  const userRef = getAdminDb().collection("users").doc(input.uid);
 
   const normalizedName = normalizeOptionalString(input.name) || normalizeOptionalString(input.authName);
   if (!normalizedName) {
@@ -182,13 +182,13 @@ export async function completeAppUserProfile(input: CompleteProfileInput) {
   );
   const normalizedAuthEmail = normalizeEmail(input.authEmail);
 
-  const result = await adminDb.runTransaction(async (transaction) => {
+  const result = await getAdminDb().runTransaction(async (transaction) => {
     const snapshot = await transaction.get(userRef);
     const current = snapshot.data() ?? {};
     const canonicalUserId = normalizeOptionalString(current.canonicalUserId);
     const targetUserId =
       canonicalUserId && canonicalUserId !== input.uid ? canonicalUserId : input.uid;
-    const targetRef = adminDb.collection("users").doc(targetUserId);
+    const targetRef = getAdminDb().collection("users").doc(targetUserId);
     const targetSnapshot = targetUserId === input.uid ? snapshot : await transaction.get(targetRef);
     const targetCurrent = targetSnapshot.data() ?? current;
     const currentTier = normalizeTier(targetCurrent.tier);
@@ -256,7 +256,7 @@ export async function completeAppUserProfile(input: CompleteProfileInput) {
 export async function markWelcomeEmailSent(uid: string) {
   if (!uid) return;
 
-  await adminDb.collection("users").doc(uid).set(
+  await getAdminDb().collection("users").doc(uid).set(
     {
       welcomeEmailSentAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -268,7 +268,7 @@ export async function markWelcomeEmailSent(uid: string) {
 export async function consumeVivaMinutes(uid: string, minutes: number) {
   if (!Number.isFinite(minutes) || minutes <= 0) return;
 
-  await adminDb.collection("users").doc(uid).set(
+  await getAdminDb().collection("users").doc(uid).set(
     {
       vivaMinutesUsed: FieldValue.increment(minutes),
       updatedAt: new Date().toISOString(),

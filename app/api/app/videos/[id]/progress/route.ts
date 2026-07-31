@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import {
   getVideoProgressCollection,
   toPositiveNumber,
@@ -30,7 +30,7 @@ export async function POST(
       );
     }
 
-    const videoRef = adminDb.collection("videoItems").doc(id);
+    const videoRef = getAdminDb().collection("videoItems").doc(id);
     const videoDoc = await videoRef.get();
 
     if (!videoDoc.exists) {

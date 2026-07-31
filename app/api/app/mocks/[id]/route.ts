@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { getMockAttemptsCollection } from "@/lib/server/candidateProgress";
 import { requireAppUser } from "@/lib/server/appSession";
@@ -12,7 +12,7 @@ export async function GET(
   const startedAt = performance.now();
   try {
     const { id } = await context.params;
-    const mockDoc = await adminDb.collection("mocks").doc(id).get();
+    const mockDoc = await getAdminDb().collection("mocks").doc(id).get();
 
     if (!mockDoc.exists) {
       return privateJsonResponse(
@@ -73,7 +73,7 @@ export async function GET(
       );
     }
 
-    const quizDoc = await adminDb.collection("quizzes").doc(String(mockData.quizId || "")).get();
+    const quizDoc = await getAdminDb().collection("quizzes").doc(String(mockData.quizId || "")).get();
 
     if (!quizDoc.exists) {
       return privateJsonResponse(
@@ -93,7 +93,7 @@ export async function GET(
 
     if (quizData?.questionIds?.length) {
       const snapshots = await Promise.all(
-        quizData.questionIds.map((qid: string) => adminDb.collection("questions").doc(qid).get())
+        quizData.questionIds.map((qid: string) => getAdminDb().collection("questions").doc(qid).get())
       );
 
       questions = snapshots
@@ -103,7 +103,7 @@ export async function GET(
           ...doc.data(),
         }));
     } else if (quizData?.bankIds?.length) {
-      const snapshot = await adminDb
+      const snapshot = await getAdminDb()
         .collection("questions")
         .where("bankId", "in", quizData.bankIds)
         .where("isActive", "==", true)

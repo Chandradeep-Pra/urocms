@@ -1,5 +1,5 @@
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { frcsPricingPresets } from "@/lib/pricingPresets";
 
 export type PlanSelection = {
@@ -173,7 +173,7 @@ async function resolvePlanVersionPricing(version: PricingPlanVersionInput) {
     };
   }
 
-  const couponDoc = await adminDb.collection("pricingCoupons").doc(version.couponId).get();
+  const couponDoc = await getAdminDb().collection("pricingCoupons").doc(version.couponId).get();
   if (!couponDoc.exists) {
     throw new Error("Selected coupon no longer exists");
   }
@@ -315,17 +315,17 @@ export async function loadPricingAdminData() {
     vivaSnap,
     vivaFoldersSnap,
   ] = await Promise.all([
-    adminDb.collection("pricingPlans").orderBy("updatedAt", "desc").get(),
-    adminDb.collection("pricingCoupons").orderBy("updatedAt", "desc").get(),
-    adminDb.collection("pricingPlanWaitlist").orderBy("createdAt", "desc").limit(100).get(),
-    adminDb.collection("courses").orderBy("createdAt", "asc").get(),
-    adminDb.collection("chapters").where("isActive", "==", true).get(),
-    adminDb.collection("videoSections").get(),
-    adminDb.collection("videoItems").get(),
-    adminDb.collection("quizzes").where("isActive", "==", true).get(),
-    adminDb.collection("mocks").get(),
-    adminDb.collection("vivaCases").where("isActive", "==", true).get(),
-    adminDb.collection("vivaFolders").get(),
+    getAdminDb().collection("pricingPlans").orderBy("updatedAt", "desc").get(),
+    getAdminDb().collection("pricingCoupons").orderBy("updatedAt", "desc").get(),
+    getAdminDb().collection("pricingPlanWaitlist").orderBy("createdAt", "desc").limit(100).get(),
+    getAdminDb().collection("courses").orderBy("createdAt", "asc").get(),
+    getAdminDb().collection("chapters").where("isActive", "==", true).get(),
+    getAdminDb().collection("videoSections").get(),
+    getAdminDb().collection("videoItems").get(),
+    getAdminDb().collection("quizzes").where("isActive", "==", true).get(),
+    getAdminDb().collection("mocks").get(),
+    getAdminDb().collection("vivaCases").where("isActive", "==", true).get(),
+    getAdminDb().collection("vivaFolders").get(),
   ]);
 
   const plans = plansSnap.docs.map((doc) => {
@@ -492,7 +492,7 @@ export async function loadPricingAdminData() {
 }
 
 export async function createPricingPlanWaitlistEntry(input: PricingPlanWaitlistInput) {
-  const planDoc = await adminDb.collection("pricingPlans").doc(input.planId).get();
+  const planDoc = await getAdminDb().collection("pricingPlans").doc(input.planId).get();
 
   if (!planDoc.exists) {
     throw new Error("Plan not found");
@@ -504,7 +504,7 @@ export async function createPricingPlanWaitlistEntry(input: PricingPlanWaitlistI
     throw new Error("Waitlist is only available for coming soon plans");
   }
 
-  const docRef = await adminDb.collection("pricingPlanWaitlist").add({
+  const docRef = await getAdminDb().collection("pricingPlanWaitlist").add({
     planId: planDoc.id,
     planName: String(plan.name ?? "Untitled Plan"),
     name: input.name,
@@ -521,7 +521,7 @@ export async function createPricingPlan(input: PricingPlanInput) {
   const pricing = await resolvePlanPricing(input);
   const primaryVersion = pricing.primaryVersion;
 
-  const docRef = await adminDb.collection("pricingPlans").add({
+  const docRef = await getAdminDb().collection("pricingPlans").add({
     name: input.name,
     description: input.description,
     tag: input.tag,
@@ -561,7 +561,7 @@ export async function updatePricingPlan(id: string, input: PricingPlanInput) {
   const pricing = await resolvePlanPricing(input);
   const primaryVersion = pricing.primaryVersion;
 
-  await adminDb.collection("pricingPlans").doc(id).update({
+  await getAdminDb().collection("pricingPlans").doc(id).update({
     name: input.name,
     description: input.description,
     tag: input.tag,
@@ -595,20 +595,20 @@ export async function updatePricingPlan(id: string, input: PricingPlanInput) {
 }
 
 export async function deletePricingPlan(id: string) {
-  await adminDb.collection("pricingPlans").doc(id).delete();
+  await getAdminDb().collection("pricingPlans").doc(id).delete();
 }
 
 export async function importPricingPresets() {
-  const batch = adminDb.batch();
+  const batch = getAdminDb().batch();
 
   for (const preset of frcsPricingPresets) {
-    const existing = await adminDb
+    const existing = await getAdminDb()
       .collection("pricingPlans")
       .where("presetKey", "==", preset.presetKey)
       .limit(1)
       .get();
 
-    const ref = existing.empty ? adminDb.collection("pricingPlans").doc() : existing.docs[0].ref;
+    const ref = existing.empty ? getAdminDb().collection("pricingPlans").doc() : existing.docs[0].ref;
 
     batch.set(
       ref,
@@ -658,7 +658,7 @@ export async function importPricingPresets() {
 }
 
 export async function createPricingCoupon(input: PricingCouponInput) {
-  const existing = await adminDb
+  const existing = await getAdminDb()
     .collection("pricingCoupons")
     .where("code", "==", input.code)
     .limit(1)
@@ -668,7 +668,7 @@ export async function createPricingCoupon(input: PricingCouponInput) {
     throw new Error("Coupon code already exists");
   }
 
-  const docRef = await adminDb.collection("pricingCoupons").add({
+  const docRef = await getAdminDb().collection("pricingCoupons").add({
     code: input.code,
     description: input.description,
     discountType: input.discountType,
@@ -684,12 +684,12 @@ export async function createPricingCoupon(input: PricingCouponInput) {
 }
 
 export async function updatePricingCouponStatus(id: string, isActive: boolean) {
-  await adminDb.collection("pricingCoupons").doc(id).update({
+  await getAdminDb().collection("pricingCoupons").doc(id).update({
     isActive,
     updatedAt: FieldValue.serverTimestamp(),
   });
 }
 
 export async function deletePricingCoupon(id: string) {
-  await adminDb.collection("pricingCoupons").doc(id).delete();
+  await getAdminDb().collection("pricingCoupons").doc(id).delete();
 }

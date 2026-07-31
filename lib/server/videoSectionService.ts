@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export type VideoSectionAccessTier = "free" | "paid";
 
@@ -26,7 +26,7 @@ function normalizeSortOrder(value: unknown, fallback: number) {
 }
 
 export async function listVideoSections(): Promise<VideoSectionRecord[]> {
-  const snapshot = await adminDb.collection("videoSections").get();
+  const snapshot = await getAdminDb().collection("videoSections").get();
 
   return snapshot.docs
     .map((doc, index): VideoSectionRecord => ({
@@ -65,7 +65,7 @@ export async function createVideoSection(input: {
       ? requestedSortOrder
       : sections.reduce((max, section) => Math.max(max, section.sortOrder), 0) + 1;
 
-  const docRef = await adminDb.collection("videoSections").add({
+  const docRef = await getAdminDb().collection("videoSections").add({
     title,
     accessTier,
     sortOrder: nextSortOrder,
@@ -84,7 +84,7 @@ export async function updateVideoSection(
     imageUrl?: string;
   }
 ) {
-  const sectionRef = adminDb.collection("videoSections").doc(id);
+  const sectionRef = getAdminDb().collection("videoSections").doc(id);
   const currentSectionDoc = await sectionRef.get();
   const currentSection = currentSectionDoc.data() ?? {};
 
@@ -122,12 +122,12 @@ export async function updateVideoSection(
     payload.sortOrder = requestedSortOrder;
   }
 
-  const videosSnapshot = await adminDb
+  const videosSnapshot = await getAdminDb()
     .collection("videoItems")
     .where("sectionId", "==", id)
     .get();
 
-  const batch = adminDb.batch();
+  const batch = getAdminDb().batch();
   batch.update(sectionRef, payload);
 
   videosSnapshot.docs.forEach((doc) => {
@@ -149,12 +149,12 @@ export async function updateVideoSection(
 }
 
 export async function deleteVideoSection(id: string) {
-  const videosSnapshot = await adminDb
+  const videosSnapshot = await getAdminDb()
     .collection("videoItems")
     .where("sectionId", "==", id)
     .get();
 
-  const batch = adminDb.batch();
+  const batch = getAdminDb().batch();
 
   videosSnapshot.docs.forEach((doc) => {
     batch.update(doc.ref, {
@@ -163,7 +163,7 @@ export async function deleteVideoSection(id: string) {
     });
   });
 
-  batch.delete(adminDb.collection("videoSections").doc(id));
+  batch.delete(getAdminDb().collection("videoSections").doc(id));
   await batch.commit();
 
   return { success: true };

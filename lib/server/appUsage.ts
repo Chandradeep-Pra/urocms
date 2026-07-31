@@ -1,5 +1,5 @@
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export interface WeeklyMockPreviewUsage {
   consumedQuestions: number;
@@ -21,7 +21,7 @@ function getUsageDocId(uid: string, feature: string) {
 }
 
 export async function getWeeklyMockPreviewUsage(uid: string, weeklyLimit: number) {
-  const docRef = adminDb.collection("featureUsage").doc(getUsageDocId(uid, "mock-preview"));
+  const docRef = getAdminDb().collection("featureUsage").doc(getUsageDocId(uid, "mock-preview"));
   const doc = await docRef.get();
 
   const data = doc.data() ?? {};

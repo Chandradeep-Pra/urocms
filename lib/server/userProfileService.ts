@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import {
   defaultUserStats,
@@ -115,7 +115,7 @@ function normalizeVivaAttempt(id: string, data: Record<string, unknown>): VivaAt
 }
 
 export async function getAdminUserProfile(userId: string): Promise<AdminUserProfile | null> {
-  const userRef = adminDb.collection("users").doc(userId);
+  const userRef = getAdminDb().collection("users").doc(userId);
   const userDoc = await userRef.get();
 
   if (!userDoc.exists) {
@@ -130,7 +130,7 @@ export async function getAdminUserProfile(userId: string): Promise<AdminUserProf
   const [courseDocs, statsDoc, quizAttemptsSnap, mockAttemptsSnap, vivaAttemptsSnap] =
     await Promise.all([
       activeCourseIds.length
-        ? Promise.all(activeCourseIds.map((courseId) => adminDb.collection("courses").doc(courseId).get()))
+        ? Promise.all(activeCourseIds.map((courseId) => getAdminDb().collection("courses").doc(courseId).get()))
         : Promise.resolve([]),
       getUserStatsRef(userId).get(),
       getQuizAttemptsCollection(userId).orderBy("submittedAt", "desc").limit(50).get(),

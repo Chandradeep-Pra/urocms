@@ -1,6 +1,6 @@
 import type { DecodedIdToken } from "firebase-admin/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebaseAdmin";
+import { getAdminAuth } from "@/lib/firebaseAdmin";
 
 export type AdminSession = {
   uid: string;
@@ -46,7 +46,7 @@ export async function requireAdminSession(
       };
     }
 
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     const email = typeof decodedToken.email === "string" ? decodedToken.email.trim().toLowerCase() : "";
 
     if (!isAllowedAdminEmail(email)) {

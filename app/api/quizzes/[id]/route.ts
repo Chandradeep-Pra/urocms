@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
@@ -38,7 +38,7 @@ export async function PUT(req: NextRequest, context: QuizRouteContext) {
   try {
     const { id } = await context.params;
     const body = await req.json();
-    const docRef = adminDb.collection("quizzes").doc(id);
+    const docRef = getAdminDb().collection("quizzes").doc(id);
     const doc = await docRef.get();
 
     if (!doc.exists) {
@@ -63,7 +63,7 @@ export async function DELETE(req: NextRequest, context: QuizRouteContext) {
 
   try {
     const { id } = await context.params;
-    const docRef = adminDb.collection("quizzes").doc(id);
+    const docRef = getAdminDb().collection("quizzes").doc(id);
     const doc = await docRef.get();
 
     if (!doc.exists) {
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest, context: QuizRouteContext) {
 
   try {
     const { id } = await context.params;
-    const doc = await adminDb.collection("quizzes").doc(id).get();
+    const doc = await getAdminDb().collection("quizzes").doc(id).get();
 
     if (!doc.exists) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest, context: QuizRouteContext) {
 
     if (Array.isArray(quizData.bankIds)) {
       for (const bankId of quizData.bankIds) {
-        const questionSnapshot = await adminDb
+        const questionSnapshot = await getAdminDb()
           .collection("questions")
           .where("bankId", "==", bankId)
           .get();

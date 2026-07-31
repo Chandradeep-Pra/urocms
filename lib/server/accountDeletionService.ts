@@ -1,4 +1,4 @@
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 
 const USER_SCOPED_ITEM_COLLECTIONS = [
   "bookmarks",
@@ -19,21 +19,21 @@ async function deleteCollectionItems(
       return;
     }
 
-    const batch = adminDb.batch();
+    const batch = getAdminDb().batch();
     snapshot.docs.forEach((doc) => batch.delete(doc.ref));
     await batch.commit();
   }
 }
 
 async function deleteUserScopedDoc(collectionName: string, uid: string) {
-  const docRef = adminDb.collection(collectionName).doc(uid);
+  const docRef = getAdminDb().collection(collectionName).doc(uid);
   await deleteCollectionItems(docRef.collection("items"));
   await docRef.delete();
 }
 
 async function deleteAppDevicesForUid(uid: string) {
   while (true) {
-    const snapshot = await adminDb
+    const snapshot = await getAdminDb()
       .collection("appDevices")
       .where("uid", "==", uid)
       .limit(300)
@@ -43,7 +43,7 @@ async function deleteAppDevicesForUid(uid: string) {
       return;
     }
 
-    const batch = adminDb.batch();
+    const batch = getAdminDb().batch();
     snapshot.docs.forEach((doc) => batch.delete(doc.ref));
     await batch.commit();
   }
@@ -51,7 +51,7 @@ async function deleteAppDevicesForUid(uid: string) {
 
 async function deleteFirebaseAuthUser(uid: string) {
   try {
-    await adminAuth.deleteUser(uid);
+    await getAdminAuth().deleteUser(uid);
   } catch (error: unknown) {
     const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
     if (code !== "auth/user-not-found") {
@@ -69,8 +69,8 @@ export async function deleteAppAccount(params: {
 
   await Promise.all(
     userIds.flatMap((uid) => [
-      adminDb.collection("users").doc(uid).delete(),
-      adminDb.collection("userStats").doc(uid).delete(),
+      getAdminDb().collection("users").doc(uid).delete(),
+      getAdminDb().collection("userStats").doc(uid).delete(),
       deleteAppDevicesForUid(uid),
       ...USER_SCOPED_ITEM_COLLECTIONS.map((collectionName) =>
         deleteUserScopedDoc(collectionName, uid)

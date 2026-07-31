@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import {
   deleteVideoAssetsFromStorage,
   saveVideoToFirestore,
@@ -37,7 +37,7 @@ function normalizeSortOrder(value: unknown, fallback: number) {
 }
 
 export async function listVideoItems(sectionId?: string) {
-  let query: Query<DocumentData> = adminDb.collection("videoItems");
+  let query: Query<DocumentData> = getAdminDb().collection("videoItems");
 
   if (sectionId) {
     query = query.where("sectionId", "==", sectionId);
@@ -81,7 +81,7 @@ async function ensureVideoNotDuplicated(
   sectionId: string
 ) {
   if (driveFileId) {
-    const driveSnapshot = await adminDb
+    const driveSnapshot = await getAdminDb()
       .collection("videoItems")
       .where("driveFileId", "==", driveFileId)
       .get();
@@ -92,7 +92,7 @@ async function ensureVideoNotDuplicated(
     return;
   }
 
-  const urlSnapshot = await adminDb
+  const urlSnapshot = await getAdminDb()
     .collection("videoItems")
     .where("videoUrl", "==", videoUrl)
     .get();
@@ -111,7 +111,7 @@ export async function updateVideoItem(id: string, input: VideoItemInput) {
 }
 
 export async function deleteVideoItem(id: string) {
-  const docRef = adminDb.collection("videoItems").doc(id);
+  const docRef = getAdminDb().collection("videoItems").doc(id);
   const snapshot = await docRef.get();
 
   if (!snapshot.exists) {

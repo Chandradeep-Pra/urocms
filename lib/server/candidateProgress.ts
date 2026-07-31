@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export type UserStatsRecord = {
   videosStarted: number;
@@ -35,27 +35,27 @@ export const defaultUserStats = (): UserStatsRecord => ({
 });
 
 export function getVideoProgressCollection(uid: string) {
-  return adminDb.collection("videoProgress").doc(uid).collection("items");
+  return getAdminDb().collection("videoProgress").doc(uid).collection("items");
 }
 
 export function getMockAttemptsCollection(uid: string) {
-  return adminDb.collection("mockAttempts").doc(uid).collection("items");
+  return getAdminDb().collection("mockAttempts").doc(uid).collection("items");
 }
 
 export function getQuizAttemptsCollection(uid: string) {
-  return adminDb.collection("quizAttempts").doc(uid).collection("items");
+  return getAdminDb().collection("quizAttempts").doc(uid).collection("items");
 }
 
 export function getVivaAttemptsCollection(uid: string) {
-  return adminDb.collection("vivaAttempts").doc(uid).collection("items");
+  return getAdminDb().collection("vivaAttempts").doc(uid).collection("items");
 }
 
 export function getBookmarksCollection(uid: string) {
-  return adminDb.collection("bookmarks").doc(uid).collection("items");
+  return getAdminDb().collection("bookmarks").doc(uid).collection("items");
 }
 
 export function getUserStatsRef(uid: string) {
-  return adminDb.collection("userStats").doc(uid);
+  return getAdminDb().collection("userStats").doc(uid);
 }
 
 export async function readUserStats(uid: string) {

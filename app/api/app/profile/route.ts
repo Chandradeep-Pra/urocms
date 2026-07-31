@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requireAppUser } from "@/lib/server/appSession";
 
 function getLocalPhoneDigits(phone: string) {
@@ -55,10 +55,10 @@ export async function PATCH(req: NextRequest) {
       updates.profileImageUrl = profileImageUrl || null;
     }
 
-    const canonicalRef = adminDb.collection("users").doc(auth.user.uid);
+    const canonicalRef = getAdminDb().collection("users").doc(auth.user.uid);
     const authRef =
       auth.user.authUid && auth.user.authUid !== auth.user.uid
-        ? adminDb.collection("users").doc(auth.user.authUid)
+        ? getAdminDb().collection("users").doc(auth.user.authUid)
         : null;
 
     

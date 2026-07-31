@@ -1,7 +1,7 @@
 // app/api/questions/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 
@@ -54,10 +54,10 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const batch = adminDb.batch();
+      const batch = getAdminDb().batch();
 
       questions.forEach((item) => {
-        const ref = adminDb.collection("questions").doc();
+        const ref = getAdminDb().collection("questions").doc();
         batch.set(ref, {
           bankId,
           questionText: item.questionText,
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
         });
       });
 
-      batch.update(adminDb.collection("questionBanks").doc(bankId), {
+      batch.update(getAdminDb().collection("questionBanks").doc(bankId), {
         questionCount: FieldValue.increment(questions.length),
       });
 
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const docRef = await adminDb.collection("questions").add({
+    const docRef = await getAdminDb().collection("questions").add({
       bankId,
       questionText,
       questionImage: questionImage ?? "",
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
     });
 
     // increment bank question count
-    await adminDb.collection("questionBanks").doc(bankId).update({
+    await getAdminDb().collection("questionBanks").doc(bankId).update({
       questionCount: FieldValue.increment(1),
     });
 
@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const snapshot = await adminDb
+    const snapshot = await getAdminDb()
       .collection("questions")
       .where("bankId", "==", bankId)
       .where("isActive", "==", true)

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMockAttemptsCollection } from "@/lib/server/candidateProgress";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requireAppUser } from "@/lib/server/appSession";
 
 export async function GET(req: NextRequest) {
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     const mockMetaMap = new Map<string, { title?: string; description?: string }>();
     await Promise.all(
       mockIds.map(async (mockId) => {
-        const doc = await adminDb.collection("mocks").doc(mockId).get();
+        const doc = await getAdminDb().collection("mocks").doc(mockId).get();
         const data = doc.data() ?? {};
         const title = String(data?.title || data?.quiz?.title || "").trim();
         const description = String(data?.description || data?.quiz?.description || "").trim();

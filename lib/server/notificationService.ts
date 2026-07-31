@@ -1,5 +1,5 @@
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb, adminMessaging } from "@/lib/firebaseAdmin";
+import { getAdminDb, getAdminMessaging } from "@/lib/firebaseAdmin";
 import {
   deactivateDeviceTokenByValue,
   listActiveDeviceTokens,
@@ -49,7 +49,7 @@ async function sendPushForNotification(params: {
     };
   }
 
-  const response = await adminMessaging.sendEachForMulticast({
+  const response = await getAdminMessaging().sendEachForMulticast({
     tokens,
     notification: {
       title: params.title,
@@ -105,7 +105,7 @@ export async function publishNotification(input: NotificationPayload) {
     throw new Error("Notification title and body are required");
   }
 
-  const docRef = await adminDb.collection("notifications").add({
+  const docRef = await getAdminDb().collection("notifications").add({
     kind: input.kind,
     title,
     body,
@@ -158,7 +158,7 @@ export async function publishNotification(input: NotificationPayload) {
 }
 
 export async function listPublishedNotifications(limit = 50) {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("notifications")
     .where("isPublished", "==", true)
     .orderBy("publishedAt", "desc")

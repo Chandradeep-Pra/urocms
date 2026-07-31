@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export type FeedbackFormRecord = {
   id: string;
@@ -81,7 +81,7 @@ function mapFeedbackResponse(
 async function generateUniqueToken() {
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const token = `fb_${randomBytes(6).toString("base64url")}`;
-    const snapshot = await adminDb
+    const snapshot = await getAdminDb()
       .collection("feedbackForms")
       .where("token", "==", token)
       .limit(1)
@@ -96,7 +96,7 @@ async function generateUniqueToken() {
 }
 
 export async function listFeedbackForms() {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("feedbackForms")
     .orderBy("createdAt", "desc")
     .get();
@@ -105,7 +105,7 @@ export async function listFeedbackForms() {
 }
 
 export async function getFeedbackFormById(id: string) {
-  const doc = await adminDb.collection("feedbackForms").doc(id).get();
+  const doc = await getAdminDb().collection("feedbackForms").doc(id).get();
   if (!doc.exists) {
     throw new Error("Feedback form not found");
   }
@@ -117,7 +117,7 @@ export async function findFeedbackFormByToken(token: string) {
   const normalizedToken = normalizeString(token);
   if (!normalizedToken) return null;
 
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("feedbackForms")
     .where("token", "==", normalizedToken)
     .limit(1)
@@ -144,7 +144,7 @@ export async function createFeedbackForm(input: Record<string, unknown>) {
   }
 
   const token = await generateUniqueToken();
-  const docRef = await adminDb.collection("feedbackForms").add({
+  const docRef = await getAdminDb().collection("feedbackForms").add({
     title,
     description,
     token,
@@ -183,7 +183,7 @@ export async function updateFeedbackForm(id: string, input: Record<string, unkno
     throw new Error("Title is required");
   }
 
-  await adminDb.collection("feedbackForms").doc(id).update({
+  await getAdminDb().collection("feedbackForms").doc(id).update({
     title,
     description,
     isActive,
@@ -195,12 +195,12 @@ export async function updateFeedbackForm(id: string, input: Record<string, unkno
 }
 
 export async function deleteFeedbackForm(id: string) {
-  await adminDb.collection("feedbackForms").doc(id).delete();
+  await getAdminDb().collection("feedbackForms").doc(id).delete();
   return { success: true };
 }
 
 export async function listFeedbackResponses(formId: string) {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("feedbackResponses")
     .where("formId", "==", formId)
     .orderBy("submittedAt", "desc")
@@ -210,7 +210,7 @@ export async function listFeedbackResponses(formId: string) {
 }
 
 export async function listPublishableFeedbackResponses() {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("feedbackResponses")
     .orderBy("submittedAt", "desc")
     .get();
@@ -256,7 +256,7 @@ export async function submitFeedbackResponse(
   }
 
   if (!form.allowMultipleResponses) {
-    const existing = await adminDb
+    const existing = await getAdminDb()
       .collection("feedbackResponses")
       .where("formId", "==", form.id)
       .where("email", "==", email)
@@ -268,7 +268,7 @@ export async function submitFeedbackResponse(
     }
   }
 
-  const docRef = await adminDb.collection("feedbackResponses").add({
+  const docRef = await getAdminDb().collection("feedbackResponses").add({
     formId: form.id,
     token: form.token,
     fullName,
@@ -280,7 +280,7 @@ export async function submitFeedbackResponse(
     submittedAt: FieldValue.serverTimestamp(),
   });
 
-  await adminDb.collection("feedbackForms").doc(form.id).update({
+  await getAdminDb().collection("feedbackForms").doc(form.id).update({
     submissionCount: FieldValue.increment(1),
     lastSubmittedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),

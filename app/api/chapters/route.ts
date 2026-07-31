@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 
 export async function GET() {
   try {
-    const snapshot = await adminDb
+    const snapshot = await getAdminDb()
       .collection("chapters")
       .where("isActive", "==", true)
       .orderBy("order", "asc")
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const docRef = adminDb.collection("chapters").doc(body.id);
+    const docRef = getAdminDb().collection("chapters").doc(body.id);
 
     await docRef.set({
       ...body,

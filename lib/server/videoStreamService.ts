@@ -1,6 +1,6 @@
 import { Readable } from "node:stream";
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { type AppUserSession } from "@/lib/server/appSession";
 import { getCloudStorageReadStream } from "@/lib/server/googleCloudStorage";
@@ -23,7 +23,7 @@ export async function buildDriveVideoStreamResponse(params: {
   mode: "admin" | "app";
   user?: AppUserSession;
 }) {
-  const videoDoc = await adminDb.collection("videoItems").doc(params.videoId).get();
+  const videoDoc = await getAdminDb().collection("videoItems").doc(params.videoId).get();
 
   if (!videoDoc.exists) {
     const error = new Error("Video not found");

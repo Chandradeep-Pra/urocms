@@ -1,5 +1,5 @@
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import type { AppUserSession } from "@/lib/server/appSession";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { sendCourseAssignedEmail } from "@/lib/server/emailService";
@@ -159,19 +159,19 @@ export function parseUpdateCourseInput(body: any) {
 }
 
 export async function listCourses() {
-  const snapshot = await adminDb.collection("courses").orderBy("createdAt", "asc").get();
+  const snapshot = await getAdminDb().collection("courses").orderBy("createdAt", "asc").get();
   return sortCourseDocs(snapshot.docs).map((doc) => shapeCourseDoc(doc));
 }
 
 export async function getCourseById(id: string) {
-  const doc = await adminDb.collection("courses").doc(id).get();
+  const doc = await getAdminDb().collection("courses").doc(id).get();
   if (!doc.exists) return null;
   return shapeCourseDoc(doc);
 }
 
 export async function createCourse(input: ReturnType<typeof parseCreateCourseInput>) {
   const slug = createCourseSlug(input.title);
-  const existingCourses = await adminDb.collection("courses").get();
+  const existingCourses = await getAdminDb().collection("courses").get();
   const nextSortOrder =
     input.sortOrder ??
     existingCourses.docs.reduce((max, doc) => {
@@ -179,7 +179,7 @@ export async function createCourse(input: ReturnType<typeof parseCreateCourseInp
       return sortOrder === null ? max : Math.max(max, sortOrder);
     }, 0) + 10;
 
-  const docRef = await adminDb.collection("courses").add({
+  const docRef = await getAdminDb().collection("courses").add({
     title: input.title,
     description: input.description,
     slug,
@@ -214,7 +214,7 @@ async function resolveCourseMemberUsers(memberUserIds: string[]) {
 
   const users = await Promise.all(
     memberUserIds.map(async (userId) => {
-      const userDoc = await adminDb.collection("users").doc(userId).get();
+      const userDoc = await getAdminDb().collection("users").doc(userId).get();
       if (!userDoc.exists) return null;
       const user = userDoc.data() ?? {};
 
@@ -282,7 +282,7 @@ export async function updateCourse(
   id: string,
   input: ReturnType<typeof parseUpdateCourseInput>
 ) {
-  const previousDoc = await adminDb.collection("courses").doc(id).get();
+  const previousDoc = await getAdminDb().collection("courses").doc(id).get();
   if (!previousDoc.exists) {
     throw new Error("Course not found");
   }
@@ -336,7 +336,7 @@ export async function updateCourse(
     ])
   );
 
-  await adminDb.collection("courses").doc(id).update({
+  await getAdminDb().collection("courses").doc(id).update({
     title: input.title,
     description: input.description,
     slug: createCourseSlug(input.title),
@@ -355,7 +355,7 @@ export async function updateCourse(
 
   await Promise.all([
     ...addedUserIds.map((userId) =>
-      adminDb.collection("users").doc(userId).set(
+      getAdminDb().collection("users").doc(userId).set(
         {
           activeCourseIds: FieldValue.arrayUnion(id),
           updatedAt: new Date().toISOString(),
@@ -364,7 +364,7 @@ export async function updateCourse(
       )
     ),
     ...removedUserIds.map((userId: string) =>
-      adminDb.collection("users").doc(userId).set(
+      getAdminDb().collection("users").doc(userId).set(
         {
           activeCourseIds: FieldValue.arrayRemove(id),
           updatedAt: new Date().toISOString(),
@@ -391,7 +391,7 @@ export async function updateCourse(
 }
 
 export async function deleteCourse(id: string) {
-  const courseDoc = await adminDb.collection("courses").doc(id).get();
+  const courseDoc = await getAdminDb().collection("courses").doc(id).get();
   const courseData = courseDoc.data() ?? {};
   const memberUserIds = Array.isArray(courseData.memberUserIds) ? courseData.memberUserIds : [];
   const memberUsers = Array.isArray(courseData.memberUsers) ? courseData.memberUsers : [];
@@ -403,7 +403,7 @@ export async function deleteCourse(id: string) {
 
   await Promise.all([
     ...accessibleUserIds.map((userId: string) =>
-      adminDb.collection("users").doc(userId).set(
+      getAdminDb().collection("users").doc(userId).set(
         {
           activeCourseIds: FieldValue.arrayRemove(id),
           updatedAt: new Date().toISOString(),
@@ -418,16 +418,16 @@ export async function deleteCourse(id: string) {
       fullMemberUsers: memberUsers,
       memberAccessGrants: [],
     }),
-    adminDb.collection("courses").doc(id).delete(),
+    getAdminDb().collection("courses").doc(id).delete(),
   ]);
 }
 
 export async function loadCourseContentCatalog() {
   const [videoSectionsSnap, chaptersSnap, mocksSnap, vivaCasesSnap] = await Promise.all([
-    adminDb.collection("videoSections").get(),
-    adminDb.collection("chapters").where("isActive", "==", true).get(),
-    adminDb.collection("mocks").get(),
-    adminDb.collection("vivaCases").where("isActive", "==", true).get(),
+    getAdminDb().collection("videoSections").get(),
+    getAdminDb().collection("chapters").where("isActive", "==", true).get(),
+    getAdminDb().collection("mocks").get(),
+    getAdminDb().collection("vivaCases").where("isActive", "==", true).get(),
   ]);
 
   const videoSections = videoSectionsSnap.docs.map((doc) => {
@@ -514,7 +514,7 @@ export async function loadCourseContentCatalog() {
 }
 
 export async function loadCourseMembersCatalog() {
-  const snapshot = await adminDb.collection("users").orderBy("createdAt", "desc").get();
+  const snapshot = await getAdminDb().collection("users").orderBy("createdAt", "desc").get();
 
   const visibleUsers = snapshot.docs
     .filter((doc) => isVisibleUserDoc(doc.data() ?? {}))

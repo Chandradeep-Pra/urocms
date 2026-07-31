@@ -2,7 +2,7 @@ import { extname } from "path";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 import {
-  adminDb,
+  getAdminDb,
 } from "@/lib/firebaseAdmin";
 import {
   fetchDriveFileStream,
@@ -82,7 +82,7 @@ function normalizeSortOrder(value: unknown, fallback = 0) {
 async function getSectionRecord(sectionId?: string) {
   if (!sectionId) return null;
 
-  const sectionDoc = await adminDb.collection("videoSections").doc(sectionId).get();
+  const sectionDoc = await getAdminDb().collection("videoSections").doc(sectionId).get();
   if (!sectionDoc.exists) return null;
 
   const data = sectionDoc.data() ?? {};
@@ -109,7 +109,7 @@ async function ensureVideoNotDuplicated(
   existingVideoId?: string
 ) {
   if (driveFileId) {
-    const driveSnapshot = await adminDb
+    const driveSnapshot = await getAdminDb()
       .collection("videoItems")
       .where("driveFileId", "==", driveFileId)
       .get();
@@ -125,7 +125,7 @@ async function ensureVideoNotDuplicated(
     return;
   }
 
-  const urlSnapshot = await adminDb
+  const urlSnapshot = await getAdminDb()
     .collection("videoItems")
     .where("videoUrl", "==", videoUrl)
     .get();
@@ -140,7 +140,7 @@ async function ensureVideoNotDuplicated(
 }
 
 async function getNextVideoSortOrder(sectionId: string, excludingVideoId?: string) {
-  const snapshot = await adminDb.collection("videoItems").get();
+  const snapshot = await getAdminDb().collection("videoItems").get();
 
   return (
     snapshot.docs
@@ -166,7 +166,7 @@ export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
     sectionAccessTier: section?.accessTier,
   });
   const existingDoc = input.videoId
-    ? await adminDb.collection("videoItems").doc(input.videoId).get()
+    ? await getAdminDb().collection("videoItems").doc(input.videoId).get()
     : null;
   const existingData = existingDoc?.exists ? existingDoc.data() ?? {} : {};
   const previousSectionId = String(existingData.sectionId || "");
@@ -234,11 +234,11 @@ export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
   };
 
   if (input.videoId) {
-    await adminDb.collection("videoItems").doc(input.videoId).update(payload);
+    await getAdminDb().collection("videoItems").doc(input.videoId).update(payload);
     return { id: input.videoId, effectiveAccessTier };
   }
 
-  const docRef = await adminDb.collection("videoItems").add({
+  const docRef = await getAdminDb().collection("videoItems").add({
     ...payload,
     createdAt: new Date(),
   });
@@ -247,7 +247,7 @@ export async function saveVideoToFirestore(input: SaveVideoToFirestoreInput) {
 }
 
 export async function syncDriveVideoToStorage(videoId: string) {
-  const videoRef = adminDb.collection("videoItems").doc(videoId);
+  const videoRef = getAdminDb().collection("videoItems").doc(videoId);
   const videoDoc = await videoRef.get();
 
   if (!videoDoc.exists) {
@@ -315,7 +315,7 @@ export async function syncDriveVideoToStorage(videoId: string) {
 }
 
 export async function playVideoFromFirestore(input: PlayVideoFromFirestoreInput) {
-  const videoDoc = await adminDb.collection("videoItems").doc(input.videoId).get();
+  const videoDoc = await getAdminDb().collection("videoItems").doc(input.videoId).get();
 
   if (!videoDoc.exists) {
     throw new Error("Video not found");
@@ -393,7 +393,7 @@ export async function playVideoFromFirestore(input: PlayVideoFromFirestoreInput)
   }
 
   if (input.user?.uid) {
-    await adminDb.collection("videoAccessLogs").add({
+    await getAdminDb().collection("videoAccessLogs").add({
       videoId: videoDoc.id,
       userId: input.user.uid,
       userEmail: input.user.email || null,

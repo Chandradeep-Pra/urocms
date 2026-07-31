@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import { sendAnnouncementEmail } from "@/lib/server/emailService";
 
@@ -23,7 +23,7 @@ function isValidEmail(value: string) {
 }
 
 async function loadRecipients() {
-  const snapshot = await adminDb.collection("users").get();
+  const snapshot = await getAdminDb().collection("users").get();
   const recipients = new Map<string, BroadcastRecipient>();
 
   snapshot.docs.forEach((doc) => {
@@ -55,7 +55,7 @@ export async function POST(
   if (response) return response;
 
   const { id } = await context.params;
-  const announcementDoc = await adminDb.collection("announcements").doc(id).get();
+  const announcementDoc = await getAdminDb().collection("announcements").doc(id).get();
 
   if (!announcementDoc.exists) {
     return Response.json({ error: "Announcement not found" }, { status: 404 });

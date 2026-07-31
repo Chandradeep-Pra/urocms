@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    const docRef = await adminDb.collection("joinlist").add(payload);
+    const docRef = await getAdminDb().collection("joinlist").add(payload);
 
     return NextResponse.json({
       success: true,

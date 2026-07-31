@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebaseAdmin";
+import { getAdminAuth } from "@/lib/firebaseAdmin";
 import { normalizeEmail, resolveCanonicalUserRecord } from "@/lib/server/userIdentity";
 
 type AppTier = "guest" | "free" | "paid";
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     const token = authHeader.split("Bearer ")[1];
-    const decoded = await adminAuth.verifyIdToken(token);
+    const decoded = await getAdminAuth().verifyIdToken(token);
     const normalizedEmail = normalizeEmail(decoded.email);
 
     if (!normalizedEmail) {

@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
@@ -15,7 +15,7 @@ export async function PUT(
   try {
     const body = await req.json();
 
-    await adminDb
+    await getAdminDb()
       .collection("questions")
       .doc(id)
       .update({
@@ -44,10 +44,10 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    const doc = await adminDb.collection("questions").doc(id).get();
+    const doc = await getAdminDb().collection("questions").doc(id).get();
     const data = doc.data();
 
-    await adminDb
+    await getAdminDb()
       .collection("questions")
       .doc(id)
       .update({
@@ -57,7 +57,7 @@ export async function DELETE(
 
     // 🔥 decrement question count
     if (data?.bankId) {
-      await adminDb
+      await getAdminDb()
         .collection("questionBanks")
         .doc(data.bankId)
         .update({

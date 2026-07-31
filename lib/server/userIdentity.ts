@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import {
   getBookmarksCollection,
   getMockAttemptsCollection,
@@ -119,7 +119,7 @@ async function copySubcollectionById(params: {
   const snapshot = await params.from.get();
   if (snapshot.empty) return;
 
-  const batch = adminDb.batch();
+  const batch = getAdminDb().batch();
   snapshot.docs.forEach((doc) => {
     batch.set(params.to.doc(doc.id), doc.data(), { merge: true });
   });
@@ -156,7 +156,7 @@ async function mergeUserScopedData(fromUid: string, toUid: string) {
     getUserStatsRef(fromUid).get(),
     getUserStatsRef(toUid).get(),
     getAppDevicesCollection().where("uid", "==", fromUid).get(),
-    adminDb.collection("courses").get(),
+    getAdminDb().collection("courses").get(),
   ]);
 
   if (fromStatsDoc.exists) {
@@ -222,7 +222,7 @@ async function mergeUserScopedData(fromUid: string, toUid: string) {
   }
 
   if (!deviceSnapshot.empty) {
-    const batch = adminDb.batch();
+    const batch = getAdminDb().batch();
     deviceSnapshot.docs.forEach((doc) => {
       batch.set(
         doc.ref,
@@ -237,7 +237,7 @@ async function mergeUserScopedData(fromUid: string, toUid: string) {
   }
 
   if (!courseSnapshot.empty) {
-    const batch = adminDb.batch();
+    const batch = getAdminDb().batch();
 
     courseSnapshot.docs.forEach((courseDoc) => {
       const data = courseDoc.data() ?? {};
@@ -296,14 +296,14 @@ export async function resolveCanonicalUserRecord(params: {
   source?: string | null;
 }) {
   const normalizedEmail = normalizeEmail(params.email);
-  const currentRef = adminDb.collection("users").doc(params.authUid);
+  const currentRef = getAdminDb().collection("users").doc(params.authUid);
   const currentSnap = await currentRef.get();
   const currentData = currentSnap.data() ?? {};
 
   if (!normalizedEmail || params.signInProvider === "anonymous") {
     const canonicalUserId = normalizeString(currentData.canonicalUserId);
     if (canonicalUserId && canonicalUserId !== params.authUid) {
-      const canonicalRef = adminDb.collection("users").doc(canonicalUserId);
+      const canonicalRef = getAdminDb().collection("users").doc(canonicalUserId);
       const canonicalSnap = await canonicalRef.get();
       if (canonicalSnap.exists) {
         return {
@@ -325,7 +325,7 @@ export async function resolveCanonicalUserRecord(params: {
     };
   }
 
-  const sameEmailSnapshot = await adminDb
+  const sameEmailSnapshot = await getAdminDb()
     .collection("users")
     .where("email", "==", normalizedEmail)
     .get();
@@ -341,7 +341,7 @@ export async function resolveCanonicalUserRecord(params: {
 
   const canonical = chooseCanonicalUser(docs, params.authUid);
   const duplicates = docs.filter((doc) => doc.id !== canonical.id);
-  const canonicalRef = adminDb.collection("users").doc(canonical.id);
+  const canonicalRef = getAdminDb().collection("users").doc(canonical.id);
 
   const mergedPayload = {
     email: normalizedEmail,
@@ -428,7 +428,7 @@ export async function resolveCanonicalUserRecord(params: {
 
   for (const duplicate of duplicates) {
     await mergeUserScopedData(duplicate.id, canonical.id);
-    await adminDb
+    await getAdminDb()
       .collection("users")
       .doc(duplicate.id)
       .set(

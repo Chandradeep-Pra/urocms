@@ -1,6 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { getPublicVivaCaseById } from "@/lib/server/vivaService";
 
 function normalizeText(value: unknown) {
@@ -36,7 +36,7 @@ export async function POST(
     };
 
     await Promise.all([
-      adminDb.collection("publicVivaAttempts").add({
+      getAdminDb().collection("publicVivaAttempts").add({
         caseId: id,
         candidate: {
           name,
@@ -46,7 +46,7 @@ export async function POST(
         status: "started",
         createdAt: FieldValue.serverTimestamp(),
       }),
-      adminDb.collection("vivaCases").doc(id).update({
+      getAdminDb().collection("vivaCases").doc(id).update({
         publicParticipants: FieldValue.arrayUnion(participant),
         updatedAt: FieldValue.serverTimestamp(),
       }),

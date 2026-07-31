@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebaseAdmin";
+import { getAdminAuth } from "@/lib/firebaseAdmin";
 import { sendBrandedPasswordResetEmail } from "@/lib/server/emailService";
 
 function normalizeEmail(value: unknown) {
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const resetLink = await adminAuth.generatePasswordResetLink(email, {
+    const resetLink = await getAdminAuth().generatePasswordResetLink(email, {
       url: `${process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://urologics.co.uk"}/login`,
       handleCodeInApp: false,
     });

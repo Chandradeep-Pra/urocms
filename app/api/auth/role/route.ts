@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebaseAdmin";
+import { getAdminAuth } from "@/lib/firebaseAdmin";
 import { isAllowedAdminEmail } from "@/lib/server/adminAccess";
 
 function getBearerToken(req: NextRequest) {
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await getAdminAuth().verifyIdToken(token);
     const email =
       typeof decodedToken.email === "string" ? decodedToken.email.trim().toLowerCase() : "";
     const isAdmin = isAllowedAdminEmail(email);

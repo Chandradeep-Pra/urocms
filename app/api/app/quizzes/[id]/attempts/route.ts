@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import {
   averageWithNext,
@@ -20,7 +20,7 @@ export async function POST(
   try {
     const { id } = await context.params;
     const body = await req.json();
-    const quizDoc = await adminDb.collection("quizzes").doc(id).get();
+    const quizDoc = await getAdminDb().collection("quizzes").doc(id).get();
 
     if (!quizDoc.exists) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });

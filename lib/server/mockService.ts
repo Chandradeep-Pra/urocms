@@ -1,5 +1,5 @@
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 type MockAttemptInput = {
   name?: unknown;
@@ -59,7 +59,7 @@ function normalizeAttempts(value: unknown) {
 }
 
 async function getMockQuizOrThrow(quizId: string) {
-  const quizDoc = await adminDb.collection("quizzes").doc(quizId).get();
+  const quizDoc = await getAdminDb().collection("quizzes").doc(quizId).get();
 
   if (!quizDoc.exists) {
     throw new Error("Quiz not found");
@@ -80,7 +80,7 @@ async function loadMockQuestions(quizData: Record<string, any>) {
   if (Array.isArray(quizData.questionIds) && quizData.questionIds.length > 0) {
     const snapshots = await Promise.all(
       quizData.questionIds.map((questionId: string) =>
-        adminDb.collection("questions").doc(questionId).get()
+        getAdminDb().collection("questions").doc(questionId).get()
       )
     );
 
@@ -93,7 +93,7 @@ async function loadMockQuestions(quizData: Record<string, any>) {
   }
 
   if (Array.isArray(quizData.bankIds) && quizData.bankIds.length > 0) {
-    const snapshot = await adminDb
+    const snapshot = await getAdminDb()
       .collection("questions")
       .where("bankId", "in", quizData.bankIds)
       .where("isActive", "==", true)
@@ -147,7 +147,7 @@ function buildMockScheduleWindow(params: {
 }
 
 export async function listMocks() {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("mocks")
     .orderBy("createdAt", "desc")
     .get();
@@ -182,7 +182,7 @@ export async function createMockSchedule(input: MockScheduleInput) {
     fallbackDurationMinutes: normalizeDurationMinutes(quiz.data.durationMinutes, 60),
   });
 
-  const docRef = await adminDb.collection("mocks").add({
+  const docRef = await getAdminDb().collection("mocks").add({
     quizId,
     title: quiz.data.title || "Untitled Mock",
     type: quiz.data.type,
@@ -204,7 +204,7 @@ export async function createMockSchedule(input: MockScheduleInput) {
 }
 
 export async function getMockDetails(id: string) {
-  const mockDoc = await adminDb.collection("mocks").doc(id).get();
+  const mockDoc = await getAdminDb().collection("mocks").doc(id).get();
 
   if (!mockDoc.exists) {
     throw new Error("Mock not found");
@@ -233,7 +233,7 @@ export async function getMockDetails(id: string) {
 }
 
 export async function updateMockSchedule(id: string, input: MockScheduleInput) {
-  const mockRef = adminDb.collection("mocks").doc(id);
+  const mockRef = getAdminDb().collection("mocks").doc(id);
   const existingMockDoc = await mockRef.get();
 
   if (!existingMockDoc.exists) {
@@ -277,7 +277,7 @@ export async function updateMockSchedule(id: string, input: MockScheduleInput) {
 }
 
 export async function deleteMockSchedule(id: string) {
-  await adminDb.collection("mocks").doc(id).delete();
+  await getAdminDb().collection("mocks").doc(id).delete();
   return { success: true };
 }
 
@@ -294,7 +294,7 @@ async function addMockAttempt(id: string, input: MockAttemptInput) {
     throw new Error("Name, email and marks are required");
   }
 
-  const mockRef = adminDb.collection("mocks").doc(id);
+  const mockRef = getAdminDb().collection("mocks").doc(id);
   const mockDoc = await mockRef.get();
 
   if (!mockDoc.exists) {
@@ -326,7 +326,7 @@ async function addMockAttempt(id: string, input: MockAttemptInput) {
 }
 
 export async function addPublicMockAttempt(id: string, input: MockAttemptInput) {
-  const mockDoc = await adminDb.collection("mocks").doc(id).get();
+  const mockDoc = await getAdminDb().collection("mocks").doc(id).get();
 
   if (!mockDoc.exists) {
     throw new Error("Mock not found");

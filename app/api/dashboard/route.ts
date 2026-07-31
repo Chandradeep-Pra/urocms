@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 type ChartPoint = {
   month: string;
@@ -66,12 +66,12 @@ export async function GET() {
       videoItemsSnap,
       quizzesSnap,
     ] = await Promise.all([
-      adminDb.collection("users").get(),
-      adminDb.collection("questions").get(),
-      adminDb.collection("vivaCases").get(),
-      adminDb.collection("chapters").where("isActive", "==", true).get(),
-      adminDb.collection("videoItems").get(),
-      adminDb.collection("quizzes").where("isActive", "==", true).get(),
+      getAdminDb().collection("users").get(),
+      getAdminDb().collection("questions").get(),
+      getAdminDb().collection("vivaCases").get(),
+      getAdminDb().collection("chapters").where("isActive", "==", true).get(),
+      getAdminDb().collection("videoItems").get(),
+      getAdminDb().collection("quizzes").where("isActive", "==", true).get(),
     ]);
 
     const users = usersSnap.docs.map((doc) => doc.data());

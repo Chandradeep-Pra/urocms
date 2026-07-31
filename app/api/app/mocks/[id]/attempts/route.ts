@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import {
   averageWithNext,
@@ -30,7 +30,7 @@ export async function POST(
       return NextResponse.json({ error: "Marks are required" }, { status: 400 });
     }
 
-    const mockRef = adminDb.collection("mocks").doc(id);
+    const mockRef = getAdminDb().collection("mocks").doc(id);
     const mockDoc = await mockRef.get();
 
     if (!mockDoc.exists) {
@@ -89,7 +89,7 @@ export async function POST(
     };
 
     const userAttemptRef = getMockAttemptsCollection(auth.user.uid).doc(id);
-    const transactionResult = await adminDb.runTransaction(async (transaction) => {
+    const transactionResult = await getAdminDb().runTransaction(async (transaction) => {
       const [latestMockDoc, deterministicAttemptDoc] = await Promise.all([
         transaction.get(mockRef),
         transaction.get(userAttemptRef),

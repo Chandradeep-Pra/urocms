@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import type { DecodedIdToken } from "firebase-admin/auth";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { type AppTier } from "@/lib/appAccess";
 import { type AppPlanStatus } from "@/lib/server/appPlanAccess";
 import { normalizeEmail, resolveCanonicalUserRecord } from "@/lib/server/userIdentity";
@@ -37,7 +38,7 @@ function normalizePlanStatus(value: unknown): AppPlanStatus {
   return value === "active" || value === "expired" || value === "none" ? value : "none";
 }
 
-function createTransientGuestSession(decoded: Awaited<ReturnType<typeof adminAuth.verifyIdToken>>) {
+function createTransientGuestSession(decoded: DecodedIdToken) {
   return {
     authUid: decoded.uid,
     uid: decoded.uid,
@@ -71,8 +72,8 @@ export async function requireAppUser(req: NextRequest) {
 
   try {
     const token = authHeader.split("Bearer ")[1];
-    const decoded = await adminAuth.verifyIdToken(token);
-    const userRef = adminDb.collection("users").doc(decoded.uid);
+    const decoded = await getAdminAuth().verifyIdToken(token);
+    const userRef = getAdminDb().collection("users").doc(decoded.uid);
     const userDoc = await userRef.get();
     const isAnonymousWithoutEmail =
       decoded.firebase.sign_in_provider === "anonymous" && !normalizeEmail(decoded.email);

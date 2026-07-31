@@ -3,7 +3,7 @@ import {
   FREE_CHAPTER_PREVIEW_LIMIT,
   type QuizType,
 } from "@/lib/appAccess";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import {
   resolveAppPlanAccess,
 } from "@/lib/server/appPlanAccess";
@@ -144,7 +144,7 @@ function getPreviewLimit(type: QuizType) {
 }
 
 async function loadVisibleCourses() {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("courses")
     .where("showOnApp", "==", true)
     .orderBy("createdAt", "asc")

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { playVideoFromFirestore } from "@/lib/server/firestoreVideoService";
 import { privateJsonResponse } from "@/lib/server/apiMetrics";
 
@@ -14,7 +14,7 @@ export async function GET(
   const startedAt = performance.now();
   try {
     const { id } = await context.params;
-    const videoDoc = await adminDb.collection("videoItems").doc(id).get();
+    const videoDoc = await getAdminDb().collection("videoItems").doc(id).get();
 
     if (!videoDoc.exists) {
       return privateJsonResponse(
@@ -32,7 +32,7 @@ export async function GET(
     let sectionAccessTier = normalizeTier(video.sectionAccessTier);
 
     if (video.sectionId) {
-      const sectionDoc = await adminDb.collection("videoSections").doc(String(video.sectionId)).get();
+      const sectionDoc = await getAdminDb().collection("videoSections").doc(String(video.sectionId)).get();
       sectionAccessTier = normalizeTier(sectionDoc.data()?.accessTier || sectionAccessTier);
     }
 

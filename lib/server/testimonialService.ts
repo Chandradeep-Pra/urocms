@@ -1,5 +1,5 @@
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export type TestimonialRecord = {
   id: string;
@@ -107,7 +107,7 @@ function mapTestimonial(doc: FirebaseFirestore.QueryDocumentSnapshot | FirebaseF
 }
 
 export async function listPublicTestimonials() {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("testimonials")
     .where("isActive", "==", true)
     .orderBy("sortOrder", "asc")
@@ -118,7 +118,7 @@ export async function listPublicTestimonials() {
 }
 
 export async function listAllTestimonials() {
-  const snapshot = await adminDb
+  const snapshot = await getAdminDb()
     .collection("testimonials")
     .orderBy("sortOrder", "asc")
     .orderBy("createdAt", "desc")
@@ -149,7 +149,7 @@ export async function createTestimonial(input: Record<string, unknown>) {
 
   const { youtubeId, videoUrl } = buildYoutubeUrl(sourceVideo);
 
-  const docRef = await adminDb.collection("testimonials").add({
+  const docRef = await getAdminDb().collection("testimonials").add({
     title,
     candidateName,
     candidateRole,
@@ -190,7 +190,7 @@ export async function updateTestimonial(id: string, input: Record<string, unknow
 
   const { youtubeId, videoUrl } = buildYoutubeUrl(sourceVideo);
 
-  await adminDb.collection("testimonials").doc(id).update({
+  await getAdminDb().collection("testimonials").doc(id).update({
     title,
     candidateName,
     candidateRole,
@@ -204,7 +204,7 @@ export async function updateTestimonial(id: string, input: Record<string, unknow
     updatedAt: FieldValue.serverTimestamp(),
   });
 
-  const doc = await adminDb.collection("testimonials").doc(id).get();
+  const doc = await getAdminDb().collection("testimonials").doc(id).get();
   if (!doc.exists) {
     throw new Error("Testimonial not found");
   }
@@ -213,6 +213,6 @@ export async function updateTestimonial(id: string, input: Record<string, unknow
 }
 
 export async function deleteTestimonial(id: string) {
-  await adminDb.collection("testimonials").doc(id).delete();
+  await getAdminDb().collection("testimonials").doc(id).delete();
   return { success: true };
 }

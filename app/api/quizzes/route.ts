@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     const verificationId = generateSlug(body.title);
 
-    const docRef = adminDb
+    const docRef = getAdminDb()
       .collection("quizzes")
       .doc(verificationId);
 
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
 
-    let query = adminDb
+    let query = getAdminDb()
       .collection("quizzes")
       .where("isActive", "==", true);
 

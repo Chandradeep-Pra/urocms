@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminStorage } from "@/lib/firebaseAdmin";
+import { getAdminStorage } from "@/lib/firebaseAdmin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     const fileName = `${folder}/${Date.now()}-${file.name}`;
 
-    const bucket = adminStorage;
+    const bucket = getAdminStorage().bucket();
     const uploadFile = bucket.file(fileName);
 
     await uploadFile.save(buffer, {

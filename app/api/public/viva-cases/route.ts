@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export async function GET() {
   try {
-    const snapshot = await adminDb
+    const snapshot = await getAdminDb()
       .collection("vivaCases")
       .where("isActive", "==", true)
       .where("accessType", "==", "public")

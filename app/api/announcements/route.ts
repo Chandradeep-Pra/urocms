@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import { publishNotification } from "@/lib/server/notificationService";
 import { CACHE_HEADERS, jsonWithApiMetrics, publicJsonResponse } from "@/lib/server/apiMetrics";
@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    const activeSnapshot = await adminDb
+    const activeSnapshot = await getAdminDb()
       .collection("announcements")
       .where("isActive", "==", true)
       .get();
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const announcementRef = adminDb.collection("announcements").doc();
+    const announcementRef = getAdminDb().collection("announcements").doc();
 
     await announcementRef.set({
       title,
@@ -203,7 +203,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   const startedAt = performance.now();
   try {
-    const snapshot = await adminDb
+    const snapshot = await getAdminDb()
       .collection("announcements")
       .where("isActive", "==", true)
       .get();
@@ -255,7 +255,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Announcement id is required" }, { status: 400 });
     }
 
-    await adminDb.collection("announcements").doc(id).update({
+    await getAdminDb().collection("announcements").doc(id).update({
       isActive: false,
       archivedAt: new Date(),
     });

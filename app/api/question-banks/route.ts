@@ -1,6 +1,6 @@
 // Get route
 
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   if (response) return response;
 
   try {
-    const snapshot = await adminDb
+    const snapshot = await getAdminDb()
       .collection("questionBanks")
       .where("isActive", "==", true)
       .get();
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid section selected" }, { status: 400 });
         }
 
-        const docRef = await adminDb.collection("questionBanks").add({
+        const docRef = await getAdminDb().collection("questionBanks").add({
             title: normalizedTitle,
             section: normalizedSection,
             questionCount: 0,

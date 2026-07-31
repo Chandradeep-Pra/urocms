@@ -1,7 +1,7 @@
 //@ts-ignore
 
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 
@@ -43,7 +43,7 @@ export async function PATCH(
       updates.section = normalizedSection;
     }
 
-    await adminDb
+    await getAdminDb()
       .collection("questionBanks")
       .doc(id)
       .update(updates);
@@ -78,7 +78,7 @@ export async function DELETE(
       );
     }
 
-    await adminDb
+    await getAdminDb()
       .collection("questionBanks")
       .doc(id)
       .update({
@@ -108,7 +108,7 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    const doc = await adminDb
+    const doc = await getAdminDb()
       .collection("questionBanks")
       .doc(id)
       .get();

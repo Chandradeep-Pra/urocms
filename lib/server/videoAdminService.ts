@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { playVideoFromFirestore, syncDriveVideoToStorage } from "@/lib/server/firestoreVideoService";
 import {
   createDrivePermission,
@@ -35,16 +35,16 @@ export async function loadAdminVideoLibrary(params: {
   sectionId?: string | null;
   userId: string;
 }) {
-  let query: Query<DocumentData> = adminDb.collection("videoItems");
+  let query: Query<DocumentData> = getAdminDb().collection("videoItems");
 
   if (params.sectionId) {
     query = query.where("sectionId", "==", params.sectionId);
   }
 
   const [userDoc, snapshot, sectionsSnapshot] = await Promise.all([
-    adminDb.collection("users").doc(params.userId).get(),
+    getAdminDb().collection("users").doc(params.userId).get(),
     query.get(),
-    adminDb.collection("videoSections").get(),
+    getAdminDb().collection("videoSections").get(),
   ]);
   const tier = userDoc.exists ? userDoc.data()?.tier ?? "guest" : "guest";
   const sectionOrderMap = new Map(

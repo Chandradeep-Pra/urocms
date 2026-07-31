@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import {
   getConfiguredDriveResourceIds,
@@ -25,7 +25,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
     }
 
-    const userRef = adminDb.collection("users").doc(id);
+    const userRef = getAdminDb().collection("users").doc(id);
     const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
@@ -86,10 +86,10 @@ export async function DELETE(
   try {
     const { id } = await context.params;
 
-    await adminDb.collection("users").doc(id).delete();
+    await getAdminDb().collection("users").doc(id).delete();
 
     try {
-      await adminAuth.deleteUser(id);
+      await getAdminAuth().deleteUser(id);
     } catch (error: any) {
       if (error?.code !== "auth/user-not-found") {
         throw error;
