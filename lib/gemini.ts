@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export function getGeminiModel() {
+export function geminiModel() {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
 
   if (!apiKey) {
