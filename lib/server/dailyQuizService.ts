@@ -1,6 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebaseAdmin";
-import { geminiModel } from "@/lib/gemini";
+import { geminiModel, getGeminiModel } from "@/lib/gemini";
 import { publishNotification } from "@/lib/server/notificationService";
 
 type DailyQuizInput = {
@@ -193,6 +193,7 @@ Return:
 }
 `;
 
+  const geminiModel = getGeminiModel();
   const result = await geminiModel.generateContent(prompt);
   const raw = result.response.text().replace(/```json|```/g, "").trim();
 
