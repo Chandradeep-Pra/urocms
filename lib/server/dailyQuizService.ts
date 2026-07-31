@@ -265,6 +265,7 @@ Return STRICT JSON only (no markdown, no commentary):
 }
 `;
 
+  const geminiModel = getGeminiModel();
   const result = await geminiModel.generateContent(prompt);
   const raw = result.response.text();
   const cleaned = raw.replace(/```json|```/g, "").trim();
