@@ -96,8 +96,8 @@ export function WaitlistDialog({
               value: `${name}-${dialCode}`,
             };
           })
-          .filter(Boolean)
-          .sort((a, b) => a.label.localeCompare(b.label)) as CountryOption[];
+          .filter((option): option is CountryOption => option !== null)
+          .sort((a, b) => a.label.localeCompare(b.label));
 
         if (!cancelled && nextCountries.length > 0) {
           setCountries(nextCountries);

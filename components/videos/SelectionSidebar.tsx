@@ -24,7 +24,12 @@ export default function SectionSidebar({
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const items = [
-    { id: "all", title: "All Videos", count: null as number | null },
+    {
+      id: "all",
+      title: "All Videos",
+      sortOrder: undefined as number | undefined,
+      count: null as number | null,
+    },
     ...sections.map((section) => ({
       id: section.id,
       title: section.title,

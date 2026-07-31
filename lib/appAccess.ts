@@ -123,11 +123,8 @@ export function getQuizAccess(tier: AppTier, quizType: QuizType) {
     allowed: true,
     mode: "preview" as const,
     previewLimit: FREE_CHAPTER_PREVIEW_LIMIT,
-    requiredTier: tier === "guest" ? ("free" as const) : null,
-    reason:
-      tier === "guest"
-        ? `Sign in for full access. Preview the first ${FREE_CHAPTER_PREVIEW_LIMIT} questions now.`
-        : `Preview mode: first ${FREE_CHAPTER_PREVIEW_LIMIT} questions only.`,
+    requiredTier: null,
+    reason: `Preview mode: first ${FREE_CHAPTER_PREVIEW_LIMIT} questions only.`,
   };
 }
 

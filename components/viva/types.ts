@@ -252,14 +252,14 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
     attempts: Array.isArray(rawCase?.attempts) ? rawCase.attempts : [],
     publicParticipants: Array.isArray(rawCase?.publicParticipants)
       ? rawCase.publicParticipants
-          .map((item) => ({
+          .map((item: Partial<PublicVivaParticipant>) => ({
             name: String(item?.name || "").trim(),
             email: String(item?.email || "").trim().toLowerCase(),
             source: String(item?.source || "").trim(),
             status: "started" as const,
             startedAt: String(item?.startedAt || ""),
           }))
-          .filter((item) => item.email)
+          .filter((item: PublicVivaParticipant) => Boolean(item.email))
       : [],
     isActive: typeof rawCase?.isActive === "boolean" ? rawCase.isActive : true,
   };

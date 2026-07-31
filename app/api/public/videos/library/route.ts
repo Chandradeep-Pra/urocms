@@ -1,6 +1,14 @@
 import { NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { CACHE_HEADERS, jsonWithApiMetrics, publicJsonResponse } from "@/lib/server/apiMetrics";
+import type { DocumentData, Query } from "firebase-admin/firestore";
+
+type VideoDocument = Record<string, unknown> & {
+  sectionId?: unknown;
+  provider?: unknown;
+  storagePath?: unknown;
+  title?: unknown;
+};
 
 function normalizeSortOrder(value: unknown, fallback: number) {
   const parsed = Number(value);
@@ -17,7 +25,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sectionId = searchParams.get("sectionId");
     const includeVideos = searchParams.get("includeVideos") !== "0";
-    let query = adminDb.collection("videoItems");
+    let query: Query<DocumentData> = adminDb.collection("videoItems");
 
     if (sectionId) {
       query = query.where("sectionId", "==", sectionId);
@@ -30,7 +38,7 @@ export async function GET(req: NextRequest) {
 
     const sectionMeta = new Map(
       sectionsSnapshot.docs.map((doc, index) => {
-        const data = doc.data() ?? {};
+        const data = doc.data() as VideoDocument;
         return [
           doc.id,
           {
@@ -45,7 +53,7 @@ export async function GET(req: NextRequest) {
 
     const videos = snapshot.docs
       .map((doc, index) => {
-        const data = doc.data() ?? {};
+        const data = doc.data() as VideoDocument;
         const section = sectionMeta.get(String(data.sectionId || ""));
         const accessTier = normalizeTier(data.accessTier);
         const sectionAccessTier = normalizeTier(data.sectionAccessTier || section?.accessTier);

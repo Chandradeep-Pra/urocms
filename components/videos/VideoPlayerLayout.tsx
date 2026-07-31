@@ -14,7 +14,13 @@ interface Props {
 
 /* ---------------------- URL PARSER ---------------------- */
 
-function parseVideo(url: string) {
+type ParsedVideo =
+  | { provider: "youtube"; youtubeId: string | null }
+  | { provider: "drive"; driveFileId: string; previewUrl: string }
+  | { provider: "file"; streamUrl: string }
+  | { provider: "drive-embed"; previewUrl: string; webViewUrl: string };
+
+function parseVideo(url: string): ParsedVideo {
   // YouTube
   if (url.includes("youtube") || url.includes("youtu.be")) {
     const match = url.match(
@@ -62,7 +68,7 @@ export default function VideoPlayerLayout({
   const [loadingPlayback, setLoadingPlayback] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
 
-  const parsed = useMemo(
+  const parsed = useMemo<ParsedVideo | null>(
     () => {
       if (!video) return null;
 
@@ -294,7 +300,7 @@ export default function VideoPlayerLayout({
               ) : (
                 <video
                   ref={videoRef}
-                  src={parsed?.streamUrl}
+                  src={parsed?.provider === "file" ? parsed.streamUrl : undefined}
                   className={`${
                     isFullscreen
                       ? "w-full h-full object-contain"

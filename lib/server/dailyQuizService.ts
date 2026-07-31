@@ -50,12 +50,16 @@ function validateDailyQuizPayload(payload: ReturnType<typeof normalizeDailyQuizP
 function isQuizExpired(expiresAt?: { _seconds?: number; toDate?: () => Date } | string | Date | null) {
   if (!expiresAt) return false;
 
-  const date =
-    typeof expiresAt === "object" && "_seconds" in expiresAt
-      ? new Date((expiresAt._seconds || 0) * 1000)
-      : typeof expiresAt === "object" && expiresAt && "toDate" in expiresAt
-        ? expiresAt.toDate()
-        : new Date(expiresAt);
+  let date: Date;
+  if (expiresAt instanceof Date) {
+    date = expiresAt;
+  } else if (typeof expiresAt === "string") {
+    date = new Date(expiresAt);
+  } else if (typeof expiresAt.toDate === "function") {
+    date = expiresAt.toDate();
+  } else {
+    date = new Date((expiresAt._seconds || 0) * 1000);
+  }
 
   return Number.isFinite(date.getTime()) && date.getTime() <= Date.now();
 }
@@ -362,10 +366,18 @@ export async function getDailyQuizDetails(id: string) {
   }
 
   const attemptsSnap = await quizRef.collection("attempts").orderBy("createdAt", "desc").get();
-  const attemptsRaw = attemptsSnap.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  const attemptsRaw = attemptsSnap.docs.map((doc) => {
+    const data = doc.data() as Record<string, unknown> & {
+      uid?: unknown;
+      selectedIndex?: unknown;
+      correct?: unknown;
+      createdAt?: unknown;
+    };
+    return {
+      id: doc.id,
+      ...data,
+    };
+  });
   const userIds = Array.from(
     new Set(attemptsRaw.map((attempt) => String(attempt.uid || "").trim()).filter(Boolean))
   );

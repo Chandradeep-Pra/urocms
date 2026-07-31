@@ -123,7 +123,7 @@ export async function GET(
       previewLimit: mockAccess.previewLimit ?? null,
       totalQuestionCount: questions.length,
       returnedQuestionCount: questions.length,
-      requiredTier: isPublic ? null : mockAccess.mode === "locked" ? "paid" : null,
+      requiredTier: null,
       reason: mockAccess.reason ?? null,
       courseIds: mockAccess.courseIds,
       isPublic,

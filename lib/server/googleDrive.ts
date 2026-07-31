@@ -7,6 +7,28 @@ const GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 
 let cachedToken: { accessToken: string; expiresAt: number } | null = null;
 
+type DriveFile = {
+  id?: string;
+  name?: string;
+  mimeType?: string;
+  webViewLink?: string;
+  thumbnailLink?: string;
+  iconLink?: string;
+  modifiedTime?: string;
+  size?: string;
+};
+
+type DrivePermission = {
+  id?: string;
+  type?: string;
+  role?: string;
+  emailAddress?: string;
+  displayName?: string;
+  domain?: string;
+  allowFileDiscovery?: boolean;
+  deleted?: boolean;
+};
+
 function getServiceAccountCredentials() {
   const googleClientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL || "";
   const googlePrivateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || "";
@@ -248,7 +270,7 @@ export async function listDriveFolderVideos(folderId: string) {
   }
 
   const data = await response.json();
-  const files = Array.isArray(data.files) ? data.files : [];
+  const files: DriveFile[] = Array.isArray(data.files) ? data.files : [];
 
   return files
     .filter((file) => typeof file?.mimeType === "string" && file.mimeType.startsWith("video/"))
@@ -294,7 +316,7 @@ export async function listDriveFolderContents(folderId: string) {
   }
 
   const data = await response.json();
-  const files = Array.isArray(data.files) ? data.files : [];
+  const files: DriveFile[] = Array.isArray(data.files) ? data.files : [];
 
   const folders = files
     .filter((file) => file?.mimeType === "application/vnd.google-apps.folder")
@@ -348,7 +370,7 @@ export async function listAccessibleDriveFolders() {
   }
 
   const data = await response.json();
-  const files = Array.isArray(data.files) ? data.files : [];
+  const files: DriveFile[] = Array.isArray(data.files) ? data.files : [];
 
   return files.map((file) => ({
     id: file.id,
@@ -385,7 +407,9 @@ export async function listDriveItemPermissions(itemId: string) {
   }
 
   const data = await response.json();
-  const permissions = Array.isArray(data.permissions) ? data.permissions : [];
+  const permissions: DrivePermission[] = Array.isArray(data.permissions)
+    ? data.permissions
+    : [];
 
   return permissions.map((permission) => ({
     id: permission.id,

@@ -158,13 +158,14 @@ useEffect(() => {
   if (!authReady || !authUser || handledAuthUidRef.current === authUser.uid) return;
 
   handledAuthUidRef.current = authUser.uid;
+  const currentUser = authUser;
 
   let cancelled = false;
 
   async function routeLoggedInUser() {
     try {
       setCheckingDestination(true);
-      const token = await authUser.getIdToken();
+      const token = await currentUser.getIdToken();
       const isAdmin = await verifyAdminAccess(token);
 
       if (cancelled) return;
@@ -174,7 +175,7 @@ useEffect(() => {
         return;
       }
 
-      await syncTestingZoneAuth(authUser, token);
+      await syncTestingZoneAuth(currentUser, token);
       if (!cancelled) {
         window.location.assign(USER_APP_URL);
       }

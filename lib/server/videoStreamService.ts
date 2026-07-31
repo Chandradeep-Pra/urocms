@@ -55,12 +55,17 @@ export async function buildDriveVideoStreamResponse(params: {
       storageBucket: typeof video.storageBucket === "string" ? video.storageBucket : undefined,
       rangeHeader: params.rangeHeader,
     });
-    const headers = new Headers(storageResponse.headers);
+    const headers = new Headers();
+    Object.entries(storageResponse.headers).forEach(([name, value]) => {
+      if (typeof value === "string") {
+        headers.set(name, value);
+      }
+    });
     headers.set("content-disposition", `inline; filename="${String(video.title || "video")}.mp4"`);
     headers.set("cache-control", "private, max-age=0, must-revalidate");
     headers.set("x-content-type-options", "nosniff");
 
-    return new NextResponse(Readable.toWeb(storageResponse.stream), {
+    return new NextResponse(Readable.toWeb(storageResponse.stream) as never, {
       status: storageResponse.status,
       headers,
     });

@@ -29,7 +29,7 @@ export async function listVideoSections(): Promise<VideoSectionRecord[]> {
   const snapshot = await adminDb.collection("videoSections").get();
 
   return snapshot.docs
-    .map((doc, index) => ({
+    .map((doc, index): VideoSectionRecord => ({
       id: doc.id,
       title: String(doc.data().title || ""),
       accessTier: doc.data().accessTier === "paid" ? "paid" : "free",

@@ -3,6 +3,14 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 import { privateJsonResponse } from "@/lib/server/apiMetrics";
+import type { DocumentData, Query } from "firebase-admin/firestore";
+
+type VideoDocument = Record<string, unknown> & {
+  sectionId?: unknown;
+  provider?: unknown;
+  storagePath?: unknown;
+  title?: unknown;
+};
 
 function normalizeSortOrder(value: unknown, fallback: number) {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -30,7 +38,7 @@ export async function GET(req: NextRequest) {
     const sectionId = searchParams.get("sectionId");
     const includeVideos = searchParams.get("includeVideos") !== "0";
 
-    let query = adminDb.collection("videoItems");
+    let query: Query<DocumentData> = adminDb.collection("videoItems");
 
     if (sectionId) {
       query = query.where("sectionId", "==", sectionId);
@@ -48,24 +56,27 @@ export async function GET(req: NextRequest) {
     );
 
     const allVideos = snapshot.docs
-      .map((doc, index) => ({
+      .map((doc, index) => {
+        const data = doc.data() as VideoDocument;
+        return ({
         id: doc.id,
-        ...doc.data(),
-        accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
+        ...data,
+        accessTier: data.accessTier === "paid" ? "paid" : "free",
         effectiveAccessTier:
-          doc.data().effectiveAccessTier === "paid" ? "paid" : "free",
-        sortOrder: normalizeSortOrder(doc.data().sortOrder, index + 1),
+          data.effectiveAccessTier === "paid" ? "paid" : "free",
+        sortOrder: normalizeSortOrder(data.sortOrder, index + 1),
         access: {
           allowed:
-            doc.data().effectiveAccessTier === "paid"
+            data.effectiveAccessTier === "paid"
               ? auth.user.tier === "paid"
               : auth.user.tier !== "guest",
           requiredTier:
-            doc.data().effectiveAccessTier === "paid" ? "paid" : "free",
+            data.effectiveAccessTier === "paid" ? "paid" : "free",
         },
         requiresGoogleSession: false,
-        isSyncedToCloudStorage: Boolean(doc.data().storagePath),
-      }))
+        isSyncedToCloudStorage: Boolean(data.storagePath),
+      });
+      })
       .map((video) => {
         const access = accessContext.getVideoAccess({
           id: String(video.id),

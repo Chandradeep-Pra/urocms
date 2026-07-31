@@ -295,7 +295,7 @@ export async function syncDriveVideoToStorage(videoId: string) {
     },
   });
 
-  await pipeline(Readable.fromWeb(upstream.body as globalThis.ReadableStream), uploadStream);
+  await pipeline(Readable.fromWeb(upstream.body as never), uploadStream);
 
   await videoRef.update({
     storagePath,

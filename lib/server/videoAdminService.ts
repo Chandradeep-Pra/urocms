@@ -9,6 +9,12 @@ import {
   listDriveItemPermissions,
   updateDrivePermissionRole,
 } from "@/lib/server/googleDrive";
+import type { DocumentData, Query } from "firebase-admin/firestore";
+
+type VideoDocument = Record<string, unknown> & {
+  sectionId?: unknown;
+  title?: unknown;
+};
 
 function normalizeSortOrder(value: unknown, fallback: number) {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -29,7 +35,7 @@ export async function loadAdminVideoLibrary(params: {
   sectionId?: string | null;
   userId: string;
 }) {
-  let query = adminDb.collection("videoItems");
+  let query: Query<DocumentData> = adminDb.collection("videoItems");
 
   if (params.sectionId) {
     query = query.where("sectionId", "==", params.sectionId);
@@ -49,12 +55,15 @@ export async function loadAdminVideoLibrary(params: {
   );
 
   const videos = snapshot.docs
-    .map((doc, index) => ({
+    .map((doc, index) => {
+      const data = doc.data() as VideoDocument;
+      return ({
       id: doc.id,
-      ...doc.data(),
-      accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
-      sortOrder: normalizeSortOrder(doc.data().sortOrder, index + 1),
-    }))
+      ...data,
+      accessTier: data.accessTier === "paid" ? "paid" : "free",
+      sortOrder: normalizeSortOrder(data.sortOrder, index + 1),
+    });
+    })
     .sort((a, b) => {
       const sectionA = sectionOrderMap.get(String(a.sectionId || "")) ?? Number.MAX_SAFE_INTEGER;
       const sectionB = sectionOrderMap.get(String(b.sectionId || "")) ?? Number.MAX_SAFE_INTEGER;

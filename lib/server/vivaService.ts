@@ -1,4 +1,9 @@
 import { FieldValue } from "firebase-admin/firestore";
+
+type VivaCaseDocument = Record<string, unknown> & {
+  folderId?: unknown;
+  accessType?: unknown;
+};
 import { adminDb } from "@/lib/firebaseAdmin";
 
 type CourseSectionLike = {
@@ -189,15 +194,16 @@ export async function createVivaCase(input: Record<string, unknown>) {
   };
 }
 
-export async function getVivaCaseById(id: string) {
+export async function getVivaCaseById(id: string): Promise<VivaCaseDocument & { id: string }> {
   const doc = await adminDb.collection("vivaCases").doc(id).get();
   if (!doc.exists) {
     throw new Error("Case not found");
   }
 
+  const data = doc.data() as VivaCaseDocument;
   return {
     id: doc.id,
-    ...doc.data(),
+    ...data,
   };
 }
 

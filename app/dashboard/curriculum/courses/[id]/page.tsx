@@ -21,6 +21,7 @@ import {
   type CourseMemberAccessGrant,
   type CourseMemberUser,
   type CourseSection,
+  type CourseSectionGrant,
   type SectionCatalog,
 } from "@/components/dashboard/courses/types";
 import { EmptyState } from "@/components/dashboard/shared/EmptyState";
@@ -317,7 +318,7 @@ export default function CourseDetailPage() {
             ? existingGrant?.contentIds || []
             : [],
         vivaMinutes: existingGrant?.vivaMinutes || 0,
-      };
+      } satisfies CourseSectionGrant;
 
       const withoutCurrent = grant.sectionGrants.filter(
         (sectionGrant) => sectionGrant.sectionId !== sectionId
@@ -367,7 +368,7 @@ export default function CourseDetailPage() {
           ...withoutCurrent,
           {
             ...existingGrant,
-            accessMode: "partial",
+            accessMode: "partial" as const,
             contentIds: nextContentIds,
           },
         ],

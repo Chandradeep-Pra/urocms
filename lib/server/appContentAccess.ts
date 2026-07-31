@@ -9,6 +9,19 @@ import {
 } from "@/lib/server/appPlanAccess";
 import type { AppUserSession } from "@/lib/server/appSession";
 
+type CourseSectionGrant = {
+  sectionId: string;
+  accessMode: "full" | "partial";
+  contentIds: string[];
+  vivaMinutes: number;
+};
+
+type CourseMemberGrant = {
+  userId: string;
+  email?: string;
+  sectionGrants: CourseSectionGrant[];
+};
+
 type CourseRecord = {
   id: string;
   title: string;
@@ -18,16 +31,7 @@ type CourseRecord = {
   accessTier: "free" | "members";
   showOnApp: boolean;
   memberUserIds: string[];
-  memberAccessGrants: Array<{
-    userId: string;
-    email?: string;
-    sectionGrants: Array<{
-      sectionId: string;
-      accessMode: "full" | "partial";
-      contentIds: string[];
-      vivaMinutes: number;
-    }>;
-  }>;
+  memberAccessGrants: CourseMemberGrant[];
   sections: any[];
 };
 
@@ -192,7 +196,7 @@ async function loadVisibleCourses() {
                       ? Math.max(0, Number(sectionGrant?.vivaMinutes))
                       : 0,
                   }))
-                  .filter((sectionGrant) => Boolean(sectionGrant.sectionId))
+                  .filter((sectionGrant: CourseSectionGrant) => Boolean(sectionGrant.sectionId))
               : [],
           }))
         : [],
@@ -287,7 +291,7 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
 
     return (
       total +
-      grant.sectionGrants.reduce((sectionTotal, sectionGrant) => {
+       grant.sectionGrants.reduce((sectionTotal: number, sectionGrant: CourseSectionGrant) => {
         const section = course.sections.find(
           (item: any) =>
             item?.id === sectionGrant.sectionId && item?.contentType === "ai-vivas"
@@ -346,7 +350,7 @@ export async function buildAppContentAccessContext(user: AppUserSession) {
     const grant = userSectionGrantMap.get(courseId);
     if (!grant) return null;
     return (
-      grant.sectionGrants.find((sectionGrant) => sectionGrant.sectionId === sectionId) ??
+      grant.sectionGrants.find((sectionGrant: CourseSectionGrant) => sectionGrant.sectionId === sectionId) ??
       null
     );
   }

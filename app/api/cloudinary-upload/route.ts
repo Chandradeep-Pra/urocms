@@ -24,7 +24,7 @@ function inferImageMimeType(file: File) {
   return "";
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const formData = await req.formData();
     const file = formData.get("file");
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(bytes);
 
     // Upload to Cloudinary using stream
-    return new Promise((resolve) => {
+    return new Promise<NextResponse>((resolve) => {
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: folder,

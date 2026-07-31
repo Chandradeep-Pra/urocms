@@ -20,7 +20,7 @@ export function LazyToaster() {
     const idleId =
       "requestIdleCallback" in window
         ? window.requestIdleCallback(load, { timeout: 2000 })
-        : window.setTimeout(load, 1200);
+        : globalThis.setTimeout(load, 1200);
 
     return () => {
       if ("cancelIdleCallback" in window && typeof idleId === "number") {

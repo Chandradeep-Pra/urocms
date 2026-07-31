@@ -3,6 +3,13 @@ import {
   deleteVideoAssetsFromStorage,
   saveVideoToFirestore,
 } from "@/lib/server/firestoreVideoService";
+import type { DocumentData, Query } from "firebase-admin/firestore";
+
+type VideoDocument = Record<string, unknown> & {
+  sectionId?: unknown;
+  title?: unknown;
+  thumbnailUrl?: unknown;
+};
 
 export interface VideoItemInput {
   title: string;
@@ -30,7 +37,7 @@ function normalizeSortOrder(value: unknown, fallback: number) {
 }
 
 export async function listVideoItems(sectionId?: string) {
-  let query = adminDb.collection("videoItems");
+  let query: Query<DocumentData> = adminDb.collection("videoItems");
 
   if (sectionId) {
     query = query.where("sectionId", "==", sectionId);
@@ -39,13 +46,16 @@ export async function listVideoItems(sectionId?: string) {
   const snapshot = await query.get();
 
   return snapshot.docs
-    .map((doc, index) => ({
+    .map((doc, index) => {
+      const data = doc.data() as VideoDocument;
+      return ({
       id: doc.id,
-      ...doc.data(),
-      accessTier: doc.data().accessTier === "paid" ? "paid" : "free",
-      thumbnailUrl: doc.data().thumbnailUrl || "",
-      sortOrder: normalizeSortOrder(doc.data().sortOrder, index + 1),
-    }))
+      ...data,
+      accessTier: data.accessTier === "paid" ? "paid" : "free",
+      thumbnailUrl: typeof data.thumbnailUrl === "string" ? data.thumbnailUrl : "",
+      sortOrder: normalizeSortOrder(data.sortOrder, index + 1),
+    });
+    })
     .sort((a, b) => {
       const sectionA = String(a.sectionId || "");
       const sectionB = String(b.sectionId || "");
