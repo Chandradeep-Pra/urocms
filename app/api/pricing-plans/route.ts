@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import {
   createPricingPlan,
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     const id = await createPricingPlan(input);
+    revalidatePath("/pricing");
     return NextResponse.json({ success: true, id });
   } catch (error) {
     console.error("Pricing plan create error:", error);

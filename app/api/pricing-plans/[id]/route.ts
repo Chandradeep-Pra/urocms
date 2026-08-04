@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import {
   deletePricingPlan,
@@ -24,6 +25,7 @@ export async function PATCH(
     }
 
     await updatePricingPlan(id, input);
+    revalidatePath("/pricing");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Pricing plan update error:", error);
@@ -41,6 +43,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     await deletePricingPlan(id);
+    revalidatePath("/pricing");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Pricing plan delete error:", error);
