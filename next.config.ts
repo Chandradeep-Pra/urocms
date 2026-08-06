@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
 
-  serverExternalPackages: ["firebase-admin"],
+  serverExternalPackages: ["firebase-admin", "@google-cloud/tasks"],
 
   async rewrites() {
     return [

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { sendPaymentQueryConfirmationEmail } from "@/lib/server/emailService";
+import {
+  buildCourseCheckoutUrl,
+  schedulePaymentQueryFollowUp,
+} from "@/lib/server/paymentQueryFollowUp";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,12 +14,13 @@ export async function POST(req: NextRequest) {
     const name = String(body?.name || "").trim();
     const query = String(body?.query || "").trim();
     const planId = String(body?.planId || "").trim();
+    const versionId = String(body?.versionId || "").trim();
     const couponCode = String(body?.couponCode || "").trim().toUpperCase();
     const platform = body?.platform === "web" ? "web" : "mobile";
 
-    if (!name || !email || !query || !planId) {
+    if (!name || !email || !query || !planId || !versionId) {
       return NextResponse.json(
-        { error: "Name, email, plan and payment query are required" },
+        { error: "Name, email, plan, plan version and payment query are required" },
         { status: 400 },
       );
     }
@@ -39,6 +44,13 @@ export async function POST(req: NextRequest) {
     }
 
     const planName = String(planDoc.data()?.name || "Untitled plan");
+    const versions = Array.isArray(planDoc.data()?.versions) ? planDoc.data()?.versions : [];
+    const version = versions.find(
+      (item: Record<string, unknown>) => String(item?.id || "") === versionId,
+    );
+    if (!version) {
+      return NextResponse.json({ error: "Selected plan version was not found" }, { status: 404 });
+    }
     const couponDoc = couponSnap && !couponSnap.empty ? couponSnap.docs[0] : null;
     const couponName = couponDoc
       ? String(couponDoc.data().code || couponCode)
@@ -50,6 +62,8 @@ export async function POST(req: NextRequest) {
       query,
       planId,
       planName,
+      versionId,
+      versionLabel: String(version.durationLabel || `${Number(version.months || 0)} months`),
       couponId: couponDoc?.id || null,
       couponName,
       couponCode: couponCode || null,
@@ -88,6 +102,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const checkoutUrl = buildCourseCheckoutUrl({ planId, versionId, queryId: ref.id });
+    let followUpScheduled = false;
+    try {
+      const scheduled = await schedulePaymentQueryFollowUp(ref.id);
+      followUpScheduled = true;
+      await ref.set(
+        {
+          checkoutUrl,
+          followUpEmail: {
+            scheduled: true,
+            taskName: scheduled.taskName,
+            scheduledFor: scheduled.scheduledFor,
+          },
+        },
+        { merge: true },
+      );
+    } catch (scheduleError) {
+      console.error("Payment query follow-up scheduling error:", scheduleError);
+      await ref.set(
+        {
+          checkoutUrl,
+          followUpEmail: {
+            scheduled: false,
+            error:
+              scheduleError instanceof Error ? scheduleError.message : "Task scheduling failed",
+            attemptedAt: FieldValue.serverTimestamp(),
+          },
+        },
+        { merge: true },
+      );
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -96,6 +142,8 @@ export async function POST(req: NextRequest) {
         planName,
         couponName,
         emailSent,
+        checkoutUrl,
+        followUpScheduled,
       },
       { status: 201 },
     );

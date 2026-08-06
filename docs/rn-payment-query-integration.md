@@ -17,12 +17,13 @@ Content-Type: application/json
   "email": "student@example.com",
   "query": "My coupon is not working for this plan.",
   "planId": "PLAN_ID",
+  "versionId": "VERSION_ID",
   "couponCode": "WELCOME10",
   "platform": "mobile"
 }
 ```
 
-`name`, `email`, `query`, and `planId` are required. `couponCode` is optional.
+`name`, `email`, `query`, `planId`, and `versionId` are required. `couponCode` is optional.
 
 ## API function
 
@@ -34,6 +35,7 @@ type PaymentQueryInput = {
   email: string;
   query: string;
   planId: string;
+  versionId: string;
   couponCode?: string;
 };
 
@@ -44,6 +46,8 @@ type PaymentQueryResponse = {
   planName: string;
   couponName: string;
   emailSent: boolean;
+  checkoutUrl: string;
+  followUpScheduled: boolean;
 };
 
 export async function raisePaymentQuery(
@@ -91,13 +95,16 @@ async function submitPaymentQuery() {
       email: user.email,
       query: paymentQuery.trim(),
       planId: selectedPlan.id,
+      versionId: selectedVersion.id,
       couponCode,
     });
 
     setPaymentQuery("");
     Alert.alert(
       "Query Submitted",
-      `Your reference is ${result.queryId}. A confirmation email has been sent to ${user.email}.`,
+      result.emailSent
+        ? `Your reference is ${result.queryId}. A confirmation email has been sent to ${user.email}.`
+        : `Your reference is ${result.queryId}. Your query was saved successfully.`,
     );
   } catch (error) {
     Alert.alert(
@@ -121,15 +128,28 @@ Disable the submit button while `submitting` is `true` to prevent duplicate quer
   "queryId": "QUERY_ID",
   "planName": "Urologics Elite Viva",
   "couponName": "WELCOME10",
-  "emailSent": true
+  "emailSent": true,
+  "checkoutUrl": "https://urologics.co.uk/checkout?planId=PLAN_ID&versionId=VERSION_ID&queryId=QUERY_ID",
+  "followUpScheduled": true
 }
 ```
 
 If `emailSent` is `false`, the query was still saved for the admin team. Show the reference number, but do not claim that the email was sent.
+
+When `followUpScheduled` is `true`, the user receives another email approximately one minute later. That email links to `checkoutUrl`. The website asks the user to sign in when necessary, validates the plan and version, and then shows the exact payment button configured for that course version.
+
+The RN app must send:
+
+- The authenticated user's `name` and `email`
+- The selected plan's Firestore `planId`
+- The selected duration's `versionId`
+- The entered `couponCode`, when available
+- The user's payment `query`
+
+Do not send a checkout/payment URL from RN. The server retrieves the authoritative checkout URL from the selected plan version.
 
 ```ts
 const confirmation = result.emailSent
   ? `Reference: ${result.queryId}. A confirmation email was sent.`
   : `Reference: ${result.queryId}. Your query was saved successfully.`;
 ```
-

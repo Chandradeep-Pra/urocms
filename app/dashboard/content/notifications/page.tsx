@@ -25,10 +25,13 @@ type PaymentQueryItem = {
   name: string;
   email: string;
   planName: string;
+  versionLabel: string;
   couponName: string;
   platform: "mobile" | "web";
   status: string;
   emailSent: boolean;
+  followUpScheduled: boolean;
+  followUpSent: boolean;
   createdAt?: { _seconds?: number } | string | null;
 };
 
@@ -173,11 +176,15 @@ export default function NotificationManagerPage() {
                       </p>
                       <div className="grid gap-1 text-sm text-slate-600 sm:grid-cols-2">
                         <p><span className="font-medium text-slate-800">Plan:</span> {item.planName}</p>
+                        <p><span className="font-medium text-slate-800">Version:</span> {item.versionLabel}</p>
                         <p><span className="font-medium text-slate-800">Coupon:</span> {item.couponName}</p>
                       </div>
                       <p className="rounded-xl bg-white p-3 text-sm leading-6 text-slate-700">{item.body}</p>
                       <p className="text-xs text-slate-500">
                         Confirmation email: {item.emailSent ? "sent" : "not sent"} · Reference: {item.id}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        One-minute follow-up: {item.followUpSent ? "sent" : item.followUpScheduled ? "scheduled" : "not scheduled"}
                       </p>
                     </div>
                     <p className="shrink-0 text-xs text-slate-500">

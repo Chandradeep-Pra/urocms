@@ -97,7 +97,11 @@ function getSafeAppRedirect(rawRedirect: string | null) {
     const redirectUrl = new URL(rawRedirect)
 
     if (ALLOWED_APP_REDIRECT_ORIGINS.has(redirectUrl.origin)) {
-      if (redirectUrl.origin === "https://urologics.co.uk" && !redirectUrl.pathname.startsWith("/web")) {
+      if (
+        redirectUrl.origin === "https://urologics.co.uk" &&
+        !redirectUrl.pathname.startsWith("/web") &&
+        redirectUrl.pathname !== "/checkout"
+      ) {
         return NON_ADMIN_REDIRECT_URL
       }
 

@@ -283,3 +283,56 @@ Urologics Support`,
     `,
   });
 }
+
+export async function sendCouponCheckoutFollowUpEmail(params: {
+  to: string;
+  name?: string | null;
+  planName: string;
+  couponName?: string | null;
+  checkoutUrl: string;
+}) {
+  const { user, transporter } = createEmailTransporter();
+  const requesterName = params.name?.trim() || "there";
+  const safeName = escapeHtml(requesterName);
+  const safePlanName = escapeHtml(params.planName);
+  const safeCouponName = escapeHtml(params.couponName?.trim() || "Not provided");
+  const safeCheckoutUrl = escapeHtml(params.checkoutUrl);
+
+  await transporter.sendMail({
+    from: `"Urologics" <${user}>`,
+    to: params.to,
+    subject: `Continue your ${params.planName} checkout on Urologics`,
+    text: `Dear ${requesterName},
+
+We are sorry that the coupon didn't work. Please try it on our website.
+
+Plan: ${params.planName}
+Coupon: ${params.couponName?.trim() || "Not provided"}
+
+Continue checkout: ${params.checkoutUrl}
+
+If you are not signed in, you will be asked to log in before continuing to the course checkout page.
+
+Urologics Support`,
+    html: `
+      <div style="margin:0;background:#eefbff;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;color:#071014;">
+        <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid rgba(15,120,150,0.14);border-radius:28px;overflow:hidden;box-shadow:0 18px 50px rgba(15,120,150,0.14);">
+          <div style="padding:28px;background:linear-gradient(135deg,#f0fdff,#ffffff);text-align:center;">
+            <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;font-weight:800;color:#0f7896;">Urologics Support</div>
+            <h1 style="margin:10px 0 0;font-size:27px;color:#071014;">Continue on our website</h1>
+          </div>
+          <div style="padding:24px 30px 32px;">
+            <p style="font-size:16px;line-height:1.7;">Dear ${safeName},</p>
+            <p style="font-size:16px;line-height:1.7;color:rgba(7,16,20,0.72);">We are sorry that the coupon didn't work. Please try it on our website.</p>
+            <div style="margin:20px 0;padding:16px;border-radius:18px;background:#f4fbfd;font-size:14px;line-height:1.8;">
+              <strong>Plan:</strong> ${safePlanName}<br />
+              <strong>Coupon:</strong> ${safeCouponName}
+            </div>
+            <a href="${safeCheckoutUrl}" style="display:block;margin:24px 0;padding:16px 22px;border-radius:18px;background:#0f7896;color:#ffffff;text-align:center;text-decoration:none;font-weight:800;font-size:15px;">Open course checkout</a>
+            <p style="font-size:13px;line-height:1.7;color:rgba(7,16,20,0.55);">If you are not signed in, we will ask you to log in before opening the checkout page.</p>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+}

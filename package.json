@@ -12,6 +12,7 @@
     "import:grand-mock-1": "node scripts/import-grand-mock-1.js"
   },
   "dependencies": {
+    "@google-cloud/tasks": "^6.3.0",
     "@google/generative-ai": "^0.24.1",
     "@opentelemetry/api": "^1.9.0",
     "@types/nodemailer": "^8.0.1",

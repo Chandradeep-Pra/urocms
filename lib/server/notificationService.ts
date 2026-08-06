@@ -189,11 +189,14 @@ export async function listAdminPaymentQueryNotifications(limit = 100) {
       email: String(data.email || ""),
       planId: String(data.planId || ""),
       planName: String(data.planName || "Unknown plan"),
+      versionLabel: String(data.versionLabel || "Unknown version"),
       couponId: data.couponId ? String(data.couponId) : null,
       couponName: String(data.couponName || data.couponCode || "Not provided"),
       platform: data.platform === "web" ? "web" : "mobile",
       status: String(data.status || "open"),
       emailSent: data.confirmationEmail?.sent === true,
+      followUpScheduled: data.followUpEmail?.scheduled === true,
+      followUpSent: data.followUpEmail?.sent === true,
       createdAt: data.createdAt ?? null,
     };
   });
