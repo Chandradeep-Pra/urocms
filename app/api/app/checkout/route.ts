@@ -11,6 +11,27 @@ function isSafeCheckoutUrl(value: string) {
   }
 }
 
+function isCouponCurrentlyActive(data: Record<string, unknown>) {
+  if (data.isActive === false) return false;
+  const now = Date.now();
+  const parseDate = (value: unknown) => {
+    if (!value) return null;
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "toDate" in value &&
+      typeof (value as { toDate?: () => Date }).toDate === "function"
+    ) {
+      return (value as { toDate: () => Date }).toDate().getTime();
+    }
+    const parsed = Date.parse(String(value));
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const startsAt = parseDate(data.startsAt);
+  const endsAt = parseDate(data.endsAt);
+  return (!startsAt || startsAt <= now) && (!endsAt || endsAt >= now);
+}
+
 export async function GET(req: NextRequest) {
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
@@ -21,7 +42,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Plan and version are required" }, { status: 400 });
   }
 
-  const planDoc = await getAdminDb().collection("pricingPlans").doc(planId).get();
+  const db = getAdminDb();
+  const planDoc = await db.collection("pricingPlans").doc(planId).get();
   if (!planDoc.exists || planDoc.data()?.isActive === false) {
     return NextResponse.json({ error: "Plan is unavailable" }, { status: 404 });
   }
@@ -40,6 +62,35 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Checkout is not configured for this plan" }, { status: 409 });
   }
 
+  const legacyCouponIds = versions
+    .map((item: Record<string, unknown>) => String(item?.couponId || ""))
+    .filter(Boolean);
+  const eligibleCouponIds = Array.from(
+    new Set([
+      ...(Array.isArray(plan.eligibleCouponIds)
+        ? plan.eligibleCouponIds.map((id: unknown) => String(id || ""))
+        : []),
+      ...legacyCouponIds,
+      String(plan.couponId || ""),
+    ].filter(Boolean)),
+  );
+  const couponDocs = eligibleCouponIds.length
+    ? await db.getAll(...eligibleCouponIds.map((id) => db.collection("pricingCoupons").doc(id)))
+    : [];
+  const coupons = couponDocs
+    .filter((doc) => doc.exists && isCouponCurrentlyActive(doc.data() ?? {}))
+    .map((doc) => {
+      const data = doc.data() ?? {};
+      return {
+        id: doc.id,
+        code: String(data.code || ""),
+        description: String(data.description || ""),
+        discountType: data.discountType === "amount" ? "amount" : "percent",
+        discountValue: Number(data.discountValue || 0),
+        isMarketing: doc.id === String(plan.marketingCouponId || plan.couponId || ""),
+      };
+    });
+
   return NextResponse.json({
     plan: {
       id: planDoc.id,
@@ -51,8 +102,9 @@ export async function GET(req: NextRequest) {
       months: Number(version.months || 0),
       durationLabel: String(version.durationLabel || ""),
       currency: String(plan.currency || "GBP"),
-      price: Number(version.discountedPrice ?? version.price ?? 0),
+      originalPrice: Number(version.price ?? version.originalPrice ?? 0),
     },
+    coupons,
     checkoutUrl,
     user: {
       uid: auth.user.uid,
