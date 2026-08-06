@@ -165,6 +165,16 @@ function CheckoutContent() {
         Math.floor((countdownMs % 3_600_000) / 60_000),
         Math.floor((countdownMs % 60_000) / 1000),
       ].map((part) => String(part).padStart(2, "0")).join(":");
+  const expiryDateLabel = appliedPricing?.expiresAt
+    ? new Intl.DateTimeFormat("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short",
+      }).format(new Date(appliedPricing.expiresAt))
+    : null;
 
   return (
     <div className="space-y-6">
@@ -258,9 +268,9 @@ function CheckoutContent() {
               <p className="flex items-center gap-2">
                 <Check className="h-4 w-4" /> Coupon {appliedPricing.couponCode} applied
               </p>
-              {countdownLabel ? (
-                <p className="rounded-full bg-emerald-100 px-3 py-1 font-mono text-xs tabular-nums">
-                  Offer ends in {countdownLabel}
+              {expiryDateLabel ? (
+                <p className="rounded-full bg-emerald-100 px-3 py-1 text-xs">
+                  Offer ends on {expiryDateLabel}
                 </p>
               ) : null}
             </motion.div>
