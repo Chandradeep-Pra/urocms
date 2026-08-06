@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import {
+  listAdminPaymentQueryNotifications,
   listPublishedNotifications,
   publishNotification,
 } from "@/lib/server/notificationService";
@@ -10,8 +11,11 @@ export async function GET(req: NextRequest) {
   if (response) return response;
 
   try {
-    const notifications = await listPublishedNotifications(100);
-    return NextResponse.json({ notifications });
+    const [notifications, paymentQueries] = await Promise.all([
+      listPublishedNotifications(100),
+      listAdminPaymentQueryNotifications(100),
+    ]);
+    return NextResponse.json({ notifications, paymentQueries });
   } catch (error) {
     console.error("Notifications fetch error:", error);
     return NextResponse.json({ error: "Failed to load notifications" }, { status: 500 });

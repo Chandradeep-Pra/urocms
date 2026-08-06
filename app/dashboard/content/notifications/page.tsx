@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Link2, Send, Sparkles } from "lucide-react";
+import { Bell, Link2, MailQuestion, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/client/adminApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,20 @@ type NotificationItem = {
   body: string;
   deepLink?: string | null;
   publishedAt?: { _seconds?: number } | string | null;
+};
+
+type PaymentQueryItem = {
+  id: string;
+  title: string;
+  body: string;
+  name: string;
+  email: string;
+  planName: string;
+  couponName: string;
+  platform: "mobile" | "web";
+  status: string;
+  emailSent: boolean;
+  createdAt?: { _seconds?: number } | string | null;
 };
 
 function formatNotificationDate(value: NotificationItem["publishedAt"]) {
@@ -33,6 +47,7 @@ export default function NotificationManagerPage() {
   const [deepLink, setDeepLink] = useState("");
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
+  const [paymentQueries, setPaymentQueries] = useState<PaymentQueryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function loadNotifications() {
@@ -41,6 +56,7 @@ export default function NotificationManagerPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to load notifications");
       setItems(data.notifications || []);
+      setPaymentQueries(data.paymentQueries || []);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load notifications");
     } finally {
@@ -117,6 +133,61 @@ export default function NotificationManagerPage() {
             <Send className="mr-2 h-4 w-4" />
             {saving ? "Publishing..." : "Publish Notification"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-3xl border shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MailQuestion className="h-5 w-5 text-amber-600" />
+            Payment Queries
+            {paymentQueries.length ? (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                {paymentQueries.length}
+              </span>
+            ) : null}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p className="text-sm text-slate-500">Loading payment queries...</p>
+          ) : paymentQueries.length === 0 ? (
+            <p className="text-sm text-slate-500">No payment queries raised yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {paymentQueries.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-base font-semibold text-slate-900">{item.title}</p>
+                        <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-amber-800">
+                          {item.status}
+                        </span>
+                        <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-600">
+                          {item.platform}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-700">
+                        {item.name} · {item.email}
+                      </p>
+                      <div className="grid gap-1 text-sm text-slate-600 sm:grid-cols-2">
+                        <p><span className="font-medium text-slate-800">Plan:</span> {item.planName}</p>
+                        <p><span className="font-medium text-slate-800">Coupon:</span> {item.couponName}</p>
+                      </div>
+                      <p className="rounded-xl bg-white p-3 text-sm leading-6 text-slate-700">{item.body}</p>
+                      <p className="text-xs text-slate-500">
+                        Confirmation email: {item.emailSent ? "sent" : "not sent"} · Reference: {item.id}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-xs text-slate-500">
+                      {formatNotificationDate(item.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

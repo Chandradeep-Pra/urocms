@@ -59,6 +59,7 @@ Content-Type: application/json
 
 ```json
 {
+  "name": "Student Name",
   "email": "student@example.com",
   "query": "My coupon was accepted but the checkout price did not change.",
   "planId": "PLAN_ID",

@@ -170,3 +170,31 @@ export async function listPublishedNotifications(limit = 50) {
     ...doc.data(),
   }));
 }
+
+export async function listAdminPaymentQueryNotifications(limit = 100) {
+  const snapshot = await getAdminDb()
+    .collection("paymentQueries")
+    .orderBy("createdAt", "desc")
+    .limit(limit)
+    .get();
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      kind: "payment-query",
+      title: "Payment query raised",
+      body: String(data.query || ""),
+      name: String(data.name || ""),
+      email: String(data.email || ""),
+      planId: String(data.planId || ""),
+      planName: String(data.planName || "Unknown plan"),
+      couponId: data.couponId ? String(data.couponId) : null,
+      couponName: String(data.couponName || data.couponCode || "Not provided"),
+      platform: data.platform === "web" ? "web" : "mobile",
+      status: String(data.status || "open"),
+      emailSent: data.confirmationEmail?.sent === true,
+      createdAt: data.createdAt ?? null,
+    };
+  });
+}

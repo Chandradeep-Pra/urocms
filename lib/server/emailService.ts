@@ -227,3 +227,59 @@ Founder Urologics and Mentor FRCS Urology`,
     `,
   });
 }
+
+export async function sendPaymentQueryConfirmationEmail(params: {
+  to: string;
+  name?: string | null;
+  queryId: string;
+  query: string;
+  planName: string;
+  couponName?: string | null;
+}) {
+  const { user, transporter } = createEmailTransporter();
+  const requesterName = params.name?.trim() || "there";
+  const safeName = escapeHtml(requesterName);
+  const safePlanName = escapeHtml(params.planName);
+  const safeCouponName = escapeHtml(params.couponName?.trim() || "Not provided");
+  const safeQuery = escapeHtml(params.query).replace(/\r?\n/g, "<br />");
+  const safeQueryId = escapeHtml(params.queryId);
+
+  await transporter.sendMail({
+    from: `"Urologics" <${user}>`,
+    to: params.to,
+    subject: `Payment query received - ${params.queryId}`,
+    text: `Dear ${requesterName},
+
+Your payment query has been raised successfully.
+
+Reference: ${params.queryId}
+Plan: ${params.planName}
+Coupon: ${params.couponName?.trim() || "Not provided"}
+Query: ${params.query}
+
+Our team will review it and contact you using this email address.
+
+Urologics Support`,
+    html: `
+      <div style="margin:0;background:#eefbff;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;color:#071014;">
+        <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid rgba(15,120,150,0.14);border-radius:28px;overflow:hidden;box-shadow:0 18px 50px rgba(15,120,150,0.14);">
+          <div style="padding:28px;background:linear-gradient(135deg,#f0fdff,#ffffff);text-align:center;">
+            <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;font-weight:800;color:#0f7896;">Urologics Support</div>
+            <h1 style="margin:10px 0 0;font-size:28px;color:#071014;">Payment query received</h1>
+          </div>
+          <div style="padding:24px 30px 32px;">
+            <p style="font-size:16px;line-height:1.7;">Dear ${safeName},</p>
+            <p style="font-size:15px;line-height:1.7;color:rgba(7,16,20,0.68);">Your query has been raised successfully. Our team will review it and contact you by email.</p>
+            <div style="margin:22px 0;padding:18px;border-radius:18px;background:#f4fbfd;font-size:14px;line-height:1.8;">
+              <strong>Reference:</strong> ${safeQueryId}<br />
+              <strong>Plan:</strong> ${safePlanName}<br />
+              <strong>Coupon:</strong> ${safeCouponName}<br />
+              <strong>Query:</strong><br />${safeQuery}
+            </div>
+            <p style="font-size:14px;color:rgba(7,16,20,0.58);">Please keep the reference number for future communication.</p>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+}

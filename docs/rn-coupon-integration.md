@@ -93,6 +93,7 @@ Show a **Raise Query** button in the payment-help section when needed.
 
 ```ts
 export async function raisePaymentQuery(input: {
+  name: string;
   email: string;
   query: string;
   planId: string;
@@ -123,6 +124,7 @@ Example:
 
 ```ts
 const result = await raisePaymentQuery({
+  name: user.name,
   email: user.email,
   query: paymentQuery,
   planId: selectedPlan.id,
@@ -131,6 +133,8 @@ const result = await raisePaymentQuery({
 
 Alert.alert("Query Submitted", `Reference: ${result.queryId}`);
 ```
+
+The API retrieves the plan and coupon names from Firestore, saves the query for the UROCMS admin Notifications screen, and emails a confirmation to the supplied address.
 
 ## 4. Recommended checkout state
 
