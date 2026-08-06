@@ -9,6 +9,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(await verifyPlanCoupon(await req.json(), "mobile"));
   } catch (error) {
     const failure = couponFailureResponse(error, "/api/payment-queries");
-    return NextResponse.json(failure.body, { status: failure.status });
+    return NextResponse.json(
+      { message: "Coupon cannot be applied, please try again" },
+      { status: failure.status },
+    );
   }
 }

@@ -44,14 +44,11 @@ Failed response:
 
 ```json
 {
-  "applied": false,
-  "message": "Coupon Applied Failed",
-  "reason": "coupon_not_eligible",
-  "error": "Coupon is not eligible for this plan",
-  "canRaiseQuery": true,
-  "paymentQueryEndpoint": "/api/payment-queries"
+  "message": "Coupon cannot be applied, please try again"
 }
 ```
+
+The simplified failure above applies to the React Native endpoint. The web endpoint returns detailed validation information.
 
 ## Raise a payment query
 
@@ -69,4 +66,3 @@ Content-Type: application/json
   "platform": "mobile"
 }
 ```
-
