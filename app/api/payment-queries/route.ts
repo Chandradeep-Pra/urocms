@@ -1,11 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { sendPaymentQueryConfirmationEmail } from "@/lib/server/emailService";
 import {
   buildCourseCheckoutUrl,
   schedulePaymentQueryFollowUp,
+  sendPaymentQueryFollowUp,
 } from "@/lib/server/paymentQueryFollowUp";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
@@ -120,14 +124,40 @@ export async function POST(req: NextRequest) {
       );
     } catch (scheduleError) {
       console.error("Payment query follow-up scheduling error:", scheduleError);
+      const fallbackScheduledFor = new Date(Date.now() + 30_000);
+      after(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 30_000));
+        try {
+          await sendPaymentQueryFollowUp(ref.id);
+        } catch (fallbackError) {
+          console.error("Payment query fallback follow-up error:", fallbackError);
+          await ref.set(
+            {
+              followUpEmail: {
+                scheduled: true,
+                mode: "after-response",
+                sent: false,
+                error:
+                  fallbackError instanceof Error
+                    ? fallbackError.message
+                    : "Fallback email delivery failed",
+                attemptedAt: FieldValue.serverTimestamp(),
+              },
+            },
+            { merge: true },
+          );
+        }
+      });
+      followUpScheduled = true;
       await ref.set(
         {
           checkoutUrl,
           followUpEmail: {
-            scheduled: false,
-            error:
+            scheduled: true,
+            mode: "after-response",
+            scheduledFor: fallbackScheduledFor,
+            taskSchedulingError:
               scheduleError instanceof Error ? scheduleError.message : "Task scheduling failed",
-            attemptedAt: FieldValue.serverTimestamp(),
           },
         },
         { merge: true },

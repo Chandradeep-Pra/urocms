@@ -2,6 +2,8 @@
 
 The one-minute apology email uses Google Cloud Tasks so it remains reliable when the Next.js server restarts.
 
+If Cloud Tasks is not configured, the payment-query route uses a Next.js `after()` fallback and attempts delivery around 30 seconds after returning the API response. Cloud Tasks remains the recommended production option because its task survives deployments and process restarts.
+
 ## Create the queue
 
 ```bash
