@@ -39,6 +39,8 @@ export type PricingPlanInput = {
   isActive: boolean;
   selectedContent: PlanSelection;
   accessScopes: PlanAccessScopes;
+  eligibleCouponIds: string[];
+  marketingCouponId: string;
   versions: PricingPlanVersionInput[];
 };
 
@@ -149,65 +151,67 @@ export function parsePricingPlanInput(body: any): PricingPlanInput {
     isActive: body?.isActive !== false,
     selectedContent: normalizePlanSelection(body?.selectedContent),
     accessScopes: normalizePlanAccessScopes(body?.accessScopes),
+    eligibleCouponIds: Array.from(
+      new Set(
+        (Array.isArray(body?.eligibleCouponIds) ? body.eligibleCouponIds : [])
+          .map((id: unknown) => String(id || "").trim())
+          .filter(Boolean),
+      ),
+    ),
+    marketingCouponId: String(body?.marketingCouponId ?? "").trim(),
     versions: fallbackVersion,
   };
 }
 
-async function resolvePlanVersionPricing(version: PricingPlanVersionInput) {
-  const originalPrice = version.price;
-
-  if (!version.couponId) {
+function applyCouponToPrice(
+  originalPrice: number,
+  coupon: Record<string, unknown> | null,
+  couponId = "",
+) {
+  if (!coupon) {
     return {
-      id: version.id,
-      months: version.months,
-      price: originalPrice,
       originalPrice,
       discountedPrice: originalPrice,
       couponId: "",
       couponCode: "",
       couponDiscountType: null,
       couponDiscountValue: null,
-      embeddedLink: version.embeddedLink,
-      durationLabel: version.durationLabel,
-      billingLabel: version.billingLabel,
     };
-  }
-
-  const couponDoc = await getAdminDb().collection("pricingCoupons").doc(version.couponId).get();
-  if (!couponDoc.exists) {
-    throw new Error("Selected coupon no longer exists");
-  }
-
-  const coupon = couponDoc.data() ?? {};
-  if (coupon.isActive === false) {
-    throw new Error("Selected coupon is inactive");
   }
 
   const discountType = coupon.discountType === "amount" ? "amount" : "percent";
   const discountValue = Number(coupon.discountValue ?? 0);
-
-  if (!Number.isFinite(discountValue) || discountValue <= 0) {
-    throw new Error("Selected coupon has an invalid discount value");
-  }
-
   const discountedPrice =
     discountType === "percent"
-      ? Math.max(
-          0,
-          Math.round((originalPrice - (originalPrice * discountValue) / 100) * 100) / 100
-        )
+      ? Math.max(0, Math.round((originalPrice - (originalPrice * discountValue) / 100) * 100) / 100)
       : Math.max(0, Math.round((originalPrice - discountValue) * 100) / 100);
+
+  return {
+    originalPrice,
+    discountedPrice,
+    couponId,
+    couponCode: String(coupon.code || ""),
+    couponDiscountType: discountType,
+    couponDiscountValue: discountValue,
+  };
+}
+
+async function resolvePlanVersionPricing(
+  version: PricingPlanVersionInput,
+  marketingCoupon: { id: string; data: Record<string, unknown> } | null,
+) {
+  const originalPrice = version.price;
+  const discount = applyCouponToPrice(
+    originalPrice,
+    marketingCoupon?.data ?? null,
+    marketingCoupon?.id,
+  );
 
   return {
     id: version.id,
     months: version.months,
     price: originalPrice,
-    originalPrice,
-    discountedPrice,
-    couponId: couponDoc.id,
-    couponCode: String(coupon.code || ""),
-    couponDiscountType: discountType,
-    couponDiscountValue: discountValue,
+    ...discount,
     embeddedLink: version.embeddedLink,
     durationLabel: version.durationLabel,
     billingLabel: version.billingLabel,
@@ -215,10 +219,35 @@ async function resolvePlanVersionPricing(version: PricingPlanVersionInput) {
 }
 
 async function resolvePlanPricing(input: PricingPlanInput) {
-  const versions = await Promise.all(input.versions.map(resolvePlanVersionPricing));
+  const legacyCouponIds = input.versions.map((version) => version.couponId).filter(Boolean);
+  const eligibleCouponIds = Array.from(new Set([...input.eligibleCouponIds, ...legacyCouponIds]));
+  const marketingCouponId = input.marketingCouponId || legacyCouponIds[0] || "";
+
+  if (marketingCouponId && !eligibleCouponIds.includes(marketingCouponId)) {
+    throw new Error("Marketing coupon must be attached to the plan");
+  }
+
+  const couponDocs = await Promise.all(
+    eligibleCouponIds.map((id) => getAdminDb().collection("pricingCoupons").doc(id).get()),
+  );
+  const missingCoupon = couponDocs.find((doc) => !doc.exists);
+  if (missingCoupon) throw new Error("An attached coupon no longer exists");
+
+  const marketingDoc = couponDocs.find((doc) => doc.id === marketingCouponId) ?? null;
+  if (marketingDoc && marketingDoc.data()?.isActive === false) {
+    throw new Error("Marketing coupon must be active");
+  }
+  const marketingCoupon = marketingDoc
+    ? { id: marketingDoc.id, data: marketingDoc.data() ?? {} }
+    : null;
+  const versions = await Promise.all(
+    input.versions.map((version) => resolvePlanVersionPricing(version, marketingCoupon)),
+  );
   return {
     versions,
     primaryVersion: versions[0],
+    eligibleCouponIds,
+    marketingCouponId,
   };
 }
 
@@ -338,6 +367,22 @@ export async function loadPricingAdminData() {
       ...data,
       selectedContent,
       accessScopes,
+      eligibleCouponIds: Array.isArray(data.eligibleCouponIds)
+        ? data.eligibleCouponIds.map((id: unknown) => String(id || "")).filter(Boolean)
+        : Array.from(
+            new Set(
+              (Array.isArray(data.versions) ? data.versions : [])
+                .map((rawVersion: unknown) => {
+                  const version =
+                    rawVersion && typeof rawVersion === "object"
+                      ? (rawVersion as Record<string, unknown>)
+                      : {};
+                  return String(version.couponId || "");
+                })
+                .filter(Boolean),
+            ),
+          ),
+      marketingCouponId: String(data.marketingCouponId ?? data.couponId ?? ""),
       contentCounts: data.contentCounts ?? countPlanSelection(selectedContent),
       category: data.category ?? "",
       durationLabel: data.durationLabel ?? "",
@@ -549,6 +594,8 @@ export async function createPricingPlan(input: PricingPlanInput) {
     isActive: input.isActive,
     selectedContent: input.selectedContent,
     accessScopes: input.accessScopes,
+    eligibleCouponIds: pricing.eligibleCouponIds,
+    marketingCouponId: pricing.marketingCouponId,
     contentCounts: countPlanSelection(input.selectedContent),
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
@@ -589,6 +636,8 @@ export async function updatePricingPlan(id: string, input: PricingPlanInput) {
     isActive: input.isActive,
     selectedContent: input.selectedContent,
     accessScopes: input.accessScopes,
+    eligibleCouponIds: pricing.eligibleCouponIds,
+    marketingCouponId: pricing.marketingCouponId,
     contentCounts: countPlanSelection(input.selectedContent),
     updatedAt: FieldValue.serverTimestamp(),
   });

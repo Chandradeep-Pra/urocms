@@ -70,6 +70,8 @@ export const emptyForm: PlanFormValues = {
   isActive: true,
   accessScopes: emptyScopes,
   selectedContent: emptySelection,
+  eligibleCouponIds: [],
+  marketingCouponId: "",
   versions: [createEmptyPlanVersion(3, { price: "49" })],
 };
 

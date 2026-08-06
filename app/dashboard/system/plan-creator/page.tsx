@@ -180,12 +180,17 @@ export default function PlanCreatorPage() {
         createEmptyPlanVersion(Number(version.months || 3), {
           id: String(version.id || `version-${index + 1}`),
           price: String(version.price ?? version.originalPrice ?? ""),
-          couponId: version.couponId || "",
+          couponId: "",
           embeddedLink: version.embeddedLink || "",
           durationLabel: version.durationLabel || "",
           billingLabel: version.billingLabel || "",
         })
       ),
+      eligibleCouponIds: Array.isArray(plan.eligibleCouponIds)
+        ? [...plan.eligibleCouponIds]
+        : Array.from(new Set(fallbackVersions.map((version) => version.couponId || "").filter(Boolean))),
+      marketingCouponId:
+        plan.marketingCouponId || plan.couponId || fallbackVersions[0]?.couponId || "",
       availabilityNote: plan.availabilityNote || "",
       sortOrder: Number(plan.sortOrder || 0),
       vivaMinutes: Number(plan.vivaMinutes || 0),
@@ -230,6 +235,8 @@ export default function PlanCreatorPage() {
         .map((item) => item.trim())
         .filter(Boolean),
       isActive: form.isActive,
+      eligibleCouponIds: form.eligibleCouponIds,
+      marketingCouponId: form.marketingCouponId,
       accessScopes: form.accessScopes,
       selectedContent: form.selectedContent,
     };

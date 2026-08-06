@@ -138,7 +138,7 @@ export function CouponLauncherCard({
         <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
           <div>
             <p className="text-sm font-medium text-slate-900">Coupon active</p>
-            <p className="text-xs text-slate-500">Show this coupon on the public pricing page.</p>
+            <p className="text-xs text-slate-500">Allow this coupon to be attached to plans.</p>
           </div>
           <Switch
             checked={couponForm.isActive}

@@ -42,6 +42,8 @@ export type PricingPlan = {
   embeddedLink?: string;
   couponId?: string;
   couponCode?: string;
+  eligibleCouponIds?: string[];
+  marketingCouponId?: string;
   expiryMonths: number;
   durationLabel?: string;
   billingLabel?: string;
@@ -121,6 +123,8 @@ export type PlanFormValues = {
   isActive: boolean;
   accessScopes: PlanAccessScopes;
   selectedContent: PlanSelection;
+  eligibleCouponIds: string[];
+  marketingCouponId: string;
   versions: PlanVersionFormValues[];
 };
 

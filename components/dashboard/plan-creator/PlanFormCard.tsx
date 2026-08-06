@@ -75,7 +75,7 @@ export function PlanFormCard({
   };
 
   const versionPreview = form.versions.map((version) => {
-    const coupon = coupons.find((item) => item.id === version.couponId) || null;
+    const coupon = coupons.find((item) => item.id === form.marketingCouponId) || null;
     const originalPrice = Number(version.price || 0);
 
     if (!coupon) {
@@ -258,12 +258,67 @@ export function PlanFormCard({
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-900">Eligible coupons</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Attach multiple coupons. A customer can apply only one coupon at checkout.
+            </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {coupons.length ? coupons.map((coupon) => {
+                const checked = form.eligibleCouponIds.includes(coupon.id);
+                return (
+                  <label key={coupon.id} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => setForm((prev) => {
+                        const eligibleCouponIds = checked
+                          ? prev.eligibleCouponIds.filter((id) => id !== coupon.id)
+                          : [...prev.eligibleCouponIds, coupon.id];
+                        return {
+                          ...prev,
+                          eligibleCouponIds,
+                          marketingCouponId:
+                            checked && prev.marketingCouponId === coupon.id
+                              ? ""
+                              : prev.marketingCouponId,
+                        };
+                      })}
+                    />
+                    <span className="text-sm text-slate-700">
+                      {coupon.code} · {coupon.discountType === "percent"
+                        ? `${coupon.discountValue}% off`
+                        : `£${coupon.discountValue} off`}
+                      {!coupon.isActive ? " · inactive" : ""}
+                    </span>
+                  </label>
+                );
+              }) : <p className="text-sm text-slate-500">Create a coupon before attaching it.</p>}
+            </div>
+            <div className="mt-4 space-y-2">
+              <Label>Coupon shown on marketing app/website</Label>
+              <select
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-900"
+                value={form.marketingCouponId}
+                onChange={(event) => setForm((prev) => ({ ...prev, marketingCouponId: event.target.value }))}
+              >
+                <option value="">Do not advertise a coupon</option>
+                {coupons
+                  .filter((coupon) => form.eligibleCouponIds.includes(coupon.id) && coupon.isActive)
+                  .map((coupon) => <option key={coupon.id} value={coupon.id}>{coupon.code}</option>)}
+              </select>
+              <p className="text-xs text-slate-500">
+                Other attached coupons remain eligible when entered manually.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-slate-900">Plan versions</p>
                 <p className="mt-1 text-xs text-slate-500">
                   Add the plan durations you want to offer. Each version can have its own price,
-                  coupon, billing label, and checkout link.
+                  billing label and checkout link.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -347,28 +402,7 @@ export function PlanFormCard({
                         </div>
                       </div>
 
-                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label>Coupon (optional)</Label>
-                          <select
-                            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-900"
-                            value={version.couponId}
-                            onChange={(event) =>
-                              updateVersion(version.id, { couponId: event.target.value })
-                            }
-                          >
-                            <option value="">No coupon</option>
-                            {coupons.map((coupon) => (
-                              <option key={coupon.id} value={coupon.id}>
-                                {coupon.code} ·{" "}
-                                {coupon.discountType === "percent"
-                                  ? `${coupon.discountValue}% off`
-                                  : `£${coupon.discountValue} off`}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
+                      <div className="mt-4">
                         <div className="space-y-2">
                           <Label>Embedded link (optional)</Label>
                           <Input
@@ -429,7 +463,7 @@ export function PlanFormCard({
                             Discounted price: {formatGbp(preview?.discountedPrice || 0)}
                             {preview?.hasDiscount ? " applied" : ""}
                           </p>
-                          <p>{version.couponId ? "Coupon attached to this version" : "No coupon attached"}</p>
+                          <p>{form.marketingCouponId ? "Marketing coupon preview applied" : "No marketing coupon shown"}</p>
                         </div>
                       </div>
                     </div>
