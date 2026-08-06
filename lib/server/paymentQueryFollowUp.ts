@@ -6,9 +6,23 @@ let tasksClientPromise: Promise<import("@google-cloud/tasks").CloudTasksClient> 
 
 function getTasksClient() {
   if (!tasksClientPromise) {
-    tasksClientPromise = import("@google-cloud/tasks").then(
-      ({ CloudTasksClient }) => new CloudTasksClient(),
-    );
+    tasksClientPromise = import("@google-cloud/tasks").then(({ CloudTasksClient }) => {
+      const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.FIREBASE_PROJECT_ID;
+      const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+      const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+      return new CloudTasksClient({
+        projectId,
+        ...(clientEmail && privateKey
+          ? {
+              credentials: {
+                client_email: clientEmail,
+                private_key: privateKey,
+              },
+            }
+          : {}),
+      });
+    });
   }
   return tasksClientPromise;
 }
@@ -47,7 +61,7 @@ export async function schedulePaymentQueryFollowUp(queryId: string) {
   const [task] = await tasksClient.createTask({
     parent,
     task: {
-      scheduleTime: { seconds: Math.floor(Date.now() / 1000) + 60 },
+      scheduleTime: { seconds: Math.floor(Date.now() / 1000) + 45 },
       httpRequest: {
         httpMethod: "POST",
         url: handlerUrl,
@@ -60,7 +74,7 @@ export async function schedulePaymentQueryFollowUp(queryId: string) {
     },
   });
 
-  return { taskName: task.name || null, scheduledFor: new Date(Date.now() + 60_000) };
+  return { taskName: task.name || null, scheduledFor: new Date(Date.now() + 45_000) };
 }
 
 export async function sendPaymentQueryFollowUp(queryId: string) {

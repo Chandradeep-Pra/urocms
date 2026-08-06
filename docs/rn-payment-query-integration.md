@@ -177,7 +177,7 @@ Disable the submit button while `submitting` is `true` to prevent duplicate quer
 
 If `emailSent` is `false`, the query was still saved for the admin team. Show the reference number, but do not claim that the email was sent.
 
-When `followUpScheduled` is `true`, the user receives another email approximately one minute later. That email links to `checkoutUrl`. The website asks the user to sign in when necessary, validates the plan and version, and then shows the exact payment button configured for that course version.
+When `followUpScheduled` is `true`, the user receives another email approximately 30–60 seconds later. This is a server-side task and does not depend on the RN app remaining open. The email links to `checkoutUrl`. The website asks the user to sign in when necessary, validates the plan and version, and then shows the exact payment button configured for that course version.
 
 The RN app must send:
 
