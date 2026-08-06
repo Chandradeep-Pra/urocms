@@ -132,6 +132,25 @@ function scoreContent(content: SearchableContent, intent: SearchIntent, query: s
   return score;
 }
 
+function scorePlanInfo(searchText: string, intent: SearchIntent, query: string) {
+  const text = normalizeText(searchText);
+  const queryText = normalizeText(query);
+  const topicTerms = intent.topics
+    .flatMap((item) => normalizeText(item).split(" "))
+    .filter((item) => item.length > 2);
+  const keywordTerms = intent.keywords
+    .flatMap((item) => normalizeText(item).split(" "))
+    .filter((item) => item.length > 2);
+
+  if (topicTerms.length && !topicTerms.some((term) => text.includes(term))) return 0;
+
+  let score = queryText && text.includes(queryText) ? 12 : 0;
+  for (const term of Array.from(new Set([...topicTerms, ...keywordTerms]))) {
+    if (text.includes(term)) score += 2;
+  }
+  return score;
+}
+
 function courseIdsForContent(
   courses: Array<{ id: string; sections: Array<Record<string, unknown>> }>,
   content: Omit<SearchableContent, "courseIds">,
@@ -231,7 +250,7 @@ export async function discoverPlansForQuery(query: string, limit = 5) {
     .sort((a, b) => b.relevance - a.relevance)
     .slice(0, 25);
 
-  const plans = plansSnap.docs
+  const candidatePlans = plansSnap.docs
     .map((doc) => {
       const data = doc.data();
       const selected = normalizePlanSelection(data.selectedContent);
@@ -273,6 +292,8 @@ export async function discoverPlansForQuery(query: string, limit = 5) {
               };
             })
           : [],
+        matchedBy: "content" as const,
+        matchReason: "Verified content included through this plan's content or access scopes.",
         matches: matches.slice(0, 5).map((match) => ({
           id: match.id,
           type: match.type,
@@ -282,16 +303,44 @@ export async function discoverPlansForQuery(query: string, limit = 5) {
           relevance: match.relevance,
         })),
         relevance: matches.reduce((total, match) => total + match.relevance, 0),
+        planInfoRelevance: scorePlanInfo(
+          [
+            data.name,
+            data.description,
+            data.category,
+            data.tag,
+            data.availabilityNote,
+            ...(Array.isArray(data.featureBullets) ? data.featureBullets : []),
+          ].join(" "),
+          intent,
+          query,
+        ),
       };
-    })
+    });
+
+  const contentPlans = candidatePlans
     .filter((plan) => plan.matches.length > 0)
     .sort((a, b) => b.relevance - a.relevance)
     .slice(0, limit);
 
+  const plans = contentPlans.length
+    ? contentPlans
+    : candidatePlans
+        .filter((plan) => plan.planInfoRelevance > 0)
+        .sort((a, b) => b.planInfoRelevance - a.planInfoRelevance)
+        .slice(0, limit)
+        .map((plan) => ({
+          ...plan,
+          matchedBy: "plan-info" as const,
+          matchReason:
+            "No linked course content matched; this result is based on the plan's name, description, category, or features.",
+          relevance: plan.planInfoRelevance,
+        }));
+
   return {
     query,
     interpretedAs: intent,
-    plans,
+    plans: plans.map((plan) => ({ ...plan, planInfoRelevance: undefined })),
     totalPlans: plans.length,
   };
 }

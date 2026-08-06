@@ -68,6 +68,8 @@ setPlans(result.plans);
       "currency": "GBP",
       "price": 99,
       "versions": [],
+      "matchedBy": "content",
+      "matchReason": "Verified content included through this plan's content or access scopes.",
       "matches": [
         {
           "id": "viva-id",
@@ -87,3 +89,4 @@ setPlans(result.plans);
 
 Show `plans` in the results list and use each plan's `matches` to explain why it was returned. An empty `plans` array means no active plan contains matching content.
 
+`matchedBy` is `content` when the result is verified against linked course content. If no linked content matches, the API can return `plan-info`, based on the plan's name, description, category, or features. Show `matchReason` in the UI so this distinction is clear.
