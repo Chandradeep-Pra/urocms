@@ -44,11 +44,11 @@ Failed response:
 
 ```json
 {
-  "message": "Coupon cannot be applied, please try again"
+  "message": "Coupon not verified"
 }
 ```
 
-The simplified failure above applies to the React Native endpoint. The web endpoint returns detailed validation information.
+The React Native endpoint always returns this failure. Mobile users should use the payment-query flow. The web endpoint continues to verify eligible coupons.
 
 ## Raise a payment query
 

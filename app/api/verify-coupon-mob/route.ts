@@ -1,17 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  couponFailureResponse,
-  verifyPlanCoupon,
-} from "@/lib/server/couponVerificationService";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  try {
-    return NextResponse.json(await verifyPlanCoupon(await req.json(), "mobile"));
-  } catch (error) {
-    const failure = couponFailureResponse(error, "/api/payment-queries");
-    return NextResponse.json(
-      { message: "Coupon cannot be applied, please try again" },
-      { status: failure.status },
-    );
-  }
+export async function POST() {
+  return NextResponse.json(
+    { message: "Coupon not verified" },
+    { status: 400 },
+  );
 }

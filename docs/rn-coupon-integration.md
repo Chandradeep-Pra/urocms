@@ -1,6 +1,6 @@
 # React Native Coupon Integration
 
-This integration verifies that a coupon is attached to the selected plan and calculates the discounted price. Only one coupon can be applied at a time.
+Mobile coupon verification is currently disabled. The endpoint always returns an error, so the React Native app should direct the user to raise a payment query.
 
 ## 1. Types
 
@@ -33,7 +33,7 @@ export type CouponSuccess = {
 };
 
 export type CouponFailure = {
-  message: "Coupon cannot be applied, please try again";
+  message: "Coupon not verified";
 };
 ```
 
@@ -62,6 +62,14 @@ export async function verifyMobileCoupon(input: {
   }
 
   return data as CouponSuccess;
+}
+```
+
+The endpoint currently always responds with HTTP `400`:
+
+```json
+{
+  "message": "Coupon not verified"
 }
 ```
 
