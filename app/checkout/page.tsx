@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
+import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check, Loader2, ReceiptText, ShieldCheck, Tag } from "lucide-react";
 import { auth } from "@/lib/firebaseClient";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ type CheckoutDetails = {
     discountType: "percent" | "amount";
     discountValue: number;
     isMarketing: boolean;
+    expiresAt: string | null;
   }>;
   checkoutUrl: string;
 };
@@ -31,6 +33,7 @@ type AppliedPricing = {
   couponCode: string;
   discountAmount: number;
   discountedPrice: number;
+  expiresAt: string | null;
 };
 
 async function verifyCoupon(details: CheckoutDetails, couponCode: string) {
@@ -51,6 +54,10 @@ async function verifyCoupon(details: CheckoutDetails, couponCode: string) {
     couponCode: String(data.coupon?.code || couponCode),
     discountAmount: Number(data.pricing?.discountAmount || 0),
     discountedPrice: Number(data.pricing?.discountedPrice ?? details.version.originalPrice),
+    expiresAt:
+      details.coupons.find(
+        (coupon) => coupon.code.toUpperCase() === String(data.coupon?.code || couponCode).toUpperCase(),
+      )?.expiresAt ?? null,
   } satisfies AppliedPricing;
 }
 
@@ -61,6 +68,7 @@ function CheckoutContent() {
   const [couponError, setCouponError] = useState("");
   const [appliedPricing, setAppliedPricing] = useState<AppliedPricing | null>(null);
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
+  const [countdownNow, setCountdownNow] = useState(Date.now());
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -97,12 +105,28 @@ function CheckoutContent() {
     return unsubscribe;
   }, []);
 
-  async function applySelectedCoupon() {
-    if (!details || !couponCode.trim()) return;
+  useEffect(() => {
+    if (!appliedPricing?.expiresAt) return;
+    const expiresAt = new Date(appliedPricing.expiresAt).getTime();
+    const interval = window.setInterval(() => {
+      const now = Date.now();
+      setCountdownNow(now);
+      if (now >= expiresAt) {
+        setAppliedPricing(null);
+        setCouponError("This coupon has expired");
+      }
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [appliedPricing?.expiresAt]);
+
+  async function applySelectedCoupon(nextCode = couponCode) {
+    if (!details || !nextCode.trim()) return;
     try {
       setVerifyingCoupon(true);
       setCouponError("");
-      setAppliedPricing(await verifyCoupon(details, couponCode.trim().toUpperCase()));
+      const normalizedCode = nextCode.trim().toUpperCase();
+      setCouponCode(normalizedCode);
+      setAppliedPricing(await verifyCoupon(details, normalizedCode));
     } catch (couponApplyError) {
       setAppliedPricing(null);
       setCouponError(
@@ -131,6 +155,16 @@ function CheckoutContent() {
       currency: details.version.currency,
     }).format(value);
   const total = appliedPricing?.discountedPrice ?? details.version.originalPrice;
+  const countdownMs = appliedPricing?.expiresAt
+    ? Math.max(0, new Date(appliedPricing.expiresAt).getTime() - countdownNow)
+    : null;
+  const countdownLabel = countdownMs === null
+    ? null
+    : [
+        Math.floor(countdownMs / 3_600_000),
+        Math.floor((countdownMs % 3_600_000) / 60_000),
+        Math.floor((countdownMs % 60_000) / 1000),
+      ].map((part) => String(part).padStart(2, "0")).join(":");
 
   return (
     <div className="space-y-6">
@@ -158,14 +192,21 @@ function CheckoutContent() {
         {details.coupons.length ? (
           <div className="grid gap-2 sm:grid-cols-2">
             {details.coupons.map((coupon) => (
-              <button
+              <motion.button
                 key={coupon.id}
                 type="button"
-                onClick={() => {
-                  setCouponCode(coupon.code);
-                  setAppliedPricing(null);
-                  setCouponError("");
+                onClick={() => void applySelectedCoupon(coupon.code)}
+                disabled={verifyingCoupon}
+                layout
+                whileHover={{ y: -2, scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                animate={{
+                  boxShadow:
+                    couponCode === coupon.code
+                      ? "0 10px 30px rgba(8, 145, 178, 0.14)"
+                      : "0 0 0 rgba(0, 0, 0, 0)",
                 }}
+                transition={{ type: "spring", stiffness: 380, damping: 28 }}
                 className={`rounded-2xl border p-3 text-left transition ${
                   couponCode === coupon.code
                     ? "border-cyan-600 bg-cyan-50"
@@ -184,7 +225,7 @@ function CheckoutContent() {
                     : `${money(coupon.discountValue)} off`}
                 </p>
                 {coupon.description ? <p className="mt-1 text-xs text-slate-500">{coupon.description}</p> : null}
-              </button>
+              </motion.button>
             ))}
           </div>
         ) : (
@@ -200,16 +241,41 @@ function CheckoutContent() {
             }}
             placeholder="Enter coupon code"
           />
-          <Button type="button" variant="outline" onClick={applySelectedCoupon} disabled={!couponCode.trim() || verifyingCoupon}>
+          <Button type="button" variant="outline" onClick={() => void applySelectedCoupon()} disabled={!couponCode.trim() || verifyingCoupon}>
             {verifyingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
           </Button>
         </div>
-        {appliedPricing ? (
-          <p className="flex items-center gap-2 text-sm font-medium text-emerald-700">
-            <Check className="h-4 w-4" /> Coupon {appliedPricing.couponCode} applied
-          </p>
-        ) : null}
-        {couponError ? <p className="text-sm text-rose-600">{couponError}</p> : null}
+        <AnimatePresence mode="wait" initial={false}>
+          {appliedPricing ? (
+            <motion.div
+              key={`applied-${appliedPricing.couponCode}`}
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+              className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-emerald-700"
+            >
+              <p className="flex items-center gap-2">
+                <Check className="h-4 w-4" /> Coupon {appliedPricing.couponCode} applied
+              </p>
+              {countdownLabel ? (
+                <p className="rounded-full bg-emerald-100 px-3 py-1 font-mono text-xs tabular-nums">
+                  Offer ends in {countdownLabel}
+                </p>
+              ) : null}
+            </motion.div>
+          ) : couponError ? (
+            <motion.p
+              key="coupon-error"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-sm text-rose-600"
+            >
+              {couponError}
+            </motion.p>
+          ) : null}
+        </AnimatePresence>
       </div>
 
       <div className="rounded-2xl border border-slate-200 p-5">
@@ -222,16 +288,55 @@ function CheckoutContent() {
             <span>{details.plan.name} · {details.version.durationLabel || `${details.version.months} months`}</span>
             <span>{money(details.version.originalPrice)}</span>
           </div>
+          <AnimatePresence initial={false}>
           {appliedPricing ? (
-            <div className="flex justify-between text-emerald-700">
+            <motion.div
+              key={appliedPricing.couponCode}
+              initial={{ opacity: 0, height: 0, y: -5 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -5 }}
+              transition={{ duration: 0.25 }}
+              className="flex justify-between overflow-hidden text-emerald-700"
+            >
               <span>Coupon discount ({appliedPricing.couponCode})</span>
               <span>−{money(appliedPricing.discountAmount)}</span>
-            </div>
+            </motion.div>
           ) : null}
+          </AnimatePresence>
           <div className="border-t border-slate-200 pt-3">
             <div className="flex items-end justify-between gap-4">
               <span className="font-semibold text-slate-950">Total</span>
-              <span className="text-2xl font-bold text-slate-950">{money(total)}</span>
+              <div className="text-right">
+                <AnimatePresence initial={false}>
+                  {appliedPricing ? (
+                    <motion.p
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="text-sm text-slate-400 line-through"
+                    >
+                      {money(details.version.originalPrice)}
+                    </motion.p>
+                  ) : null}
+                </AnimatePresence>
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={total}
+                    initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
+                    transition={{ type: "spring", stiffness: 360, damping: 27 }}
+                    className="block text-2xl font-bold text-slate-950"
+                  >
+                    {money(total)}
+                  </motion.span>
+                </AnimatePresence>
+                {countdownLabel ? (
+                  <p className="mt-1 font-mono text-xs font-semibold text-rose-600">
+                    {countdownLabel} remaining
+                  </p>
+                ) : null}
+              </div>
             </div>
             <p className="mt-1 text-right text-xs text-slate-500">Currency: {details.version.currency}</p>
           </div>

@@ -32,6 +32,20 @@ function isCouponCurrentlyActive(data: Record<string, unknown>) {
   return (!startsAt || startsAt <= now) && (!endsAt || endsAt >= now);
 }
 
+function toIsoDate(value: unknown) {
+  if (!value) return null;
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toDate" in value &&
+    typeof (value as { toDate?: () => Date }).toDate === "function"
+  ) {
+    return (value as { toDate: () => Date }).toDate().toISOString();
+  }
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 export async function GET(req: NextRequest) {
   const auth = await requireAppUser(req);
   if ("response" in auth) return auth.response;
@@ -88,6 +102,7 @@ export async function GET(req: NextRequest) {
         discountType: data.discountType === "amount" ? "amount" : "percent",
         discountValue: Number(data.discountValue || 0),
         isMarketing: doc.id === String(plan.marketingCouponId || plan.couponId || ""),
+        expiresAt: toIsoDate(data.endsAt),
       };
     });
 
