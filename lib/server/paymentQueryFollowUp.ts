@@ -1,9 +1,17 @@
-import { CloudTasksClient } from "@google-cloud/tasks";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { sendCouponCheckoutFollowUpEmail } from "@/lib/server/emailService";
 
-const tasksClient = new CloudTasksClient();
+let tasksClientPromise: Promise<import("@google-cloud/tasks").CloudTasksClient> | null = null;
+
+function getTasksClient() {
+  if (!tasksClientPromise) {
+    tasksClientPromise = import("@google-cloud/tasks").then(
+      ({ CloudTasksClient }) => new CloudTasksClient(),
+    );
+  }
+  return tasksClientPromise;
+}
 
 function getSiteUrl() {
   return (process.env.NEXT_PUBLIC_SITE_URL || "https://urologics.co.uk").replace(/\/$/, "");
@@ -34,6 +42,7 @@ export async function schedulePaymentQueryFollowUp(queryId: string) {
     throw new Error("Payment query task scheduling is not configured");
   }
 
+  const tasksClient = await getTasksClient();
   const parent = tasksClient.queuePath(projectId, location, queue);
   const [task] = await tasksClient.createTask({
     parent,

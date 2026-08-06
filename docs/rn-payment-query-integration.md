@@ -2,6 +2,8 @@
 
 Use this flow when a user needs help with a plan, coupon, or payment. The submitted query appears in UROCMS Admin → Content → Notifications, and the user receives a confirmation email.
 
+The user should only type the query. Fill the user, plan, version, coupon, and platform automatically from the current RN session and checkout state.
+
 ## Endpoint
 
 ```http
@@ -24,6 +26,18 @@ Content-Type: application/json
 ```
 
 `name`, `email`, `query`, `planId`, and `versionId` are required. `couponCode` is optional.
+
+## Automatically populated values
+
+| API field | RN source |
+|---|---|
+| `name` | Authenticated user profile |
+| `email` | Authenticated user profile |
+| `planId` | Currently selected plan |
+| `versionId` | Currently selected duration/version |
+| `couponCode` | Coupon already entered on checkout |
+| `platform` | Always `mobile` |
+| `query` | The only value entered by the user |
 
 ## API function
 
@@ -90,13 +104,14 @@ async function submitPaymentQuery() {
   try {
     setSubmitting(true);
 
+    // Automatically use values already available in the app.
     const result = await raisePaymentQuery({
-      name: user.name,
-      email: user.email,
+      name: user.displayName || userProfile.name,
+      email: user.email || userProfile.email,
       query: paymentQuery.trim(),
       planId: selectedPlan.id,
       versionId: selectedVersion.id,
-      couponCode,
+      couponCode: enteredCouponCode,
     });
 
     setPaymentQuery("");
@@ -116,6 +131,32 @@ async function submitPaymentQuery() {
   }
 }
 ```
+
+Example form—the user enters only the query:
+
+```tsx
+<View>
+  <Text>Payment support for {selectedPlan.name}</Text>
+  <Text>{selectedVersion.durationLabel}</Text>
+
+  {enteredCouponCode ? <Text>Coupon: {enteredCouponCode}</Text> : null}
+
+  <TextInput
+    value={paymentQuery}
+    onChangeText={setPaymentQuery}
+    placeholder="Describe the payment or coupon problem"
+    multiline
+  />
+
+  <Button
+    title={submitting ? "Submitting..." : "Raise Query"}
+    onPress={submitPaymentQuery}
+    disabled={submitting || !paymentQuery.trim()}
+  />
+</View>
+```
+
+Display the selected plan, version, and coupon for confirmation, but do not ask the user to enter them again.
 
 Disable the submit button while `submitting` is `true` to prevent duplicate queries.
 
@@ -147,6 +188,15 @@ The RN app must send:
 - The user's payment `query`
 
 Do not send a checkout/payment URL from RN. The server retrieves the authoritative checkout URL from the selected plan version.
+
+Check that the automatic values exist before submitting:
+
+```ts
+if (!user || !selectedPlan || !selectedVersion) {
+  Alert.alert("Unable to Raise Query", "User or checkout information is missing.");
+  return;
+}
+```
 
 ```ts
 const confirmation = result.emailSent
