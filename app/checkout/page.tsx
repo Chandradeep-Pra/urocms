@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, Loader2, ReceiptText, ShieldCheck, Tag } from "lucide-react";
+import { ArrowRight, Check, CircleHelp, Loader2, ReceiptText, ShieldCheck, Tag } from "lucide-react";
 import { auth } from "@/lib/firebaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,6 +155,7 @@ function CheckoutContent() {
       currency: details.version.currency,
     }).format(value);
   const total = appliedPricing?.discountedPrice ?? details.version.originalPrice;
+  const queryId = new URLSearchParams(window.location.search).get("queryId");
   const countdownMs = appliedPricing?.expiresAt
     ? Math.max(0, new Date(appliedPricing.expiresAt).getTime() - countdownNow)
     : null;
@@ -182,6 +183,15 @@ function CheckoutContent() {
         <ShieldCheck className="h-6 w-6" />
         <span className="font-semibold">Signed in and ready for secure checkout</span>
       </div>
+      {queryId ? (
+        <div className="flex items-start gap-3 rounded-lg border border-cyan-200 bg-cyan-50 p-4 text-cyan-900">
+          <CircleHelp className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-semibold">Your payment query is linked</p>
+            <p className="mt-1 text-sm text-cyan-800">Support reference: {queryId}</p>
+          </div>
+        </div>
+      ) : null}
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-700">Course checkout</p>
         <h1 className="mt-2 text-3xl font-bold text-slate-950">{details.plan.name}</h1>

@@ -64,9 +64,17 @@ export async function GET(req: NextRequest) {
 
   const plan = planDoc.data() ?? {};
   const versions = Array.isArray(plan.versions) ? plan.versions : [];
+  const legacyVersion = {
+    id: "legacy-default",
+    months: Number(plan.expiryMonths || 1),
+    price: Number(plan.price || 0),
+    originalPrice: Number(plan.originalPrice ?? plan.price ?? 0),
+    embeddedLink: String(plan.embeddedLink || ""),
+    durationLabel: String(plan.durationLabel || ""),
+  };
   const version = versions.find(
     (item: Record<string, unknown>) => String(item?.id || "") === versionId,
-  );
+  ) || (versionId === "legacy-default" ? legacyVersion : null);
   if (!version) {
     return NextResponse.json({ error: "Plan version is unavailable" }, { status: 404 });
   }

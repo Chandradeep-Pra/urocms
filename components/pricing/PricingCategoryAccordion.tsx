@@ -1,13 +1,16 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
   Clock3,
   Layers3,
+  Loader2,
+  Search,
   Sparkles,
+  WandSparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -236,7 +239,7 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
           ? "border-slate-300 bg-slate-100 text-slate-700 shadow-[0_16px_38px_rgba(7,16,20,0.04)]"
           : "border-[#0f7896]/12 bg-white shadow-[0_16px_38px_rgba(15,120,150,0.08)] hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(15,120,150,0.14)]"
       }`}
-      aria-disabled={isComingSoon}
+      data-disabled={isComingSoon || undefined}
     >
       <div className="absolute inset-x-0 top-0 h-1 bg-[#0f7896]" />
 
@@ -405,12 +408,8 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
             className="mt-4 w-full rounded-full bg-[#0f7896] text-white hover:bg-[#0b647d]"
           >
             {activeVersion.embeddedLink || plan.embeddedLink ? (
-            <a
-              href={activeVersion.embeddedLink || plan.embeddedLink}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Register Now
+            <a href={`/checkout?planId=${encodeURIComponent(plan.id)}&versionId=${encodeURIComponent(activeVersion.id)}`}>
+              Continue to checkout
             </a>
           ) : (
             <span>Register Now</span>
@@ -428,6 +427,60 @@ export function PricingCategoryAccordion({
   groupedPlans: GroupedPlans[];
 }) {
   const [openCategories, setOpenCategories] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [aiPlanIds, setAiPlanIds] = useState<string[] | null>(null);
+  const [aiSearching, setAiSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+
+  const visibleGroups = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return groupedPlans
+      .map((group) => ({
+        ...group,
+        plans: group.plans.filter((plan) => {
+          if (aiPlanIds && !aiPlanIds.includes(plan.id)) return false;
+          if (!query || aiPlanIds) return true;
+          return [
+            plan.name,
+            plan.category,
+            plan.tag,
+            plan.subtitle,
+            ...plan.featureBullets,
+            ...plan.courseItems.map((course) => course.title),
+            ...plan.items.flatMap((item) => item.details),
+          ].some((value) => String(value || "").toLowerCase().includes(query));
+        }),
+      }))
+      .filter((group) => group.plans.length > 0);
+  }, [aiPlanIds, groupedPlans, searchQuery]);
+
+  async function runAiSearch() {
+    const query = searchQuery.trim();
+    if (query.length < 3) {
+      setSearchError("Enter at least 3 characters for AI search.");
+      return;
+    }
+    try {
+      setAiSearching(true);
+      setSearchError("");
+      const response = await fetch("/api/public/plans/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, limit: 10 }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to search plans");
+      const ids = Array.isArray(data.plans)
+        ? data.plans.map((plan: { id?: string }) => String(plan.id || "")).filter(Boolean)
+        : [];
+      setAiPlanIds(ids);
+      setOpenCategories(groupedPlans.map((group) => group.category));
+    } catch (error) {
+      setSearchError(error instanceof Error ? error.message : "Unable to search plans");
+    } finally {
+      setAiSearching(false);
+    }
+  }
 
   const toggleCategory = (category: string) => {
     setOpenCategories((current) => (current.includes(category) ? [] : [category]));
@@ -435,7 +488,55 @@ export function PricingCategoryAccordion({
 
   return (
     <div className="space-y-6">
-      {groupedPlans.map((group) => {
+      <div className="border-y border-[#0f7896]/12 bg-white py-5">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0f7896]" />
+            <Input
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setAiPlanIds(null);
+                setSearchError("");
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void runAiSearch();
+              }}
+              className="h-12 rounded-lg border-[#0f7896]/20 pl-12"
+              placeholder="Search courses, topics, mocks, or AI viva"
+              aria-label="Search plans"
+            />
+          </div>
+          <Button
+            type="button"
+            onClick={() => void runAiSearch()}
+            disabled={aiSearching || searchQuery.trim().length < 3}
+            className="h-12 rounded-lg bg-[#0f7896] px-5 text-white hover:bg-[#0b647d]"
+          >
+            {aiSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <WandSparkles className="h-4 w-4" />}
+            AI search
+          </Button>
+        </div>
+        <div className="mt-3 flex min-h-5 items-center justify-between gap-3 text-sm">
+          <p className={searchError ? "text-rose-600" : "text-[#071014]/55"}>
+            {searchError || (aiPlanIds ? `${aiPlanIds.length} AI-matched plan${aiPlanIds.length === 1 ? "" : "s"}` : "Results filter as you type. AI search understands natural-language requests.")}
+          </p>
+          {(searchQuery || aiPlanIds) ? (
+            <button type="button" className="font-semibold text-[#0f7896]" onClick={() => { setSearchQuery(""); setAiPlanIds(null); setSearchError(""); }}>
+              Clear
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {visibleGroups.length === 0 ? (
+        <div className="border-y border-[#0f7896]/12 bg-white py-12 text-center">
+          <p className="font-semibold text-[#071014]">No matching plans found</p>
+          <p className="mt-2 text-sm text-[#071014]/55">Try a broader topic or describe what you want to practise.</p>
+        </div>
+      ) : null}
+
+      {visibleGroups.map((group) => {
         const open = openCategories.includes(group.category);
 
         return (
