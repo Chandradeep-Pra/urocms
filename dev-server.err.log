@@ -1,3 +1,17 @@
 Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
   npx update-browserslist-db@latest
   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Pricing page plans fetch error: Error: 14 UNAVAILABLE: No connection established. Last error: Error: connect EACCES 142.250.122.95:443. Resolution note: 
+    at getPricingPlans (app\pricing\page.tsx:130:49)
+    at PricingPage (app\pricing\page.tsx:285:23)
+  128 |     const [snapshot, coursesSnap, chaptersSnap, videosSnap, quizzesSnap, mocksSnap, vivaSnap] =
+  129 |       await Promise.all([
+> 130 |         getAdminDb().collection("pricingPlans").get(),
+      |                                                 ^
+  131 |         getAdminDb().collection("courses").get(),
+  132 |         getAdminDb().collection("chapters").where("isActive", "==", true).get(),
+  133 |         getAdminDb().collection("videoItems").get(), {
+  code: 14,
+  details: 'No connection established. Last error: Error: connect EACCES 142.250.122.95:443. Resolution note: ',
+  metadata: [Metadata]
+}

@@ -488,7 +488,7 @@ export function PricingCategoryAccordion({
 
   return (
     <div className="space-y-6">
-      <div className="border-y border-[#0f7896]/12 bg-white py-5">
+      <div className="border-y border-[#0f7896]/12 bg-transparent py-5">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0f7896]" />
@@ -518,9 +518,7 @@ export function PricingCategoryAccordion({
           </Button>
         </div>
         <div className="mt-3 flex min-h-5 items-center justify-between gap-3 text-sm">
-          <p className={searchError ? "text-rose-600" : "text-[#071014]/55"}>
-            {searchError || (aiPlanIds ? `${aiPlanIds.length} AI-matched plan${aiPlanIds.length === 1 ? "" : "s"}` : "Results filter as you type. AI search understands natural-language requests.")}
-          </p>
+          
           {(searchQuery || aiPlanIds) ? (
             <button type="button" className="font-semibold text-[#0f7896]" onClick={() => { setSearchQuery(""); setAiPlanIds(null); setSearchError(""); }}>
               Clear
