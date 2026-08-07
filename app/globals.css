@@ -225,6 +225,29 @@
     border-radius: 999px;
   }
 
+  .pricing-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 120, 150, 0.55) rgba(15, 120, 150, 0.06);
+  }
+
+  .pricing-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .pricing-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 120, 150, 0.06);
+  }
+
+  .pricing-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(15, 120, 150, 0.55);
+    border-radius: 999px;
+  }
+
+  .pricing-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(11, 95, 119, 0.8);
+  }
+
   .bg-mesh {
     background-color: #101415;
     background-image:

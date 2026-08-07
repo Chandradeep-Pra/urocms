@@ -287,7 +287,7 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
 
   return (
     <article
-      className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border p-6 transition duration-300 ${
+      className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border p-6 transition duration-300 md:h-[620px] ${
         isComingSoon
           ? "border-slate-300 bg-slate-100 text-slate-700 shadow-[0_16px_38px_rgba(7,16,20,0.04)]"
           : "border-[#0f7896]/12 bg-white shadow-[0_16px_38px_rgba(15,120,150,0.08)] hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(15,120,150,0.14)]"
@@ -296,8 +296,8 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
     >
       <div className="absolute inset-x-0 top-0 h-1 bg-[#0f7896]" />
 
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)] md:gap-8">
-        <div className="min-w-0">
+      <div className="grid h-full min-h-0 gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)] md:gap-8">
+        <div className="flex min-h-0 min-w-0 flex-col">
 
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -327,12 +327,12 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
         ) : null}
       </div>
 
-      <p className="mt-4 text-sm leading-7 text-[#071014]/62">
+      <p className="pricing-scrollbar mt-4 max-h-24 overflow-y-auto pr-2 text-sm leading-7 text-[#071014]/62">
         {plan.subtitle || "Custom access plan built from selected Urologics content."}
       </p>
 
       {aiResult ? (
-        <div className="mt-5 border-l-4 border-emerald-500 bg-emerald-50 px-4 py-4">
+        <div className="pricing-scrollbar mt-5 max-h-44 overflow-y-auto border-l-4 border-emerald-500 bg-emerald-50 px-4 py-4">
           <div className="flex items-center gap-2 text-emerald-800">
             <WandSparkles className="h-4 w-4 shrink-0" />
             <p className="text-xs font-bold uppercase tracking-[0.14em]">Why AI chose this</p>
@@ -354,7 +354,7 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
         </div>
       ) : null}
 
-      <div className="mt-5 space-y-2">
+      <div className="pricing-scrollbar mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
 
         {plan.featureBullets.map((feature) => (
           <AccessLine key={`${plan.id}-${feature}`} text={feature} />
@@ -397,7 +397,7 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
       </div>
         </div>
 
-        <aside className="flex min-w-0 flex-col border-t border-[#0f7896]/10 pt-6 md:border-l md:border-t-0 md:pl-8 md:pt-0">
+        <aside className="pricing-scrollbar flex min-h-0 min-w-0 flex-col overflow-y-auto border-t border-[#0f7896]/10 pt-6 md:border-l md:border-t-0 md:pl-8 md:pt-0">
           <div>
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f7896]">
@@ -431,12 +431,12 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
           </div>
 
           {plan.eligibleCoupons.length > 0 ? (
-            <div className="mt-4 border border-amber-300 bg-amber-50 p-3">
+            <div className="mt-4">
               <div className="flex items-center gap-2 text-amber-900">
                 <Tag className="h-4 w-4" />
                 <p className="text-xs font-bold uppercase tracking-[0.14em]">Eligible coupons</p>
               </div>
-              <div className="mt-3 space-y-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {plan.eligibleCoupons.map((coupon) => {
                   const selected = appliedCoupon?.code === coupon.code;
                   return (
@@ -445,20 +445,18 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
                       type="button"
                       disabled={Boolean(applyingCoupon)}
                       onClick={() => void applyCoupon(coupon.code)}
-                      className={`flex w-full items-center justify-between gap-3 border px-3 py-2 text-left transition ${selected ? "border-orange-500 bg-orange-100" : "border-amber-200 bg-white hover:border-orange-400 hover:bg-orange-50"}`}
+                      className={`inline-flex min-h-8 items-center gap-2 rounded-full border px-3 py-1.5 text-left transition ${selected ? "border-orange-500 bg-orange-100" : "border-amber-300 bg-amber-50 hover:border-orange-400 hover:bg-orange-50"}`}
                     >
-                      <span>
-                        <span className="block text-sm font-bold text-amber-950">{coupon.code}</span>
-                        <span className="block text-xs text-amber-900/65">
-                          {coupon.discountType === "percent" ? `${coupon.discountValue}% off` : `${formatGbp(coupon.discountValue)} off`}
-                        </span>
+                      <span className="text-xs font-bold text-amber-950">{coupon.code}</span>
+                      <span className="text-xs text-amber-900/65">
+                        {coupon.discountType === "percent" ? `${coupon.discountValue}% off` : `${formatGbp(coupon.discountValue)} off`}
                       </span>
                       {applyingCoupon === coupon.code ? (
                         <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
                       ) : selected ? (
                         <CheckCircle2 className="h-4 w-4 text-orange-600" />
                       ) : (
-                        <span className="text-xs font-semibold text-orange-700">Apply</span>
+                        <span className="text-[10px] font-semibold uppercase text-orange-700">Apply</span>
                       )}
                     </button>
                   );
@@ -541,10 +539,10 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
           >
             {activeVersion.embeddedLink || plan.embeddedLink ? (
             <a href={`/checkout?planId=${encodeURIComponent(plan.id)}&versionId=${encodeURIComponent(activeVersion.id)}${appliedCoupon ? `&couponCode=${encodeURIComponent(appliedCoupon.code)}` : ""}`}>
-              Continue to checkout
+              Enrol Now
             </a>
           ) : (
-            <span>Register Now</span>
+            <span>Enrol Now</span>
           )}
           </Button>
         )}
