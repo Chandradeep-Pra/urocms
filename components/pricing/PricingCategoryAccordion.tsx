@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   CheckCircle2,
   ChevronDown,
@@ -10,7 +11,9 @@ import {
   Loader2,
   Search,
   Sparkles,
+  Tag,
   WandSparkles,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +43,13 @@ type PricingPlanCard = {
   name: string;
   category?: string;
   tag?: string;
+  eligibleCoupons: Array<{
+    id: string;
+    code: string;
+    description: string;
+    discountType: "percent" | "amount";
+    discountValue: number;
+  }>;
   versions: PricingPlanVersion[];
   price: number;
   originalPrice?: number;
@@ -73,6 +83,18 @@ type PricingPlanCard = {
 type GroupedPlans = {
   category: string;
   plans: PricingPlanCard[];
+};
+
+type AiPlanResult = {
+  id: string;
+  matchedBy: "content" | "plan-info";
+  matchReason: string;
+  matches: Array<{
+    id: string;
+    type: string;
+    title: string;
+    subtitle: string;
+  }>;
 };
 
 function formatGbp(price: number) {
@@ -210,7 +232,7 @@ function PlanWaitlistButton({ plan }: { plan: PricingPlanCard }) {
   );
 }
 
-function PlanCard({ plan }: { plan: PricingPlanCard }) {
+function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlanResult }) {
   const isComingSoon = plan.isActive === false;
   const sortedVersions =
     Array.isArray(plan.versions) && plan.versions.length > 0
@@ -229,8 +251,39 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
           },
         ];
   const [activeVersionId, setActiveVersionId] = useState(sortedVersions[0]?.id ?? "");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    originalPrice: number;
+    discountedPrice: number;
+  } | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState("");
+  const [couponError, setCouponError] = useState("");
   const activeVersion =
     sortedVersions.find((version) => version.id === activeVersionId) ?? sortedVersions[0];
+
+  async function applyCoupon(code: string) {
+    try {
+      setApplyingCoupon(code);
+      setCouponError("");
+      const response = await fetch("/api/verify-coupon-web", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: plan.id, versionId: activeVersion.id, couponCode: code }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.applied) throw new Error(data.error || "Coupon cannot be applied");
+      setAppliedCoupon({
+        code: String(data.coupon?.code || code),
+        originalPrice: Number(data.pricing?.originalPrice ?? activeVersion.price),
+        discountedPrice: Number(data.pricing?.discountedPrice ?? activeVersion.price),
+      });
+    } catch (error) {
+      setAppliedCoupon(null);
+      setCouponError(error instanceof Error ? error.message : "Coupon cannot be applied");
+    } finally {
+      setApplyingCoupon("");
+    }
+  }
 
   return (
     <article
@@ -242,6 +295,9 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
       data-disabled={isComingSoon || undefined}
     >
       <div className="absolute inset-x-0 top-0 h-1 bg-[#0f7896]" />
+
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)] md:gap-8">
+        <div className="min-w-0">
 
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -275,48 +331,30 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
         {plan.subtitle || "Custom access plan built from selected Urologics content."}
       </p>
 
-      <div className="mt-5 rounded-2xl border border-[#0f7896]/10 bg-cyan-50 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f7896]">
-              Choose Duration
-            </p>
-            <p className="mt-2 text-sm text-[#071014]/58">
-              Pick the version that best matches how long you want access.
-            </p>
+      {aiResult ? (
+        <div className="mt-5 border-l-4 border-emerald-500 bg-emerald-50 px-4 py-4">
+          <div className="flex items-center gap-2 text-emerald-800">
+            <WandSparkles className="h-4 w-4 shrink-0" />
+            <p className="text-xs font-bold uppercase tracking-[0.14em]">Why AI chose this</p>
           </div>
-          <p className="text-xs font-medium text-[#071014]/55">
-            {sortedVersions.length} option{sortedVersions.length > 1 ? "s" : ""}
-          </p>
+          <p className="mt-2 text-sm leading-6 text-emerald-950/75">{aiResult.matchReason}</p>
+          {aiResult.matches.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              {aiResult.matches.slice(0, 3).map((match) => (
+                <div key={`${aiResult.id}-${match.type}-${match.id}`} className="flex items-start gap-2 text-sm">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                  <p className="min-w-0 text-emerald-950">
+                    <span className="font-semibold">{match.title}</span>
+                    {match.subtitle ? <span className="text-emerald-900/55"> · {match.subtitle}</span> : null}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {sortedVersions.map((version) => (
-            <button
-              key={version.id}
-              type="button"
-              disabled={isComingSoon}
-              onClick={() => setActiveVersionId(version.id)}
-              className={`rounded-full border px-3 py-2 text-sm font-medium transition ${
-                activeVersion.id === version.id
-                  ? "border-[#0f7896] bg-[#0f7896] text-white"
-                  : "border-[#0f7896]/12 bg-white text-[#0f7896] hover:border-[#0f7896]/30"
-              }`}
-            >
-              {version.months} months
-            </button>
-          ))}
-        </div>
-      </div>
+      ) : null}
 
-      <div className="mt-6 flex-1 space-y-3">
-        <div className="rounded-2xl bg-cyan-50 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f7896]">
-            Access Included
-          </p>
-          <p className="mt-2 text-sm text-[#071014]/58">
-            Built for candidates who want a structured and clearly scoped preparation path.
-          </p>
-        </div>
+      <div className="mt-5 space-y-2">
 
         {plan.featureBullets.map((feature) => (
           <AccessLine key={`${plan.id}-${feature}`} text={feature} />
@@ -356,7 +394,81 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
           </div>
         ) : null}
 
-        <div className="rounded-2xl border border-[#0f7896]/10 bg-cyan-50 px-4 py-3 text-sm text-[#071014]/62">
+      </div>
+        </div>
+
+        <aside className="flex min-w-0 flex-col border-t border-[#0f7896]/10 pt-6 md:border-l md:border-t-0 md:pl-8 md:pt-0">
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f7896]">
+                Choose duration
+              </p>
+              <p className="text-xs font-medium text-[#071014]/55">
+                {sortedVersions.length} option{sortedVersions.length > 1 ? "s" : ""}
+              </p>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {sortedVersions.map((version) => (
+                <button
+                  key={version.id}
+                  type="button"
+                  disabled={isComingSoon}
+                  onClick={() => {
+                    setActiveVersionId(version.id);
+                    setAppliedCoupon(null);
+                    setCouponError("");
+                  }}
+                  className={`min-h-10 border px-3 py-2 text-sm font-medium transition ${
+                    activeVersion.id === version.id
+                      ? "border-[#0f7896] bg-[#0f7896] text-white"
+                      : "border-[#0f7896]/15 bg-[#f8fdff] text-[#0f7896] hover:border-[#0f7896]/40"
+                  }`}
+                >
+                  {version.months} months
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {plan.eligibleCoupons.length > 0 ? (
+            <div className="mt-4 border border-amber-300 bg-amber-50 p-3">
+              <div className="flex items-center gap-2 text-amber-900">
+                <Tag className="h-4 w-4" />
+                <p className="text-xs font-bold uppercase tracking-[0.14em]">Eligible coupons</p>
+              </div>
+              <div className="mt-3 space-y-2">
+                {plan.eligibleCoupons.map((coupon) => {
+                  const selected = appliedCoupon?.code === coupon.code;
+                  return (
+                    <button
+                      key={coupon.id}
+                      type="button"
+                      disabled={Boolean(applyingCoupon)}
+                      onClick={() => void applyCoupon(coupon.code)}
+                      className={`flex w-full items-center justify-between gap-3 border px-3 py-2 text-left transition ${selected ? "border-orange-500 bg-orange-100" : "border-amber-200 bg-white hover:border-orange-400 hover:bg-orange-50"}`}
+                    >
+                      <span>
+                        <span className="block text-sm font-bold text-amber-950">{coupon.code}</span>
+                        <span className="block text-xs text-amber-900/65">
+                          {coupon.discountType === "percent" ? `${coupon.discountValue}% off` : `${formatGbp(coupon.discountValue)} off`}
+                        </span>
+                      </span>
+                      {applyingCoupon === coupon.code ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
+                      ) : selected ? (
+                        <CheckCircle2 className="h-4 w-4 text-orange-600" />
+                      ) : (
+                        <span className="text-xs font-semibold text-orange-700">Apply</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {couponError ? <p className="mt-2 text-xs font-medium text-rose-600">{couponError}</p> : null}
+            </div>
+          ) : null}
+
+          <div className="mt-4 border-l-2 border-[#0f7896] bg-cyan-50 px-4 py-3 text-sm text-[#071014]/62">
           <div className="flex items-center gap-2 font-medium text-[#0f7896]">
             <Clock3 className="h-4 w-4" />
             <span>
@@ -368,25 +480,45 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
           {activeVersion.billingLabel ? <p className="mt-2">{activeVersion.billingLabel}</p> : null}
           {plan.vivaMinutes ? <p className="mt-2">Includes {plan.vivaMinutes} AI viva minutes</p> : null}
         </div>
-      </div>
 
-      <div className="mt-8 border-t border-[#0f7896]/10 pt-5">
-        {typeof activeVersion.originalPrice === "number" &&
+      <div className="mt-5 border-t border-[#0f7896]/10 pt-5">
+        <AnimatePresence mode="wait" initial={false}>
+        {appliedCoupon ? (
+          <motion.div
+            key={`${activeVersion.id}-${appliedCoupon.code}`}
+            initial={{ opacity: 0, y: 10, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 360, damping: 28 }}
+          >
+            <motion.p
+              initial={{ width: 0 }}
+              animate={{ width: "100%" }}
+              className="w-fit overflow-hidden whitespace-nowrap text-sm font-medium text-[#071014]/45 line-through decoration-2 decoration-orange-500"
+            >
+              {formatGbp(appliedCoupon.originalPrice)}
+            </motion.p>
+            <p className="mt-1 text-3xl font-semibold text-emerald-700">
+              {formatGbp(appliedCoupon.discountedPrice)}
+            </p>
+          </motion.div>
+        ) : typeof activeVersion.originalPrice === "number" &&
         typeof activeVersion.discountedPrice === "number" &&
         activeVersion.discountedPrice < activeVersion.originalPrice ? (
-          <div className="space-y-1">
+          <motion.div key={`${activeVersion.id}-default-discount`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-1">
             <p className="text-sm font-medium text-[#071014]/45 line-through">
               {formatGbp(activeVersion.originalPrice)}
             </p>
             <p className="text-3xl font-semibold tracking-[-0.04em] text-[#071014]">
               {formatGbp(activeVersion.discountedPrice)}
             </p>
-          </div>
+          </motion.div>
         ) : (
-          <p className="text-3xl font-semibold tracking-[-0.04em] text-[#071014]">
+          <motion.p key={`${activeVersion.id}-price`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-3xl font-semibold tracking-[-0.04em] text-[#071014]">
             {formatGbp(activeVersion.discountedPrice ?? activeVersion.price)}
-          </p>
+          </motion.p>
         )}
+        </AnimatePresence>
         <p className="mt-1 text-sm text-[#071014]/55">
           One focused plan for a cleaner, faster enrolment decision.
         </p>
@@ -408,7 +540,7 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
             className="mt-4 w-full rounded-full bg-[#0f7896] text-white hover:bg-[#0b647d]"
           >
             {activeVersion.embeddedLink || plan.embeddedLink ? (
-            <a href={`/checkout?planId=${encodeURIComponent(plan.id)}&versionId=${encodeURIComponent(activeVersion.id)}`}>
+            <a href={`/checkout?planId=${encodeURIComponent(plan.id)}&versionId=${encodeURIComponent(activeVersion.id)}${appliedCoupon ? `&couponCode=${encodeURIComponent(appliedCoupon.code)}` : ""}`}>
               Continue to checkout
             </a>
           ) : (
@@ -416,6 +548,8 @@ function PlanCard({ plan }: { plan: PricingPlanCard }) {
           )}
           </Button>
         )}
+      </div>
+        </aside>
       </div>
     </article>
   );
@@ -428,7 +562,7 @@ export function PricingCategoryAccordion({
 }) {
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [aiPlanIds, setAiPlanIds] = useState<string[] | null>(null);
+  const [aiResults, setAiResults] = useState<AiPlanResult[] | null>(null);
   const [aiSearching, setAiSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
 
@@ -438,8 +572,8 @@ export function PricingCategoryAccordion({
       .map((group) => ({
         ...group,
         plans: group.plans.filter((plan) => {
-          if (aiPlanIds && !aiPlanIds.includes(plan.id)) return false;
-          if (!query || aiPlanIds) return true;
+          if (aiResults && !aiResults.some((result) => result.id === plan.id)) return false;
+          if (!query || aiResults) return true;
           return [
             plan.name,
             plan.category,
@@ -452,7 +586,7 @@ export function PricingCategoryAccordion({
         }),
       }))
       .filter((group) => group.plans.length > 0);
-  }, [aiPlanIds, groupedPlans, searchQuery]);
+  }, [aiResults, groupedPlans, searchQuery]);
 
   async function runAiSearch() {
     const query = searchQuery.trim();
@@ -470,10 +604,15 @@ export function PricingCategoryAccordion({
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to search plans");
-      const ids = Array.isArray(data.plans)
-        ? data.plans.map((plan: { id?: string }) => String(plan.id || "")).filter(Boolean)
+      const results: AiPlanResult[] = Array.isArray(data.plans)
+        ? data.plans.map((plan: AiPlanResult) => ({
+            id: String(plan.id || ""),
+            matchedBy: plan.matchedBy === "plan-info" ? "plan-info" : "content",
+            matchReason: String(plan.matchReason || "This plan is relevant to your search."),
+            matches: Array.isArray(plan.matches) ? plan.matches : [],
+          })).filter((plan: AiPlanResult) => Boolean(plan.id))
         : [];
-      setAiPlanIds(ids);
+      setAiResults(results);
       setOpenCategories(groupedPlans.map((group) => group.category));
     } catch (error) {
       setSearchError(error instanceof Error ? error.message : "Unable to search plans");
@@ -488,7 +627,7 @@ export function PricingCategoryAccordion({
 
   return (
     <div className="space-y-6">
-      <div className="border-y border-[#0f7896]/12 bg-transparent py-5">
+      <div className="border-y border-[#0f7896]/12 bg-white px-4 py-5 shadow-[0_12px_32px_rgba(15,120,150,0.06)] sm:px-5">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0f7896]" />
@@ -496,16 +635,31 @@ export function PricingCategoryAccordion({
               value={searchQuery}
               onChange={(event) => {
                 setSearchQuery(event.target.value);
-                setAiPlanIds(null);
+                setAiResults(null);
                 setSearchError("");
               }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") void runAiSearch();
               }}
-              className="h-12 rounded-lg border-[#0f7896]/20 pl-12"
+              className="h-12 rounded-lg border-[#0f7896]/20 bg-[#f8fdff] pl-12 pr-11 shadow-none focus-visible:border-[#0f7896] focus-visible:ring-[#0f7896]/15"
               placeholder="Search courses, topics, mocks, or AI viva"
               aria-label="Search plans"
             />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setAiResults(null);
+                  setSearchError("");
+                }}
+                className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center text-[#071014]/45 transition hover:text-[#071014] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f7896]"
+                aria-label="Clear search"
+                title="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
           <Button
             type="button"
@@ -517,14 +671,11 @@ export function PricingCategoryAccordion({
             AI search
           </Button>
         </div>
-        <div className="mt-3 flex min-h-5 items-center justify-between gap-3 text-sm">
-          
-          {(searchQuery || aiPlanIds) ? (
-            <button type="button" className="font-semibold text-[#0f7896]" onClick={() => { setSearchQuery(""); setAiPlanIds(null); setSearchError(""); }}>
-              Clear
-            </button>
-          ) : null}
-        </div>
+        {searchError || aiResults ? (
+          <div className={`mt-3 border-l-2 px-3 text-sm ${searchError ? "border-rose-400 text-rose-600" : "border-emerald-500 text-emerald-800"}`}>
+            {searchError || `${aiResults?.length || 0} plan${aiResults?.length === 1 ? "" : "s"} matched. Open a category to see why each was selected.`}
+          </div>
+        ) : null}
       </div>
 
       {visibleGroups.length === 0 ? (
@@ -583,9 +734,13 @@ export function PricingCategoryAccordion({
 
             {open ? (
               <div className="border-t border-[#0f7896]/10 bg-[#fbfeff] px-6 py-6">
-                <div className="grid gap-5 lg:grid-cols-3">
+                <div className="grid gap-5 xl:grid-cols-2">
                   {group.plans.map((plan) => (
-                    <PlanCard key={plan.id} plan={plan} />
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      aiResult={aiResults?.find((result) => result.id === plan.id)}
+                    />
                   ))}
                 </div>
               </div>

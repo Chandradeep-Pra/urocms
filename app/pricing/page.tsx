@@ -51,6 +51,13 @@ type PricingPlanCard = {
   name: string;
   category?: string;
   tag?: string;
+  eligibleCoupons: Array<{
+    id: string;
+    code: string;
+    description: string;
+    discountType: "percent" | "amount";
+    discountValue: number;
+  }>;
   versions: Array<{
     id: string;
     months: number;
@@ -125,9 +132,10 @@ function groupPlansByCategory(plans: PricingPlanCard[]) {
 
 async function getPricingPlans(): Promise<PricingPlanCard[]> {
   try {
-    const [snapshot, coursesSnap, chaptersSnap, videosSnap, quizzesSnap, mocksSnap, vivaSnap] =
+    const [snapshot, couponsSnap, coursesSnap, chaptersSnap, videosSnap, quizzesSnap, mocksSnap, vivaSnap] =
       await Promise.all([
         getAdminDb().collection("pricingPlans").get(),
+        getAdminDb().collection("pricingCoupons").where("isActive", "==", true).get(),
         getAdminDb().collection("courses").get(),
         getAdminDb().collection("chapters").where("isActive", "==", true).get(),
         getAdminDb().collection("videoItems").get(),
@@ -135,6 +143,19 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
         getAdminDb().collection("mocks").get(),
         getAdminDb().collection("vivaCases").where("isActive", "==", true).get(),
       ]);
+
+    const couponCatalog = new Map(
+      couponsSnap.docs.map((doc) => {
+        const coupon = doc.data();
+        return [doc.id, {
+          id: doc.id,
+          code: String(coupon.code ?? "").trim(),
+          description: String(coupon.description ?? "").trim(),
+          discountType: coupon.discountType === "amount" ? "amount" as const : "percent" as const,
+          discountValue: Number(coupon.discountValue ?? 0),
+        }];
+      }),
+    );
 
     const titleMap = {
       courses: Object.fromEntries(
@@ -208,29 +229,46 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
 
         const versions = Array.isArray(data.versions)
           ? data.versions
-              .map((version: any, index: number) => ({
-                id: String(version?.id ?? `version-${index + 1}`),
-                months: Number(version?.months ?? 0),
-                price: Number(version?.price ?? version?.originalPrice ?? 0),
+              .map((rawVersion: unknown, index: number) => {
+                const version = rawVersion && typeof rawVersion === "object"
+                  ? rawVersion as Record<string, unknown>
+                  : {};
+                return ({
+                id: String(version.id ?? `version-${index + 1}`),
+                months: Number(version.months ?? 0),
+                price: Number(version.price ?? version.originalPrice ?? 0),
                 originalPrice: Number(
-                  version?.originalPrice ?? version?.price ?? data.originalPrice ?? data.price ?? 0
+                  version.originalPrice ?? version.price ?? data.originalPrice ?? data.price ?? 0
                 ),
                 discountedPrice: Number(
-                  version?.discountedPrice ?? version?.price ?? data.discountedPrice ?? data.price ?? 0
+                  version.discountedPrice ?? version.price ?? data.discountedPrice ?? data.price ?? 0
                 ),
-                embeddedLink: String(version?.embeddedLink ?? "").trim(),
-                couponCode: String(version?.couponCode ?? "").trim(),
-                billingLabel: String(version?.billingLabel ?? "").trim(),
-                durationLabel: String(version?.durationLabel ?? "").trim(),
-              }))
-              .filter((version: any) => Number.isFinite(version.months) && version.months > 0)
+                embeddedLink: String(version.embeddedLink ?? "").trim(),
+                couponCode: String(version.couponCode ?? "").trim(),
+                billingLabel: String(version.billingLabel ?? "").trim(),
+                durationLabel: String(version.durationLabel ?? "").trim(),
+              });
+              })
+              .filter((version) => Number.isFinite(version.months) && version.months > 0)
           : [];
+        const eligibleCouponIds = Array.from(new Set([
+          ...(Array.isArray(data.eligibleCouponIds) ? data.eligibleCouponIds : []),
+          ...((Array.isArray(data.versions) ? data.versions : []).map((version: unknown) =>
+            version && typeof version === "object"
+              ? (version as Record<string, unknown>).couponId
+              : undefined
+          )),
+          data.couponId,
+        ].map((id) => String(id || "")).filter(Boolean)));
 
         return {
           id: doc.id,
           name: String(data.name ?? "Untitled Plan"),
           category: String(data.category ?? "").trim(),
           tag: String(data.tag ?? "").trim(),
+          eligibleCoupons: eligibleCouponIds
+            .map((id) => couponCatalog.get(id))
+            .filter((coupon): coupon is NonNullable<typeof coupon> => Boolean(coupon?.code)),
           versions:
             versions.length > 0
               ? versions

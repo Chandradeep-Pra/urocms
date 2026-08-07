@@ -104,9 +104,16 @@ export async function verifyPlanCoupon(
   }
 
   const versions = Array.isArray(plan.versions) ? plan.versions : [];
+  const legacyVersion = {
+    id: "legacy-default",
+    months: Number(plan.expiryMonths || 1),
+    price: Number(plan.price || 0),
+    originalPrice: Number(plan.originalPrice ?? plan.price ?? 0),
+  };
   const version = versionId
-    ? versions.find((item: Record<string, unknown>) => String(item?.id || "") === versionId)
-    : versions[0];
+    ? versions.find((item: Record<string, unknown>) => String(item?.id || "") === versionId) ||
+      (versionId === "legacy-default" ? legacyVersion : null)
+    : versions[0] || legacyVersion;
   if (!version) {
     throw new CouponVerificationError("Plan version is unavailable", "version_unavailable", 404);
   }

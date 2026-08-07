@@ -89,11 +89,14 @@ function CheckoutContent() {
         if (!response.ok) throw new Error(data.error || "Unable to open checkout");
         const checkoutDetails = data as CheckoutDetails;
         setDetails(checkoutDetails);
-        const marketingCoupon = checkoutDetails.coupons.find((coupon) => coupon.isMarketing);
-        if (marketingCoupon) {
-          setCouponCode(marketingCoupon.code);
+        const requestedCouponCode = params.get("couponCode")?.trim().toUpperCase();
+        const selectedCoupon = checkoutDetails.coupons.find(
+          (coupon) => requestedCouponCode && coupon.code.toUpperCase() === requestedCouponCode,
+        ) || checkoutDetails.coupons.find((coupon) => coupon.isMarketing);
+        if (selectedCoupon) {
+          setCouponCode(selectedCoupon.code);
           try {
-            setAppliedPricing(await verifyCoupon(checkoutDetails, marketingCoupon.code));
+            setAppliedPricing(await verifyCoupon(checkoutDetails, selectedCoupon.code));
           } catch {
             // Keep checkout available if an advertised coupon has just expired or changed.
           }
