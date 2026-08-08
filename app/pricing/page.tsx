@@ -322,8 +322,6 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
 export default async function PricingPage() {
   const plans = await getPricingPlans();
   const groupedPlans = groupPlansByCategory(plans);
-  const configuredTax = Number(process.env.TAX ?? 0);
-  const taxPercent = Number.isFinite(configuredTax) && configuredTax >= 0 ? configuredTax : 0;
   const offerCatalogSchema = {
     "@context": "https://schema.org",
     "@type": "OfferCatalog",
@@ -382,7 +380,7 @@ export default async function PricingPage() {
            
           </div>
         ) : (
-          <PricingCategoryAccordion groupedPlans={groupedPlans} taxPercent={taxPercent} />
+          <PricingCategoryAccordion groupedPlans={groupedPlans} />
         )}
       </div>
     </main>
