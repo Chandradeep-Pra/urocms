@@ -171,9 +171,15 @@ function CheckoutContent() {
       style: "currency",
       currency: details.version.currency,
     }).format(value);
+  const wholeMoney = (value: number) =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: details.version.currency,
+      maximumFractionDigits: 0,
+    }).format(value);
   const subtotal = appliedPricing?.discountedPrice ?? details.version.originalPrice;
   const taxAmount = Math.round(subtotal * details.taxPercent) / 100;
-  const total = Math.round((subtotal + taxAmount) * 100) / 100;
+  const total = Math.round(subtotal + taxAmount);
   const queryId = new URLSearchParams(window.location.search).get("queryId");
   const countdownMs = appliedPricing?.expiresAt
     ? Math.max(0, new Date(appliedPricing.expiresAt).getTime() - countdownNow)
@@ -367,7 +373,7 @@ function CheckoutContent() {
                     transition={{ type: "spring", stiffness: 360, damping: 27 }}
                     className="block text-2xl font-bold text-slate-950"
                   >
-                    {money(total)}
+                    {wholeMoney(total)}
                   </motion.span>
                 </AnimatePresence>
                 {countdownLabel ? (
