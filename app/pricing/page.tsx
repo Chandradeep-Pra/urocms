@@ -322,6 +322,8 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
 export default async function PricingPage() {
   const plans = await getPricingPlans();
   const groupedPlans = groupPlansByCategory(plans);
+  const configuredTax = Number(process.env.TAX ?? 0);
+  const taxPercent = Number.isFinite(configuredTax) && configuredTax >= 0 ? configuredTax : 0;
   const offerCatalogSchema = {
     "@context": "https://schema.org",
     "@type": "OfferCatalog",
@@ -338,7 +340,7 @@ export default async function PricingPage() {
         name: `${plan.name} - ${version.months} Months`,
         description: plan.subtitle || "Urologics learning access plan",
         priceCurrency: "GBP",
-        price: String(version.discountedPrice ?? version.price ?? 0),
+        price: String(version.price ?? 0),
         url: version.embeddedLink || plan.embeddedLink || absoluteUrl("/pricing"),
       })),
     })),
@@ -380,7 +382,7 @@ export default async function PricingPage() {
            
           </div>
         ) : (
-          <PricingCategoryAccordion groupedPlans={groupedPlans} />
+          <PricingCategoryAccordion groupedPlans={groupedPlans} taxPercent={taxPercent} />
         )}
       </div>
     </main>

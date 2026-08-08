@@ -57,6 +57,8 @@ export async function GET(req: NextRequest) {
   }
 
   const db = getAdminDb();
+  const configuredTax = Number(process.env.TAX ?? 0);
+  const taxPercent = Number.isFinite(configuredTax) && configuredTax >= 0 ? configuredTax : 0;
   const planDoc = await db.collection("pricingPlans").doc(planId).get();
   if (!planDoc.exists || planDoc.data()?.isActive === false) {
     return NextResponse.json({ error: "Plan is unavailable" }, { status: 404 });
@@ -129,6 +131,7 @@ export async function GET(req: NextRequest) {
     },
     coupons,
     checkoutUrl,
+    taxPercent,
     user: {
       uid: auth.user.uid,
       email: auth.user.email,

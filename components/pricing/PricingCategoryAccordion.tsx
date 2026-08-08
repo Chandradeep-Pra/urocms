@@ -232,7 +232,15 @@ function PlanWaitlistButton({ plan }: { plan: PricingPlanCard }) {
   );
 }
 
-function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlanResult }) {
+function PlanCard({
+  plan,
+  aiResult,
+  taxPercent,
+}: {
+  plan: PricingPlanCard;
+  aiResult?: AiPlanResult;
+  taxPercent: number;
+}) {
   const isComingSoon = plan.isActive === false;
   const sortedVersions =
     Array.isArray(plan.versions) && plan.versions.length > 0
@@ -260,6 +268,9 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
   const [couponError, setCouponError] = useState("");
   const activeVersion =
     sortedVersions.find((version) => version.id === activeVersionId) ?? sortedVersions[0];
+  const coursePrice = appliedCoupon?.discountedPrice ?? activeVersion.price;
+  const taxAmount = Math.round(coursePrice * taxPercent) / 100;
+  const priceWithTax = Math.round((coursePrice + taxAmount) * 100) / 100;
 
   async function applyCoupon(code: string) {
     try {
@@ -500,31 +511,24 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
               {formatGbp(appliedCoupon.discountedPrice)}
             </p>
           </motion.div>
-        ) : typeof activeVersion.originalPrice === "number" &&
-        typeof activeVersion.discountedPrice === "number" &&
-        activeVersion.discountedPrice < activeVersion.originalPrice ? (
-          <motion.div key={`${activeVersion.id}-default-discount`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-1">
-            <p className="text-sm font-medium text-[#071014]/45 line-through">
-              {formatGbp(activeVersion.originalPrice)}
-            </p>
-            <p className="text-3xl font-semibold tracking-[-0.04em] text-[#071014]">
-              {formatGbp(activeVersion.discountedPrice)}
-            </p>
-          </motion.div>
         ) : (
           <motion.p key={`${activeVersion.id}-price`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-3xl font-semibold tracking-[-0.04em] text-[#071014]">
-            {formatGbp(activeVersion.discountedPrice ?? activeVersion.price)}
+            {formatGbp(activeVersion.price)}
           </motion.p>
         )}
         </AnimatePresence>
-        <p className="mt-1 text-sm text-[#071014]/55">
-          One focused plan for a cleaner, faster enrolment decision.
-        </p>
-        {activeVersion.couponCode ? (
-          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
-            Coupon applied: {activeVersion.couponCode}
-          </p>
-        ) : null}
+        <div className="mt-3 space-y-1 border-t border-[#0f7896]/10 pt-3 text-xs text-[#071014]/55">
+          <div className="flex items-center justify-between gap-3">
+            <span>Taxes + platform fee ({taxPercent}%)</span>
+            <span>+{formatGbp(taxAmount)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3 text-sm font-semibold text-[#071014]">
+            <span>Total</span>
+            <motion.span key={priceWithTax} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
+              {formatGbp(priceWithTax)}
+            </motion.span>
+          </div>
+        </div>
         {isComingSoon ? (
           <>
             <div className="mt-4 rounded-2xl border border-slate-300 bg-white/80 px-4 py-3 text-center text-sm font-medium leading-6 text-slate-700">
@@ -555,8 +559,10 @@ function PlanCard({ plan, aiResult }: { plan: PricingPlanCard; aiResult?: AiPlan
 
 export function PricingCategoryAccordion({
   groupedPlans,
+  taxPercent,
 }: {
   groupedPlans: GroupedPlans[];
+  taxPercent: number;
 }) {
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -738,6 +744,7 @@ export function PricingCategoryAccordion({
                       key={plan.id}
                       plan={plan}
                       aiResult={aiResults?.find((result) => result.id === plan.id)}
+                      taxPercent={taxPercent}
                     />
                   ))}
                 </div>

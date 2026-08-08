@@ -27,6 +27,7 @@ type CheckoutDetails = {
     expiresAt: string | null;
   }>;
   checkoutUrl: string;
+  taxPercent: number;
 };
 
 type AppliedPricing = {
@@ -35,6 +36,19 @@ type AppliedPricing = {
   discountedPrice: number;
   expiresAt: string | null;
 };
+
+function formatRemainingTime(milliseconds: number) {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = totalSeconds % 60;
+  const time = [hours, minutes, seconds]
+    .map((part) => String(part).padStart(2, "0"))
+    .join(":");
+
+  return days > 0 ? `${days}d ${time}` : time;
+}
 
 async function verifyCoupon(details: CheckoutDetails, couponCode: string) {
   const response = await fetch("/api/verify-coupon-web", {
@@ -92,7 +106,7 @@ function CheckoutContent() {
         const requestedCouponCode = params.get("couponCode")?.trim().toUpperCase();
         const selectedCoupon = checkoutDetails.coupons.find(
           (coupon) => requestedCouponCode && coupon.code.toUpperCase() === requestedCouponCode,
-        ) || checkoutDetails.coupons.find((coupon) => coupon.isMarketing);
+        );
         if (selectedCoupon) {
           setCouponCode(selectedCoupon.code);
           try {
@@ -157,18 +171,16 @@ function CheckoutContent() {
       style: "currency",
       currency: details.version.currency,
     }).format(value);
-  const total = appliedPricing?.discountedPrice ?? details.version.originalPrice;
+  const subtotal = appliedPricing?.discountedPrice ?? details.version.originalPrice;
+  const taxAmount = Math.round(subtotal * details.taxPercent) / 100;
+  const total = Math.round((subtotal + taxAmount) * 100) / 100;
   const queryId = new URLSearchParams(window.location.search).get("queryId");
   const countdownMs = appliedPricing?.expiresAt
     ? Math.max(0, new Date(appliedPricing.expiresAt).getTime() - countdownNow)
     : null;
   const countdownLabel = countdownMs === null
     ? null
-    : [
-        Math.floor(countdownMs / 3_600_000),
-        Math.floor((countdownMs % 3_600_000) / 60_000),
-        Math.floor((countdownMs % 60_000) / 1000),
-      ].map((part) => String(part).padStart(2, "0")).join(":");
+    : formatRemainingTime(countdownMs);
   const expiryDateLabel = appliedPricing?.expiresAt
     ? new Intl.DateTimeFormat("en-GB", {
         day: "numeric",
@@ -326,6 +338,10 @@ function CheckoutContent() {
             </motion.div>
           ) : null}
           </AnimatePresence>
+          <div className="flex justify-between gap-4 text-slate-500">
+            <span>Taxes + platform fee ({details.taxPercent}%)</span>
+            <span>+{money(taxAmount)}</span>
+          </div>
           <div className="border-t border-slate-200 pt-3">
             <div className="flex items-end justify-between gap-4">
               <span className="font-semibold text-slate-950">Total</span>
