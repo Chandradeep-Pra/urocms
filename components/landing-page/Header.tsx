@@ -17,7 +17,7 @@ const navItems = [
   { label: "Courses", href: "#courses" },
   { label: "AI Viva", href: "#ai-viva" },
   { label: "Stories", href: "#stories" },
-  // { label: "Pricing", href: "/pricing" },
+  { label: "Plans", href: "/pricing" },
 ];
 
 const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "/web";
