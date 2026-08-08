@@ -345,7 +345,7 @@ function CheckoutContent() {
           ) : null}
           </AnimatePresence>
           <div className="flex justify-between gap-4 text-slate-500">
-            <span>Taxes + platform fee ({details.taxPercent}%)</span>
+            <span>Taxes + platform fee</span>
             <span>+{money(taxAmount)}</span>
           </div>
           <div className="border-t border-slate-200 pt-3">
