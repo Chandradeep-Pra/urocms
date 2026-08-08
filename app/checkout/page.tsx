@@ -376,11 +376,7 @@ function CheckoutContent() {
                     {wholeMoney(total)}
                   </motion.span>
                 </AnimatePresence>
-                {countdownLabel ? (
-                  <p className="mt-1 font-mono text-xs font-semibold text-rose-600">
-                    {countdownLabel} remaining
-                  </p>
-                ) : null}
+                
               </div>
             </div>
             <p className="mt-1 text-right text-xs text-slate-500">Currency: {details.version.currency}</p>
