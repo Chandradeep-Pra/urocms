@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import type { VivaCaseForm } from "@/components/viva/types";
 
-interface FastAndFuriousDialogProps {
+export interface VivaQuestionSetupDialogProps {
   open: boolean;
   form: VivaCaseForm;
   onOpenChange: (open: boolean) => void;
@@ -28,7 +28,7 @@ interface FastAndFuriousDialogProps {
   onQuestionsGenerated: (questions: Array<{ question: string; answerKeywords: string[] }>) => void;
 }
 
-export function FastAndFuriousDialog({
+export function VivaQuestionSetupDialog({
   open,
   form,
   onOpenChange,
@@ -38,9 +38,10 @@ export function FastAndFuriousDialog({
   onToggleQuestionExhibit,
   mode = "fastAndFurious",
   onQuestionsGenerated,
-}: FastAndFuriousDialogProps) {
+}: VivaQuestionSetupDialogProps) {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [generating, setGenerating] = useState(false);
+  const [leftPanelTab, setLeftPanelTab] = useState<"config" | "questions">("config");
 
   const modeConfig = form.modes[mode];
   const displayedQuestionIndex = Math.min(
@@ -54,6 +55,9 @@ export function FastAndFuriousDialog({
     question.question.trim()
   ).length;
   const activeQuestion = modeConfig.questions[displayedQuestionIndex];
+  const populatedQuestions = modeConfig.questions
+    .map((question, index) => ({ question, index }))
+    .filter(({ question }) => question.question.trim().length > 0);
 
   const generateSampleQuestions = async () => {
     if (!form.case.stem.trim()) {
@@ -82,6 +86,7 @@ export function FastAndFuriousDialog({
       if (!response.ok) throw new Error(data?.error || "Question generation failed");
       onQuestionsGenerated(data.questions || []);
       setActiveQuestionIndex(0);
+      setLeftPanelTab("questions");
       toast.success("Sample viva questions generated. Review them before saving.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Question generation failed");
@@ -133,45 +138,78 @@ export function FastAndFuriousDialog({
           <div className="flex-1 overflow-hidden bg-slate-50 px-8 py-6">
             <div className="grid h-full min-h-0 gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
               <div className="flex h-full min-h-0 flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="space-y-1">
-                  <Label htmlFor="fast-question-count" className="text-sm font-semibold text-slate-800">
-                    Question Count
-                  </Label>
-                  <p className="text-xs text-slate-500">
-                    Pick the number of {isCalm ? "guided" : "rapid-fire"} prompts for this case.
-                  </p>
+                <div className="mb-5 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setLeftPanelTab("config")}
+                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                      leftPanelTab === "config"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    Config
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLeftPanelTab("questions")}
+                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                      leftPanelTab === "questions"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    Questions ({populatedQuestions.length})
+                  </button>
                 </div>
 
-                <Input
-                  id="fast-question-count"
-                  type="number"
-                  min={1}
-                  value={questionCount}
-                  onChange={(e) => onQuestionCountChange(Number(e.target.value || 1))}
-                  className="mt-4 h-11"
-                />
+                {leftPanelTab === "config" ? (
+                  <div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`${mode}-question-count`} className="text-sm font-semibold text-slate-800">
+                        Question Count
+                      </Label>
+                      <p className="text-xs text-slate-500">
+                        Pick the number of {isCalm ? "guided" : "rapid-fire"} prompts for this case.
+                      </p>
+                    </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={generating || !form.case.stem.trim()}
-                  onClick={generateSampleQuestions}
-                  className="mt-3 w-full gap-2 text-xs"
-                >
-                  {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                  {generating ? "Generating..." : "Generate sample questions with AI"}
-                </Button>
+                    <Input
+                      id={`${mode}-question-count`}
+                      type="number"
+                      min={1}
+                      value={questionCount}
+                      onChange={(e) => onQuestionCountChange(Number(e.target.value || 1))}
+                      className="mt-4 h-11"
+                    />
 
-                <div className="mt-5 mb-3 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-slate-800">Questions</p>
-                  <p className="text-xs text-slate-500">Click to edit</p>
-                </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={generating || !form.case.stem.trim()}
+                      onClick={generateSampleQuestions}
+                      className="mt-3 w-full gap-2 text-xs"
+                    >
+                      {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                      {generating ? "Generating..." : "Generate sample questions with AI"}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex min-h-0 flex-1 flex-col">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-800">Generated Questions</p>
+                      <p className="text-xs text-slate-500">Click to edit</p>
+                    </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-                  <div className="space-y-3">
-                  {modeConfig.questions.map((question, index) => {
-                    const ready = question.question.trim().length > 0;
+                    <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                      {populatedQuestions.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-xs text-slate-500">
+                          No generated questions yet. Open Config to generate them.
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                  {populatedQuestions.map(({ question, index }) => {
                     const linkedCount = question.linkedExhibitIds.length;
                     const keywordCount = question.answerKeywords.length;
                     const active = displayedQuestionIndex === index;
@@ -191,14 +229,8 @@ export function FastAndFuriousDialog({
                           <p className="text-sm font-medium text-slate-800">
                             Question {index + 1}
                           </p>
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                              ready
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-slate-200 text-slate-600"
-                            }`}
-                          >
-                            {ready ? "Ready" : "Draft"}
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+                            Ready
                           </span>
                         </div>
                         <p className="mt-2 text-xs text-slate-500">
@@ -207,8 +239,11 @@ export function FastAndFuriousDialog({
                       </button>
                     );
                   })}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="min-h-0 overflow-y-auto rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">

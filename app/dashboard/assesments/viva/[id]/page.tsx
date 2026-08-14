@@ -8,7 +8,7 @@ import { adminFetch } from "@/lib/client/adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FastAndFuriousDialog } from "@/components/viva/FastAndFuriousDialog";
+import { VivaQuestionSetupDialog } from "@/components/viva/VivaQuestionSetupDialog";
 import { VivaModeSelector } from "@/components/viva/VivaModeSelector";
 import {
   createExhibit,
@@ -1076,7 +1076,7 @@ export default function CaseDetailsPage() {
         )}
       </div>
 
-      <FastAndFuriousDialog
+      <VivaQuestionSetupDialog
         mode="calmAndComposed"
         open={calmModeDialogOpen}
         form={caseData}
@@ -1088,7 +1088,7 @@ export default function CaseDetailsPage() {
         onQuestionsGenerated={(questions) => applyGeneratedQuestions("calmAndComposed", questions)}
       />
 
-      <FastAndFuriousDialog
+      <VivaQuestionSetupDialog
         open={fastModeDialogOpen}
         form={caseData}
         onOpenChange={setFastModeDialogOpen}

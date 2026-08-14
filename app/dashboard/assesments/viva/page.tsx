@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FastAndFuriousDialog } from "@/components/viva/FastAndFuriousDialog";
+import { VivaQuestionSetupDialog } from "@/components/viva/VivaQuestionSetupDialog";
 import { VivaModeSelector } from "@/components/viva/VivaModeSelector";
 import {
   createExhibit,
@@ -1112,7 +1112,7 @@ export default function AIVivaPage() {
         </Dialog>
         </div>
 
-      <FastAndFuriousDialog
+      <VivaQuestionSetupDialog
         mode="calmAndComposed"
         open={calmModeDialogOpen}
         form={form}
@@ -1124,7 +1124,7 @@ export default function AIVivaPage() {
         onQuestionsGenerated={(questions) => applyGeneratedQuestions("calmAndComposed", questions)}
       />
 
-      <FastAndFuriousDialog
+      <VivaQuestionSetupDialog
         open={fastModeDialogOpen}
           form={form}
           onOpenChange={setFastModeDialogOpen}

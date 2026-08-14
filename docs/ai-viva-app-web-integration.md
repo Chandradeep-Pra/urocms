@@ -2,6 +2,8 @@
 
 This guide covers the shared question contract for the **Calm and Composed** and **Fast and Furious** AI viva modes. Both modes now return pre-authored questions in the same shape, so clients can use one player implementation.
 
+For complete React Native and web examples for the admin AI generator, see [RN and Web Integration: AI Viva Question Generator](./rn-web-ai-viva-question-generator.md).
+
 ## Base URLs and authentication
 
 | Client | Endpoint | Authentication |
