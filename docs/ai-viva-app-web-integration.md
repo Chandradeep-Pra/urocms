@@ -125,6 +125,19 @@ The player behavior can differ without changing the data model:
 - Fast and Furious: use the app's rapid timing/advance behavior.
 - Keep mode labels as product labels; do not rely on them for parsing or storage. Use the camel-case keys.
 
+## Candidate name and opening greeting
+
+Resolve the candidate name before the clinical questions begin:
+
+1. Prefer the authenticated account profile name.
+2. If no profile name exists, ask for it on the viva start screen.
+3. Require a non-empty name before entering the session.
+4. Pass that name into the viva session runtime; do not store it in generated case questions.
+
+The examiner opens with `Hello {candidateName}, welcome to the Urologics AI Examiner viva.` The greeting and optional audio warm-up happen before the first saved clinical question and do not start the Fast mode timer. This matches the testing-zone flow and the Urologix RN start/session implementation.
+
+The RN app currently pre-fills `candidateName` from `profile.name`, allows correction on the start screen, passes it to the session route, and uses it in the runtime greeting. Web clients should follow the same fallback order.
+
 ## Signed-in mobile app flow
 
 1. Obtain the signed-in user's Firebase ID token.

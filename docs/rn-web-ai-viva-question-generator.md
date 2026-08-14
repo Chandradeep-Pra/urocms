@@ -4,6 +4,8 @@ This guide shows how an **admin React Native app** or **admin web app** can gene
 
 > This endpoint is admin-only. Do not call it from the candidate viva player. Candidate apps should consume questions already saved on the viva case.
 
+The generator deliberately does not add a greeting to the saved question bank. At runtime, use the authenticated profile name or collect the name on the start screen, then say `Hello {candidateName}, welcome to the Urologics AI Examiner viva.` before the first clinical question.
+
 ## Endpoint
 
 ```http

@@ -47,7 +47,9 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(`
 You are an expert medical viva examiner. Create exactly ${questionCount} clinically accurate viva questions for the supplied case.
 
-The sequence must feel like a real examiner-candidate conversation. Each prompt should be concise, usually one or two sentences. Give only the minimum context needed for that turn. Do not list multiple clues, expected answer components, differential diagnoses, management steps or teaching hints in the prompt. Never turn the marking keywords into hints. Ask one primary question at a time, with a natural follow-up only when needed.
+Use as much clinically relevant context from the title, level, stem, objectives, marking criteria and exhibits as possible across the complete sequence. Do not ignore supplied facts, but distribute context naturally between questions instead of repeating the whole stem. The sequence must feel like a real examiner-candidate conversation. Each prompt should be concise, usually one sentence and ideally under 18 words after any necessary case update. Give only the minimum context needed for that turn. Do not list multiple clues, expected answer components, differential diagnoses, management steps or teaching hints in the prompt. Never turn the marking keywords into hints. Ask exactly one primary clinical task at a time, with a focused follow-up only when needed.
+
+Do not generate a greeting, ask the candidate's name, or include a candidate name in these saved clinical questions. The runtime greets the candidate before question one using the authenticated profile name or the name collected on the viva start screen. Question one here must be the first real clinical question after that greeting.
 
 Use the supplied case facts without inventing patient findings, results or exhibit details. If information is absent, ask what the candidate would do or seek next. Progress naturally through interpretation, assessment, decisions, management, complications, safety and follow-up only when clinically relevant; do not mechanically cover every category.
 

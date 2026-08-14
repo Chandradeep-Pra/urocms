@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { BadgePercent, ClipboardList, FolderOpen, Layers3, Users } from "lucide-react";
 import { adminFetch } from "@/lib/client/adminApi";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlanAccessScopePanel } from "@/components/dashboard/plan-creator/PlanAccessScopePanel";
 import { CouponLauncherCard } from "@/components/dashboard/plan-creator/CouponLauncherCard";
 import {
@@ -28,6 +30,7 @@ import type {
 } from "@/components/dashboard/plan-creator/types";
 
 export default function PlanCreatorPage() {
+  const [activeTab, setActiveTab] = useState("builder");
   const [catalog, setCatalog] = useState<CatalogResponse>(emptyCatalog);
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [coupons, setCoupons] = useState<PricingCoupon[]>([]);
@@ -153,6 +156,7 @@ export default function PlanCreatorPage() {
       selectedContent: { ...emptySelection },
       versions: [createEmptyPlanVersion(3, { price: "49" })],
     });
+    setActiveTab("builder");
   };
 
   const hydrateForm = (plan: PricingPlan) => {
@@ -210,6 +214,7 @@ export default function PlanCreatorPage() {
         vivaCaseIds: [...(plan.selectedContent?.vivaCaseIds || [])],
       },
     });
+    setActiveTab("builder");
   };
 
   const handleSave = async () => {
@@ -411,10 +416,46 @@ export default function PlanCreatorPage() {
           importingPresets={importingPresets}
         />
 
-        <WaitlistResponsesPanel responses={waitlistResponses} />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-6">
+          <div className="sticky top-0 z-20 -mx-2 overflow-x-auto bg-slate-50/95 px-2 py-2 backdrop-blur">
+            <TabsList className="grid h-auto min-w-[760px] w-full grid-cols-5 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+              <TabsTrigger value="builder" className="min-h-12 gap-2 rounded-xl data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+                <ClipboardList className="h-4 w-4" />
+                Plan Builder
+              </TabsTrigger>
+              <TabsTrigger value="access" className="min-h-12 gap-2 rounded-xl data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+                <Layers3 className="h-4 w-4" />
+                Access & Content
+              </TabsTrigger>
+              <TabsTrigger value="plans" className="min-h-12 gap-2 rounded-xl data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+                <FolderOpen className="h-4 w-4" />
+                Saved Plans
+              </TabsTrigger>
+              <TabsTrigger value="coupons" className="min-h-12 gap-2 rounded-xl data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+                <BadgePercent className="h-4 w-4" />
+                Coupons
+              </TabsTrigger>
+              <TabsTrigger value="waitlist" className="min-h-12 gap-2 rounded-xl data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+                <Users className="h-4 w-4" />
+                Waitlist ({waitlistResponses.length})
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-6">
+          <TabsContent value="builder" className="mx-auto w-full max-w-4xl">
+            <PlanFormCard
+              editingId={editingId}
+              form={form}
+              setForm={setForm}
+              coupons={coupons}
+              totalScopedGroups={totalScopedGroups}
+              totalSelected={totalSelected}
+              saving={saving}
+              onSave={handleSave}
+            />
+          </TabsContent>
+
+          <TabsContent value="access" className="space-y-6">
             <PlanAccessScopePanel
               catalog={catalog}
               selectedScopes={form.accessScopes}
@@ -427,20 +468,13 @@ export default function PlanCreatorPage() {
               selectedContent={form.selectedContent}
               onToggleSelection={updateSelection}
             />
-          </div>
+          </TabsContent>
 
-          <div className="space-y-6">
-            <PlanFormCard
-              editingId={editingId}
-              form={form}
-              setForm={setForm}
-              coupons={coupons}
-              totalScopedGroups={totalScopedGroups}
-              totalSelected={totalSelected}
-              saving={saving}
-              onSave={handleSave}
-            />
+          <TabsContent value="plans">
             <SavedPlansPanel plans={plans} loading={loading} onEdit={hydrateForm} onDelete={handleDelete} />
+          </TabsContent>
+
+          <TabsContent value="coupons">
             <CouponLauncherCard
               couponForm={couponForm}
               setCouponForm={setCouponForm}
@@ -450,8 +484,12 @@ export default function PlanCreatorPage() {
               onToggleCoupon={toggleCoupon}
               onDeleteCoupon={deleteCoupon}
             />
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="waitlist">
+            <WaitlistResponsesPanel responses={waitlistResponses} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
