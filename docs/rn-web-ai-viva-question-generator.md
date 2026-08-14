@@ -37,6 +37,7 @@ export interface GenerateVivaQuestionsRequest {
   mustMention: string[];
   criticalFail: string[];
   exhibits: Array<{
+    id: string;
     label: string;
     description: string;
   }>;
@@ -57,6 +58,7 @@ Example:
   "criticalFail": ["Delay drainage in an obstructed septic patient"],
   "exhibits": [
     {
+      "id": "exhibit-cystoscopy-1",
       "label": "CT urogram",
       "description": "Delayed phase image showing contrast extravasation"
     }
@@ -78,6 +80,7 @@ Rules enforced by the server:
 export interface GeneratedVivaQuestion {
   question: string;
   answerKeywords: string[];
+  linkedExhibitIds: string[];
 }
 
 export interface GenerateVivaQuestionsResponse {
@@ -96,17 +99,19 @@ export interface GenerateVivaQuestionsResponse {
         "renal function",
         "urine output",
         "examination"
-      ]
+      ],
+      "linkedExhibitIds": []
     },
     {
       "question": "Which investigations would you request next, and why?",
-      "answerKeywords": ["blood tests", "renal function", "CT urogram", "delayed phase"]
+      "answerKeywords": ["blood tests", "renal function", "CT urogram", "delayed phase"],
+      "linkedExhibitIds": ["exhibit-cystoscopy-1"]
     }
   ]
 }
 ```
 
-Generated questions do not have `id` or `linkedExhibitIds`. The editor must merge them into its local case model before saving.
+Generated questions do not have their own question `id`. The editor must create or preserve that ID when merging. `linkedExhibitIds` contains at most one valid supplied exhibit ID and is empty when the question does not require an image.
 
 ## Shared API client
 
@@ -187,7 +192,8 @@ export function GenerateQuestionsButton({ caseDraft, mode, applyQuestions }) {
         objectives: caseDraft.case.objectives,
         mustMention: caseDraft.marking_criteria.must_mention,
         criticalFail: caseDraft.marking_criteria.critical_fail,
-        exhibits: caseDraft.exhibits.map(({ label, description }) => ({
+        exhibits: caseDraft.exhibits.map(({ id, label, description }) => ({
+          id,
           label,
           description,
         })),
@@ -247,7 +253,8 @@ export function GenerateQuestionsButton({ caseDraft, mode, applyQuestions }) {
         objectives: caseDraft.case.objectives,
         mustMention: caseDraft.marking_criteria.must_mention,
         criticalFail: caseDraft.marking_criteria.critical_fail,
-        exhibits: caseDraft.exhibits.map(({ label, description }) => ({
+        exhibits: caseDraft.exhibits.map(({ id, label, description }) => ({
+          id,
           label,
           description,
         })),
@@ -287,7 +294,7 @@ function mergeGeneratedQuestions(
     id: existing[index]?.id ?? `question-${crypto.randomUUID()}`,
     question: item.question,
     answerKeywords: item.answerKeywords,
-    linkedExhibitIds: existing[index]?.linkedExhibitIds ?? [],
+    linkedExhibitIds: item.linkedExhibitIds,
   }));
 }
 
@@ -355,4 +362,3 @@ Before saving, the admin should verify:
 - Answer keywords are clinically correct and sufficiently specific.
 - Critical safety decisions are represented.
 - Existing exhibit links still match the generated questions.
-

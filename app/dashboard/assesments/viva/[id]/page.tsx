@@ -351,7 +351,7 @@ export default function CaseDetailsPage() {
 
   const applyGeneratedQuestions = (
     modeKey: "calmAndComposed" | "fastAndFurious",
-    generated: Array<{ question: string; answerKeywords: string[] }>
+    generated: Array<{ question: string; answerKeywords: string[]; linkedExhibitIds: string[] }>
   ) => setCaseData((prev) => {
     if (!prev) return prev;
     const current = prev.modes[modeKey].questions;
@@ -359,6 +359,7 @@ export default function CaseDetailsPage() {
       ...(current[index] || createFastQuestion()),
       question: item.question,
       answerKeywords: item.answerKeywords,
+      linkedExhibitIds: item.linkedExhibitIds,
     }));
     return {
       ...prev,

@@ -25,7 +25,11 @@ export interface VivaQuestionSetupDialogProps {
   onQuestionKeywordsChange: (questionIndex: number, value: string) => void;
   onToggleQuestionExhibit: (questionIndex: number, exhibitId: string) => void;
   mode?: "calmAndComposed" | "fastAndFurious";
-  onQuestionsGenerated: (questions: Array<{ question: string; answerKeywords: string[] }>) => void;
+  onQuestionsGenerated: (questions: Array<{
+    question: string;
+    answerKeywords: string[];
+    linkedExhibitIds: string[];
+  }>) => void;
 }
 
 export function VivaQuestionSetupDialog({
@@ -79,7 +83,7 @@ export function VivaQuestionSetupDialog({
           objectives: form.case.objectives,
           mustMention: form.marking_criteria.must_mention,
           criticalFail: form.marking_criteria.critical_fail,
-          exhibits: form.exhibits.map(({ label, description }) => ({ label, description })),
+          exhibits: form.exhibits.map(({ id, label, description }) => ({ id, label, description })),
         }),
       });
       const data = await response.json().catch(() => null);

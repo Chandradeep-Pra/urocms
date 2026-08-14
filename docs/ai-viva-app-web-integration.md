@@ -91,11 +91,11 @@ Authorization: <admin session/token>
   "objectives": ["Recognise the injury"],
   "mustMention": ["Assess stability"],
   "criticalFail": ["Delay drainage in sepsis"],
-  "exhibits": [{ "label": "CT urogram", "description": "Delayed phase image" }]
+  "exhibits": [{ "id": "exhibit-1", "label": "CT urogram", "description": "Delayed phase image" }]
 }
 ```
 
-The response is `{ "questions": [{ "question": "...", "answerKeywords": ["..."] }] }`. Generation populates the editor only; an admin must review and save the case. The endpoint requires `GEMINI_API_KEY` on the server and never exposes it to clients.
+The response is `{ "questions": [{ "question": "...", "answerKeywords": ["..."], "linkedExhibitIds": ["exhibit-1"] }] }`. Exhibit IDs are returned only when the generated question explicitly needs that image. Generation populates the editor only; an admin must review and save the case. The endpoint requires `GEMINI_API_KEY` on the server and never exposes it to clients.
 
 ## One player for both modes
 

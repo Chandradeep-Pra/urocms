@@ -5,6 +5,7 @@ import { getGeminiJsonModel } from "@/lib/gemini";
 type GeneratedQuestion = {
   question: string;
   answerKeywords: string[];
+  linkedExhibitIds: string[];
 };
 
 export async function POST(req: NextRequest) {
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
       : [];
     const exhibits = Array.isArray(body?.exhibits)
       ? body.exhibits.slice(0, 20).map((item: Record<string, unknown>) => ({
+          id: String(item?.id || "").trim(),
           label: String(item?.label || "").trim(),
           description: String(item?.description || "").trim(),
         }))
@@ -45,7 +47,11 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(`
 You are an expert medical viva examiner. Create exactly ${questionCount} clinically accurate viva questions for the supplied case.
 
-The sequence must feel like a real examiner-candidate conversation: begin with assessment or interpretation, then progress logically through differential diagnosis, investigations, decisions, management, complications, safety and follow-up when relevant. Questions must be answerable from accepted clinical knowledge and the supplied case. Do not invent patient findings, test results or exhibit details. If information is absent, ask what the candidate would do or seek next. Avoid duplicate questions and avoid giving away the answer in the question.
+The sequence must feel like a real examiner-candidate conversation. Each prompt should be concise, usually one or two sentences. Give only the minimum context needed for that turn. Do not list multiple clues, expected answer components, differential diagnoses, management steps or teaching hints in the prompt. Never turn the marking keywords into hints. Ask one primary question at a time, with a natural follow-up only when needed.
+
+Use the supplied case facts without inventing patient findings, results or exhibit details. If information is absent, ask what the candidate would do or seek next. Progress naturally through interpretation, assessment, decisions, management, complications, safety and follow-up only when clinically relevant; do not mechanically cover every category.
+
+Exhibits are optional. Link an exhibit only when the examiner explicitly asks the candidate to view or interpret it. When linked, briefly introduce what the candidate has just performed or is being shown, then ask for interpretation. Do not repeat every detail from the exhibit description or reveal the conclusion. A good style is: "You've performed a flexible cystoscopy and are shown this finding. What is your interpretation?" Questions that do not need an exhibit must return an empty linkedExhibitIds array.
 
 Mode: ${mode}
 Pacing: ${pace}
@@ -55,14 +61,15 @@ Case stem: ${stem}
 Objectives: ${JSON.stringify(objectives)}
 Must mention: ${JSON.stringify(mustMention)}
 Critical fail points: ${JSON.stringify(criticalFail)}
-Available exhibit descriptions: ${JSON.stringify(exhibits)}
+Available exhibits (use only these exact IDs): ${JSON.stringify(exhibits)}
 
 Return only this JSON shape:
 {
   "questions": [
     {
       "question": "one natural examiner prompt",
-      "answerKeywords": ["3 to 8 concise marking keywords"]
+      "answerKeywords": ["3 to 6 concise internal marking keywords"],
+      "linkedExhibitIds": ["zero or one exact available exhibit ID"]
     }
   ]
 }
@@ -71,11 +78,17 @@ Return only this JSON shape:
     const parsed = JSON.parse(result.response.text()) as { questions?: unknown };
     if (!Array.isArray(parsed.questions)) throw new Error("AI returned an invalid question list");
 
+    const validExhibitIds = new Set(
+      exhibits.map((exhibit: { id: string }) => exhibit.id).filter(Boolean)
+    );
     const questions: GeneratedQuestion[] = parsed.questions
       .map((item: Record<string, unknown>) => ({
         question: String(item?.question || "").trim(),
         answerKeywords: Array.isArray(item?.answerKeywords)
           ? Array.from(new Set(item.answerKeywords.map(String).map((keyword) => keyword.trim()).filter(Boolean))).slice(0, 12)
+          : [],
+        linkedExhibitIds: Array.isArray(item?.linkedExhibitIds)
+          ? Array.from(new Set(item.linkedExhibitIds.map(String).map((id) => id.trim()).filter((id) => validExhibitIds.has(id)))).slice(0, 1)
           : [],
       }))
       .filter((item: GeneratedQuestion) => item.question)

@@ -479,13 +479,14 @@ export default function AIVivaPage() {
 
   const applyGeneratedQuestions = (
     modeKey: "calmAndComposed" | "fastAndFurious",
-    generated: Array<{ question: string; answerKeywords: string[] }>
+    generated: Array<{ question: string; answerKeywords: string[]; linkedExhibitIds: string[] }>
   ) => setForm((prev) => {
     const current = prev.modes[modeKey].questions;
     const questions = generated.map((item, index) => ({
       ...(current[index] || createFastQuestion()),
       question: item.question,
       answerKeywords: item.answerKeywords,
+      linkedExhibitIds: item.linkedExhibitIds,
     }));
     return {
       ...prev,
