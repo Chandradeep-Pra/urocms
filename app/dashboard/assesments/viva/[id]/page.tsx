@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { VivaQuestionSetupDialog } from "@/components/viva/VivaQuestionSetupDialog";
 import { VivaModeSelector } from "@/components/viva/VivaModeSelector";
+import { VivaEditorTabList, type VivaEditorTab } from "@/components/viva/VivaEditorTabList";
+import { VivaUsageProgress } from "@/components/viva/VivaUsageProgress";
 import {
   createExhibit,
   createFastQuestion,
@@ -29,6 +31,7 @@ export default function CaseDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeMode, setActiveMode] = useState<VivaMode>("Calm and Composed");
+  const [editorTab, setEditorTab] = useState<VivaEditorTab>("details");
   const [fastModeDialogOpen, setFastModeDialogOpen] = useState(false);
   const [calmModeDialogOpen, setCalmModeDialogOpen] = useState(false);
   const [fastKeywordInputs, setFastKeywordInputs] = useState<Record<string, string>>({});
@@ -434,7 +437,9 @@ export default function CaseDetailsPage() {
       </div>
 
       <div className="mx-auto max-w-6xl space-y-8 p-6">
-        <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <VivaEditorTabList value={editorTab} onValueChange={setEditorTab} />
+
+        <section className={`${editorTab === "details" ? "" : "hidden"} space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm`}>
           <div className="space-y-1">
             <h3 className="font-semibold text-slate-800">Shared Case Details</h3>
             <p className="text-sm text-slate-500">
@@ -499,7 +504,7 @@ export default function CaseDetailsPage() {
           />
         </section>
 
-        <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className={`${editorTab === "details" ? "" : "hidden"} space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm`}>
           <h3 className="font-semibold text-slate-800">Allowed Users</h3>
 
           {caseData.allowedUser.map((email, index) => (
@@ -541,7 +546,14 @@ export default function CaseDetailsPage() {
           </Button>
         </section>
 
-        {caseData.accessType === "public" && (
+        {editorTab === "usage" && (
+          <VivaUsageProgress
+            attempts={caseData.attempts}
+            publicParticipants={caseData.publicParticipants}
+          />
+        )}
+
+        {editorTab === "usage" && caseData.accessType === "public" && (
           <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="space-y-1">
               <h3 className="font-semibold text-slate-800">Public Starts</h3>
@@ -580,7 +592,7 @@ export default function CaseDetailsPage() {
           </section>
         )}
 
-        <section className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className={`${editorTab === "images" ? "" : "hidden"} space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm`}>
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-slate-800">Shared Exhibits</h3>
@@ -732,6 +744,7 @@ export default function CaseDetailsPage() {
           ))}
         </section>
 
+        <div className={editorTab === "questions" ? "space-y-8" : "hidden"}>
         <VivaModeSelector
           activeMode={activeMode}
           calmEnabled={caseData.modes.calmAndComposed.enabled}
@@ -1074,6 +1087,7 @@ export default function CaseDetailsPage() {
             </div>
           </section>
         )}
+        </div>
       </div>
 
       <VivaQuestionSetupDialog

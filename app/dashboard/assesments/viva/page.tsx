@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { VivaQuestionSetupDialog } from "@/components/viva/VivaQuestionSetupDialog";
 import { VivaModeSelector } from "@/components/viva/VivaModeSelector";
+import { VivaEditorTabList, type VivaEditorTab } from "@/components/viva/VivaEditorTabList";
 import {
   createExhibit,
   createFastQuestion,
@@ -62,6 +63,7 @@ export default function AIVivaPage() {
   const [calmModeDialogOpen, setCalmModeDialogOpen] = useState(false);
   const [uploadingExhibitIndex, setUploadingExhibitIndex] = useState<number | null>(null);
   const [activeMode, setActiveMode] = useState<VivaMode>("Calm and Composed");
+  const [editorTab, setEditorTab] = useState<VivaEditorTab>("details");
   const [activeFolderId, setActiveFolderId] = useState<"all" | "unfoldered" | string>("all");
   const [form, setForm] = useState<VivaCaseForm>(createInitialVivaForm());
   const [folderForm, setFolderForm] = useState({ title: "", description: "" });
@@ -99,6 +101,7 @@ export default function AIVivaPage() {
     setActiveMode("Calm and Composed");
     setFastModeDialogOpen(false);
     setCalmModeDialogOpen(false);
+    setEditorTab("details");
   };
 
   const handleSave = async () => {
@@ -618,8 +621,12 @@ export default function AIVivaPage() {
               </DialogHeader>
             </div>
 
+            <div className="border-b border-slate-200 bg-slate-50 px-8 py-4">
+              <VivaEditorTabList value={editorTab} onValueChange={setEditorTab} />
+            </div>
+
             <div className="flex-1 space-y-6 overflow-y-auto bg-slate-50 px-8 py-6">
-              <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <section className={`${editorTab === "details" ? "" : "hidden"} space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm`}>
                 <div className="space-y-1">
                   <h3 className="text-sm font-semibold text-slate-800">Shared Case Details</h3>
                   <p className="text-xs text-slate-500">
@@ -701,7 +708,7 @@ export default function AIVivaPage() {
                 />
               </section>
 
-              <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <section className={`${editorTab === "details" ? "" : "hidden"} space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm`}>
                 <div className="space-y-1">
                   <h3 className="text-sm font-semibold text-slate-800">Allowed Users</h3>
                   <p className="text-xs text-slate-500">
@@ -751,7 +758,18 @@ export default function AIVivaPage() {
                 )}
               </section>
 
-              <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              {editorTab === "usage" && (
+                <section className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                  <div className="mx-auto max-w-md space-y-2">
+                    <h3 className="font-semibold text-slate-800">Viva use starts after publishing</h3>
+                    <p className="text-sm text-slate-500">
+                      Attempts, completion and score progress will appear here after this case is saved and used by candidates.
+                    </p>
+                  </div>
+                </section>
+              )}
+
+              <section className={`${editorTab === "images" ? "" : "hidden"} space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm`}>
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold text-slate-800">Shared Exhibit Library</h3>
@@ -883,6 +901,7 @@ export default function AIVivaPage() {
                 ))}
               </section>
 
+              <div className={editorTab === "questions" ? "space-y-6" : "hidden"}>
               <VivaModeSelector
                 activeMode={activeMode}
                 calmEnabled={form.modes.calmAndComposed.enabled}
@@ -1097,6 +1116,7 @@ export default function AIVivaPage() {
                   </div>
                 </section>
               )}
+              </div>
             </div>
 
             <div className="sticky bottom-0 z-10 flex justify-end gap-3 border-t bg-white px-8 py-4">

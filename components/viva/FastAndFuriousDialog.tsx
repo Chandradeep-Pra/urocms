@@ -97,8 +97,8 @@ export function VivaQuestionSetupDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!w-[80vw] !max-w-[80vw] sm:!max-w-[80vw] overflow-hidden border-0 bg-transparent p-0 shadow-none">
-        <div className="mx-auto flex h-[88vh] w-full flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-2xl">
+      <DialogContent className="!h-screen !w-screen !max-w-none overflow-hidden border-0 bg-white p-0 shadow-none sm:!max-w-none">
+        <div className="flex h-screen w-screen flex-col overflow-hidden bg-white">
           <DialogHeader className="sticky top-0 z-10 border-b bg-white px-8 py-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-1">
