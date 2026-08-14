@@ -12,6 +12,7 @@ import { FastAndFuriousDialog } from "@/components/viva/FastAndFuriousDialog";
 import { VivaModeSelector } from "@/components/viva/VivaModeSelector";
 import {
   createExhibit,
+  createFastQuestion,
   hasConfiguredCalmMode,
   hasConfiguredFastMode,
   normalizeVivaCase,
@@ -29,6 +30,7 @@ export default function CaseDetailsPage() {
   const [saving, setSaving] = useState(false);
   const [activeMode, setActiveMode] = useState<VivaMode>("Calm and Composed");
   const [fastModeDialogOpen, setFastModeDialogOpen] = useState(false);
+  const [calmModeDialogOpen, setCalmModeDialogOpen] = useState(false);
   const [fastKeywordInputs, setFastKeywordInputs] = useState<Record<string, string>>({});
   const [uploadingExhibitIndex, setUploadingExhibitIndex] = useState<number | null>(null);
 
@@ -148,6 +150,7 @@ export default function CaseDetailsPage() {
           modes: {
             ...prev.modes,
             calmAndComposed: {
+              ...prev.modes.calmAndComposed,
               enabled: !prev.modes.calmAndComposed.enabled,
             },
           },
@@ -172,7 +175,61 @@ export default function CaseDetailsPage() {
       setFastModeDialogOpen(true);
       setActiveMode("Fast and Furious");
     }
+    if (mode === "Calm and Composed" && !caseData.modes.calmAndComposed.enabled) {
+      setCalmModeDialogOpen(true);
+      setActiveMode("Calm and Composed");
+    }
   };
+
+  const updateCalmMode = (
+    updater: (questions: VivaCase["modes"]["calmAndComposed"]["questions"]) => VivaCase["modes"]["calmAndComposed"]["questions"],
+    questionCount?: number
+  ) => setCaseData((prev) => prev ? ({
+    ...prev,
+    modes: {
+      ...prev.modes,
+      calmAndComposed: {
+        ...prev.modes.calmAndComposed,
+        ...(questionCount === undefined ? {} : { questionCount }),
+        questions: updater([...prev.modes.calmAndComposed.questions]),
+      },
+    },
+  }) : prev);
+
+  const syncCalmQuestionCount = (nextCount: number) => {
+    const safeCount = Number.isFinite(nextCount) ? Math.max(1, nextCount) : 1;
+    updateCalmMode((questions) => {
+      while (questions.length < safeCount) questions.push(createFastQuestion());
+      return questions.slice(0, safeCount);
+    }, safeCount);
+  };
+
+  const updateCalmQuestionText = (index: number, value: string) =>
+    updateCalmMode((questions) => {
+      questions[index] = { ...questions[index], question: value };
+      return questions;
+    });
+
+  const updateCalmQuestionKeywords = (index: number, value: string) =>
+    updateCalmMode((questions) => {
+      questions[index] = {
+        ...questions[index],
+        answerKeywords: value.split(",").map((item) => item.trim()).filter(Boolean),
+      };
+      return questions;
+    });
+
+  const toggleCalmQuestionExhibit = (index: number, exhibitId: string) =>
+    updateCalmMode((questions) => {
+      const question = questions[index];
+      questions[index] = {
+        ...question,
+        linkedExhibitIds: question.linkedExhibitIds.includes(exhibitId)
+          ? question.linkedExhibitIds.filter((item) => item !== exhibitId)
+          : [...question.linkedExhibitIds, exhibitId],
+      };
+      return questions;
+    });
 
   const syncFastQuestionCount = (nextCount: number) => {
     setCaseData((prev) => {
@@ -288,6 +345,26 @@ export default function CaseDetailsPage() {
       };
     });
   };
+
+  const applyGeneratedQuestions = (
+    modeKey: "calmAndComposed" | "fastAndFurious",
+    generated: Array<{ question: string; answerKeywords: string[] }>
+  ) => setCaseData((prev) => {
+    if (!prev) return prev;
+    const current = prev.modes[modeKey].questions;
+    const questions = generated.map((item, index) => ({
+      ...(current[index] || createFastQuestion()),
+      question: item.question,
+      answerKeywords: item.answerKeywords,
+    }));
+    return {
+      ...prev,
+      modes: {
+        ...prev.modes,
+        [modeKey]: { ...prev.modes[modeKey], questionCount: questions.length, questions },
+      },
+    };
+  });
 
   if (loading) {
     return (
@@ -626,6 +703,15 @@ export default function CaseDetailsPage() {
                       exhibits: caseData.exhibits.filter((_, itemIndex) => itemIndex !== index),
                       modes: {
                         ...caseData.modes,
+                        calmAndComposed: {
+                          ...caseData.modes.calmAndComposed,
+                          questions: caseData.modes.calmAndComposed.questions.map((question) => ({
+                            ...question,
+                            linkedExhibitIds: question.linkedExhibitIds.filter(
+                              (linkedId) => linkedId !== removedId
+                            ),
+                          })),
+                        },
                         fastAndFurious: {
                           ...caseData.modes.fastAndFurious,
                           questions: caseData.modes.fastAndFurious.questions.map((question) => ({
@@ -649,11 +735,13 @@ export default function CaseDetailsPage() {
         <VivaModeSelector
           activeMode={activeMode}
           calmEnabled={caseData.modes.calmAndComposed.enabled}
+          calmQuestionCount={caseData.modes.calmAndComposed.questionCount}
           fastEnabled={caseData.modes.fastAndFurious.enabled}
           fastQuestionCount={caseData.modes.fastAndFurious.questionCount}
           onModeSelect={setActiveMode}
           onToggleMode={toggleMode}
           onConfigureFastMode={() => setFastModeDialogOpen(true)}
+          onConfigureCalmMode={() => setCalmModeDialogOpen(true)}
         />
 
         {activeMode === "Calm and Composed" && (
@@ -989,6 +1077,18 @@ export default function CaseDetailsPage() {
       </div>
 
       <FastAndFuriousDialog
+        mode="calmAndComposed"
+        open={calmModeDialogOpen}
+        form={caseData}
+        onOpenChange={setCalmModeDialogOpen}
+        onQuestionCountChange={syncCalmQuestionCount}
+        onQuestionTextChange={updateCalmQuestionText}
+        onQuestionKeywordsChange={updateCalmQuestionKeywords}
+        onToggleQuestionExhibit={toggleCalmQuestionExhibit}
+        onQuestionsGenerated={(questions) => applyGeneratedQuestions("calmAndComposed", questions)}
+      />
+
+      <FastAndFuriousDialog
         open={fastModeDialogOpen}
         form={caseData}
         onOpenChange={setFastModeDialogOpen}
@@ -996,6 +1096,7 @@ export default function CaseDetailsPage() {
         onQuestionTextChange={updateFastQuestionText}
         onQuestionKeywordsChange={updateFastQuestionKeywords}
         onToggleQuestionExhibit={toggleFastQuestionExhibit}
+        onQuestionsGenerated={(questions) => applyGeneratedQuestions("fastAndFurious", questions)}
       />
     </div>
   );

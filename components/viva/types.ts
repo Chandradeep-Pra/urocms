@@ -25,12 +25,14 @@ export interface VivaExhibit {
   description: string;
 }
 
-export interface FastQuestionConfig {
+export interface VivaQuestionConfig {
   id: string;
   question: string;
   answerKeywords: string[];
   linkedExhibitIds: string[];
 }
+
+export type FastQuestionConfig = VivaQuestionConfig;
 
 export interface VivaCase {
   id: string;
@@ -53,6 +55,8 @@ export interface VivaCase {
   modes: {
     calmAndComposed: {
       enabled: boolean;
+      questionCount: number;
+      questions: VivaQuestionConfig[];
     };
     fastAndFurious: {
       enabled: boolean;
@@ -88,6 +92,8 @@ export const createFastQuestion = (): FastQuestionConfig => ({
   linkedExhibitIds: [],
 });
 
+export const createVivaQuestion = createFastQuestion;
+
 export const createInitialVivaForm = (): VivaCaseForm => ({
   folderId: "",
   folderName: "",
@@ -107,6 +113,8 @@ export const createInitialVivaForm = (): VivaCaseForm => ({
   modes: {
     calmAndComposed: {
       enabled: true,
+      questionCount: 3,
+      questions: [createVivaQuestion(), createVivaQuestion(), createVivaQuestion()],
     },
     fastAndFurious: {
       enabled: false,
@@ -199,6 +207,10 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
     rawCase?.modes?.fastAndFurious?.questions ?? legacyFastQuestions,
     exhibits
   );
+  const normalizedCalmQuestions = normalizeFastQuestions(
+    rawCase?.modes?.calmAndComposed?.questions,
+    exhibits
+  );
 
   const fastEnabled =
     typeof rawCase?.modes?.fastAndFurious?.enabled === "boolean"
@@ -237,6 +249,12 @@ export const normalizeVivaCase = (rawCase: any): VivaCase => {
     modes: {
       calmAndComposed: {
         enabled: calmEnabled,
+        questionCount:
+          rawCase?.modes?.calmAndComposed?.questionCount || normalizedCalmQuestions.length || 3,
+        questions:
+          normalizedCalmQuestions.length > 0
+            ? normalizedCalmQuestions
+            : [createVivaQuestion(), createVivaQuestion(), createVivaQuestion()],
       },
       fastAndFurious: {
         enabled: fastEnabled,
@@ -278,6 +296,13 @@ export const toVivaCasePayload = (form: VivaCaseForm) => ({
   modes: {
     calmAndComposed: {
       enabled: form.modes.calmAndComposed.enabled,
+      questionCount: form.modes.calmAndComposed.questionCount,
+      questions: form.modes.calmAndComposed.questions.map((question) => ({
+        id: question.id,
+        question: question.question,
+        answerKeywords: question.answerKeywords,
+        linkedExhibitIds: question.linkedExhibitIds,
+      })),
     },
     fastAndFurious: {
       enabled: form.modes.fastAndFurious.enabled,
@@ -293,7 +318,10 @@ export const toVivaCasePayload = (form: VivaCaseForm) => ({
 });
 
 export const hasConfiguredCalmMode = (vivaCase: Pick<VivaCase, "case" | "modes">) =>
-  vivaCase.modes.calmAndComposed.enabled && vivaCase.case.objectives.length > 0;
+  vivaCase.modes.calmAndComposed.enabled &&
+  (vivaCase.modes.calmAndComposed.questions.some(
+    (question) => question.question.trim().length > 0
+  ) || vivaCase.case.objectives.length > 0);
 
 export const hasConfiguredFastMode = (
   vivaCase: Pick<VivaCase, "modes">

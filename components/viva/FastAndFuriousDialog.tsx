@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +24,8 @@ interface FastAndFuriousDialogProps {
   onQuestionTextChange: (questionIndex: number, value: string) => void;
   onQuestionKeywordsChange: (questionIndex: number, value: string) => void;
   onToggleQuestionExhibit: (questionIndex: number, exhibitId: string) => void;
+  mode?: "calmAndComposed" | "fastAndFurious";
+  onQuestionsGenerated: (questions: Array<{ question: string; answerKeywords: string[] }>) => void;
 }
 
 export function FastAndFuriousDialog({
@@ -31,21 +36,59 @@ export function FastAndFuriousDialog({
   onQuestionTextChange,
   onQuestionKeywordsChange,
   onToggleQuestionExhibit,
+  mode = "fastAndFurious",
+  onQuestionsGenerated,
 }: FastAndFuriousDialogProps) {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const [generating, setGenerating] = useState(false);
 
-  useEffect(() => {
-    if (activeQuestionIndex > form.modes.fastAndFurious.questions.length - 1) {
-      setActiveQuestionIndex(Math.max(0, form.modes.fastAndFurious.questions.length - 1));
-    }
-  }, [activeQuestionIndex, form.modes.fastAndFurious.questions.length]);
-
-  const questionCount = form.modes.fastAndFurious.questionCount;
+  const modeConfig = form.modes[mode];
+  const displayedQuestionIndex = Math.min(
+    activeQuestionIndex,
+    Math.max(0, modeConfig.questions.length - 1)
+  );
+  const isCalm = mode === "calmAndComposed";
+  const questionCount = modeConfig.questionCount;
   const totalExhibits = form.exhibits.length;
-  const configuredQuestions = form.modes.fastAndFurious.questions.filter((question) =>
+  const configuredQuestions = modeConfig.questions.filter((question) =>
     question.question.trim()
   ).length;
-  const activeQuestion = form.modes.fastAndFurious.questions[activeQuestionIndex];
+  const activeQuestion = modeConfig.questions[displayedQuestionIndex];
+
+  const generateSampleQuestions = async () => {
+    if (!form.case.stem.trim()) {
+      toast.error("Add a case stem before generating questions");
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const response = await adminFetch("/api/viva-cases/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          questionCount,
+          title: form.case.title,
+          level: form.case.level,
+          stem: form.case.stem,
+          objectives: form.case.objectives,
+          mustMention: form.marking_criteria.must_mention,
+          criticalFail: form.marking_criteria.critical_fail,
+          exhibits: form.exhibits.map(({ label, description }) => ({ label, description })),
+        }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error || "Question generation failed");
+      onQuestionsGenerated(data.questions || []);
+      setActiveQuestionIndex(0);
+      toast.success("Sample viva questions generated. Review them before saving.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Question generation failed");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -54,9 +97,11 @@ export function FastAndFuriousDialog({
           <DialogHeader className="sticky top-0 z-10 border-b bg-white px-8 py-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-1">
-                <DialogTitle>Fast and Furious Setup</DialogTitle>
+                <DialogTitle>{isCalm ? "Calm and Composed" : "Fast and Furious"} Setup</DialogTitle>
                 <p className="text-sm text-slate-500">
-                  Build rapid-fire questions, add answer keywords, and link each one to shared exhibits.
+                  {isCalm
+                    ? "Prepare a measured sequence of pre-added questions, answer keywords, and exhibits."
+                    : "Build rapid-fire questions, add answer keywords, and link each one to shared exhibits."}
                 </p>
               </div>
 
@@ -93,7 +138,7 @@ export function FastAndFuriousDialog({
                     Question Count
                   </Label>
                   <p className="text-xs text-slate-500">
-                    Pick the number of rapid-fire prompts for this case.
+                    Pick the number of {isCalm ? "guided" : "rapid-fire"} prompts for this case.
                   </p>
                 </div>
 
@@ -106,6 +151,18 @@ export function FastAndFuriousDialog({
                   className="mt-4 h-11"
                 />
 
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={generating || !form.case.stem.trim()}
+                  onClick={generateSampleQuestions}
+                  className="mt-3 w-full gap-2 text-xs"
+                >
+                  {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  {generating ? "Generating..." : "Generate sample questions with AI"}
+                </Button>
+
                 <div className="mt-5 mb-3 flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-800">Questions</p>
                   <p className="text-xs text-slate-500">Click to edit</p>
@@ -113,11 +170,11 @@ export function FastAndFuriousDialog({
 
                 <div className="min-h-0 flex-1 overflow-y-auto pr-1">
                   <div className="space-y-3">
-                  {form.modes.fastAndFurious.questions.map((question, index) => {
+                  {modeConfig.questions.map((question, index) => {
                     const ready = question.question.trim().length > 0;
                     const linkedCount = question.linkedExhibitIds.length;
                     const keywordCount = question.answerKeywords.length;
-                    const active = activeQuestionIndex === index;
+                    const active = displayedQuestionIndex === index;
 
                     return (
                       <button
@@ -160,7 +217,7 @@ export function FastAndFuriousDialog({
                     <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between">
                       <div>
                         <h4 className="text-base font-semibold text-slate-800">
-                          Question {activeQuestionIndex + 1}
+                          Question {displayedQuestionIndex + 1}
                         </h4>
                         <p className="text-sm text-slate-500">
                           Add the prompt, enter answer keywords, and attach the shared exhibits this question should show.
@@ -180,10 +237,10 @@ export function FastAndFuriousDialog({
                             Prompt
                           </Label>
                           <Textarea
-                            placeholder={`Enter question ${activeQuestionIndex + 1}`}
+                            placeholder={`Enter question ${displayedQuestionIndex + 1}`}
                             value={activeQuestion.question}
                             onChange={(e) =>
-                              onQuestionTextChange(activeQuestionIndex, e.target.value)
+                              onQuestionTextChange(displayedQuestionIndex, e.target.value)
                             }
                             className="min-h-[120px] rounded-2xl border-slate-200 bg-slate-50"
                           />
@@ -203,7 +260,7 @@ export function FastAndFuriousDialog({
                             placeholder="e.g. sepsis, obstruction, decompression, antibiotics"
                             value={activeQuestion.answerKeywords.join(", ")}
                             onChange={(e) =>
-                              onQuestionKeywordsChange(activeQuestionIndex, e.target.value)
+                              onQuestionKeywordsChange(displayedQuestionIndex, e.target.value)
                             }
                             className="h-11 rounded-2xl border-slate-200 bg-slate-50"
                           />
@@ -247,7 +304,7 @@ export function FastAndFuriousDialog({
                                   key={exhibit.id}
                                   type="button"
                                   onClick={() =>
-                                    onToggleQuestionExhibit(activeQuestionIndex, exhibit.id)
+                                    onToggleQuestionExhibit(displayedQuestionIndex, exhibit.id)
                                   }
                                   className={`rounded-2xl border px-4 py-3 text-left transition ${
                                     selected

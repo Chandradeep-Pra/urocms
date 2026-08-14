@@ -59,6 +59,7 @@ export default function AIVivaPage() {
     count: number;
   } | null>(null);
   const [fastModeDialogOpen, setFastModeDialogOpen] = useState(false);
+  const [calmModeDialogOpen, setCalmModeDialogOpen] = useState(false);
   const [uploadingExhibitIndex, setUploadingExhibitIndex] = useState<number | null>(null);
   const [activeMode, setActiveMode] = useState<VivaMode>("Calm and Composed");
   const [activeFolderId, setActiveFolderId] = useState<"all" | "unfoldered" | string>("all");
@@ -97,6 +98,7 @@ export default function AIVivaPage() {
     setForm(createInitialVivaForm());
     setActiveMode("Calm and Composed");
     setFastModeDialogOpen(false);
+    setCalmModeDialogOpen(false);
   };
 
   const handleSave = async () => {
@@ -107,6 +109,14 @@ export default function AIVivaPage() {
 
     if (!form.modes.calmAndComposed.enabled && !form.modes.fastAndFurious.enabled) {
       toast.error("Enable at least one mode");
+      return;
+    }
+
+    if (
+      form.modes.calmAndComposed.enabled &&
+      !form.modes.calmAndComposed.questions.some((question) => question.question.trim())
+    ) {
+      toast.error("Add at least one Calm and Composed question");
       return;
     }
 
@@ -302,6 +312,56 @@ export default function AIVivaPage() {
     });
   };
 
+  const updateCalmMode = (
+    updater: (questions: VivaCaseForm["modes"]["calmAndComposed"]["questions"]) => VivaCaseForm["modes"]["calmAndComposed"]["questions"],
+    questionCount?: number
+  ) => setForm((prev) => ({
+    ...prev,
+    modes: {
+      ...prev.modes,
+      calmAndComposed: {
+        ...prev.modes.calmAndComposed,
+        ...(questionCount === undefined ? {} : { questionCount }),
+        questions: updater([...prev.modes.calmAndComposed.questions]),
+      },
+    },
+  }));
+
+  const syncCalmQuestionCount = (nextCount: number) => {
+    const safeCount = Number.isFinite(nextCount) ? Math.max(1, nextCount) : 1;
+    updateCalmMode((questions) => {
+      while (questions.length < safeCount) questions.push(createFastQuestion());
+      return questions.slice(0, safeCount);
+    }, safeCount);
+  };
+
+  const updateCalmQuestion = (index: number, value: string) =>
+    updateCalmMode((questions) => {
+      questions[index] = { ...questions[index], question: value };
+      return questions;
+    });
+
+  const updateCalmQuestionKeywords = (index: number, value: string) =>
+    updateCalmMode((questions) => {
+      questions[index] = {
+        ...questions[index],
+        answerKeywords: value.split(",").map((item) => item.trim()).filter(Boolean),
+      };
+      return questions;
+    });
+
+  const toggleCalmQuestionExhibit = (index: number, exhibitId: string) =>
+    updateCalmMode((questions) => {
+      const question = questions[index];
+      questions[index] = {
+        ...question,
+        linkedExhibitIds: question.linkedExhibitIds.includes(exhibitId)
+          ? question.linkedExhibitIds.filter((id) => id !== exhibitId)
+          : [...question.linkedExhibitIds, exhibitId],
+      };
+      return questions;
+    });
+
   const toggleMode = (mode: VivaMode) => {
     setForm((prev) => {
       if (mode === "Calm and Composed") {
@@ -310,6 +370,7 @@ export default function AIVivaPage() {
           modes: {
             ...prev.modes,
             calmAndComposed: {
+              ...prev.modes.calmAndComposed,
               enabled: !prev.modes.calmAndComposed.enabled,
             },
           },
@@ -333,6 +394,10 @@ export default function AIVivaPage() {
     if (mode === "Fast and Furious" && !form.modes.fastAndFurious.enabled) {
       setFastModeDialogOpen(true);
       setActiveMode("Fast and Furious");
+    }
+    if (mode === "Calm and Composed" && !form.modes.calmAndComposed.enabled) {
+      setCalmModeDialogOpen(true);
+      setActiveMode("Calm and Composed");
     }
   };
 
@@ -409,6 +474,25 @@ export default function AIVivaPage() {
     });
   };
 
+  const applyGeneratedQuestions = (
+    modeKey: "calmAndComposed" | "fastAndFurious",
+    generated: Array<{ question: string; answerKeywords: string[] }>
+  ) => setForm((prev) => {
+    const current = prev.modes[modeKey].questions;
+    const questions = generated.map((item, index) => ({
+      ...(current[index] || createFastQuestion()),
+      question: item.question,
+      answerKeywords: item.answerKeywords,
+    }));
+    return {
+      ...prev,
+      modes: {
+        ...prev.modes,
+        [modeKey]: { ...prev.modes[modeKey], questionCount: questions.length, questions },
+      },
+    };
+  });
+
   const removeExhibit = (exhibitIndex: number) => {
     setForm((prev) => {
       const removedExhibit = prev.exhibits[exhibitIndex];
@@ -423,6 +507,13 @@ export default function AIVivaPage() {
         exhibits,
         modes: {
           ...prev.modes,
+          calmAndComposed: {
+            ...prev.modes.calmAndComposed,
+            questions: prev.modes.calmAndComposed.questions.map((question) => ({
+              ...question,
+              linkedExhibitIds: question.linkedExhibitIds.filter((id) => id !== removedExhibit.id),
+            })),
+          },
           fastAndFurious: {
             ...prev.modes.fastAndFurious,
             questions,
@@ -795,11 +886,13 @@ export default function AIVivaPage() {
               <VivaModeSelector
                 activeMode={activeMode}
                 calmEnabled={form.modes.calmAndComposed.enabled}
+                calmQuestionCount={form.modes.calmAndComposed.questionCount}
                 fastEnabled={form.modes.fastAndFurious.enabled}
                 fastQuestionCount={form.modes.fastAndFurious.questionCount}
                 onModeSelect={setActiveMode}
                 onToggleMode={toggleMode}
                 onConfigureFastMode={() => setFastModeDialogOpen(true)}
+                onConfigureCalmMode={() => setCalmModeDialogOpen(true)}
               />
 
               {activeMode === "Calm and Composed" && (
@@ -875,7 +968,10 @@ export default function AIVivaPage() {
                             ...prev,
                             modes: {
                               ...prev.modes,
-                              calmAndComposed: { enabled: true },
+                              calmAndComposed: {
+                                ...prev.modes.calmAndComposed,
+                                enabled: true,
+                              },
                             },
                           }))
                         }
@@ -1016,14 +1112,27 @@ export default function AIVivaPage() {
         </Dialog>
         </div>
 
-        <FastAndFuriousDialog
-          open={fastModeDialogOpen}
+      <FastAndFuriousDialog
+        mode="calmAndComposed"
+        open={calmModeDialogOpen}
+        form={form}
+        onOpenChange={setCalmModeDialogOpen}
+        onQuestionCountChange={syncCalmQuestionCount}
+        onQuestionTextChange={updateCalmQuestion}
+        onQuestionKeywordsChange={updateCalmQuestionKeywords}
+        onToggleQuestionExhibit={toggleCalmQuestionExhibit}
+        onQuestionsGenerated={(questions) => applyGeneratedQuestions("calmAndComposed", questions)}
+      />
+
+      <FastAndFuriousDialog
+        open={fastModeDialogOpen}
           form={form}
           onOpenChange={setFastModeDialogOpen}
           onQuestionCountChange={syncFastQuestionCount}
           onQuestionTextChange={updateFastQuestion}
           onQuestionKeywordsChange={updateFastQuestionKeywords}
-          onToggleQuestionExhibit={toggleFastQuestionExhibit}
+        onToggleQuestionExhibit={toggleFastQuestionExhibit}
+        onQuestionsGenerated={(questions) => applyGeneratedQuestions("fastAndFurious", questions)}
         />
       </div>
 

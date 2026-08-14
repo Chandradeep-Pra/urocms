@@ -8,9 +8,11 @@ interface VivaModeSelectorProps {
   calmEnabled: boolean;
   fastEnabled: boolean;
   fastQuestionCount: number;
+  calmQuestionCount: number;
   onModeSelect: (mode: VivaMode) => void;
   onToggleMode: (mode: VivaMode) => void;
   onConfigureFastMode: () => void;
+  onConfigureCalmMode: () => void;
 }
 
 const MODES: VivaMode[] = ["Calm and Composed", "Fast and Furious"];
@@ -20,9 +22,11 @@ export function VivaModeSelector({
   calmEnabled,
   fastEnabled,
   fastQuestionCount,
+  calmQuestionCount,
   onModeSelect,
   onToggleMode,
   onConfigureFastMode,
+  onConfigureCalmMode,
 }: VivaModeSelectorProps) {
   const isEnabled = (mode: VivaMode) =>
     mode === "Calm and Composed" ? calmEnabled : fastEnabled;
@@ -69,7 +73,7 @@ export function VivaModeSelector({
 
               <p className="mt-2 text-xs text-slate-500">
                 {mode === "Calm and Composed"
-                  ? "Shared stem with objectives and marking criteria."
+                  ? "A measured sequence of pre-added questions with answer guidance."
                   : "Rapid questions linked to the shared exhibit library."}
               </p>
 
@@ -91,13 +95,13 @@ export function VivaModeSelector({
                   {enabled ? "Disable" : "Enable"}
                 </Button>
 
-                {mode === "Fast and Furious" && enabled && (
+                {enabled && (
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={onConfigureFastMode}
+                    onClick={mode === "Calm and Composed" ? onConfigureCalmMode : onConfigureFastMode}
                   >
-                    {fastQuestionCount} questions
+                    {mode === "Calm and Composed" ? calmQuestionCount : fastQuestionCount} questions
                   </Button>
                 )}
               </div>

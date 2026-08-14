@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { withVivaModeQuestionContract } from "@/lib/server/vivaService";
 
 export async function GET() {
   try {
@@ -11,7 +12,7 @@ export async function GET() {
       .get();
 
     const cases = snapshot.docs.map((doc) => {
-      const data = doc.data();
+      const data = withVivaModeQuestionContract(doc.data());
       const {
         allowedUser,
         courseAllowedUserMap,

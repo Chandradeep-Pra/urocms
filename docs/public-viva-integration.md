@@ -46,7 +46,9 @@ Success response:
       },
       "modes": {
         "calmAndComposed": {
-          "enabled": true
+          "enabled": true,
+          "questionCount": 3,
+          "questions": []
         },
         "fastAndFurious": {
           "enabled": false,
@@ -90,7 +92,9 @@ Success response:
     },
     "modes": {
       "calmAndComposed": {
-        "enabled": true
+        "enabled": true,
+        "questionCount": 3,
+        "questions": []
       },
       "fastAndFurious": {
         "enabled": false,

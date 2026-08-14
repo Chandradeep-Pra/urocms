@@ -12,6 +12,37 @@ type CourseSectionLike = {
   linkedContentIds?: unknown;
 };
 
+export function withVivaModeQuestionContract<T extends Record<string, unknown>>(data: T): T {
+  const modes = data.modes && typeof data.modes === "object"
+    ? data.modes as Record<string, unknown>
+    : {};
+  const calm = modes.calmAndComposed && typeof modes.calmAndComposed === "object"
+    ? modes.calmAndComposed as Record<string, unknown>
+    : {};
+  const fast = modes.fastAndFurious && typeof modes.fastAndFurious === "object"
+    ? modes.fastAndFurious as Record<string, unknown>
+    : {};
+  const normalizeMode = (mode: Record<string, unknown>, fallbackEnabled: boolean) => {
+    const questions = Array.isArray(mode.questions) ? mode.questions : [];
+    return {
+      ...mode,
+      enabled: typeof mode.enabled === "boolean" ? mode.enabled : fallbackEnabled,
+      questionCount:
+        typeof mode.questionCount === "number" ? mode.questionCount : questions.length,
+      questions,
+    };
+  };
+
+  return {
+    ...data,
+    modes: {
+      ...modes,
+      calmAndComposed: normalizeMode(calm, true),
+      fastAndFurious: normalizeMode(fast, false),
+    },
+  };
+}
+
 function normalizeFolderInput(input: { title?: unknown; description?: unknown }) {
   return {
     title: String(input.title || "").trim(),
@@ -89,8 +120,8 @@ export async function listVivaCases() {
     .get();
 
   return snapshot.docs.map((doc) => ({
+    ...withVivaModeQuestionContract(doc.data()),
     id: doc.id,
-    ...doc.data(),
   }));
 }
 
@@ -202,8 +233,8 @@ export async function getVivaCaseById(id: string): Promise<VivaCaseDocument & { 
 
   const data = doc.data() as VivaCaseDocument;
   return {
+    ...withVivaModeQuestionContract(data),
     id: doc.id,
-    ...data,
   };
 }
 
@@ -243,8 +274,8 @@ export async function getPublicVivaCaseById(id: string) {
   }
 
   return {
+    ...withVivaModeQuestionContract(data),
     id: doc.id,
-    ...data,
   };
 }
 
