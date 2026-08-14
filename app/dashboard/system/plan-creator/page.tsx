@@ -410,33 +410,34 @@ export default function PlanCreatorPage() {
     <div className="min-h-screen bg-slate-50 p-8">
       <div className="mx-auto max-w-7xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-6">
-          <div className="sticky top-0 z-20 -mx-2 overflow-x-auto bg-slate-50/95 px-2 py-2 backdrop-blur">
-            <TabsList className="grid h-auto min-w-[760px] w-full grid-cols-5 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
-              <TabsTrigger value="builder" className="min-h-12 gap-2 rounded-xl data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+          <div className="sticky top-0 z-20 bg-slate-50/95 py-2 backdrop-blur">
+            <TabsList className="grid h-14 w-full grid-cols-5 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+              <TabsTrigger value="builder" className="h-12 min-w-0 gap-1.5 rounded-lg px-2 text-xs data-[state=active]:bg-teal-600 data-[state=active]:text-white sm:text-sm">
                 <ClipboardList className="h-4 w-4" />
-                Plan Builder
+                <span className="truncate">1. Plan Details</span>
               </TabsTrigger>
-              <TabsTrigger value="access" className="min-h-12 gap-2 rounded-xl data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+              <TabsTrigger value="access" className="h-12 min-w-0 gap-1.5 rounded-lg px-2 text-xs data-[state=active]:bg-teal-600 data-[state=active]:text-white sm:text-sm">
                 <Layers3 className="h-4 w-4" />
-                Access & Content
+                <span className="truncate">2. Pick Access</span>
               </TabsTrigger>
-              <TabsTrigger value="plans" className="min-h-12 gap-2 rounded-xl data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+              <TabsTrigger value="plans" className="h-12 min-w-0 gap-1.5 rounded-lg px-2 text-xs data-[state=active]:bg-teal-600 data-[state=active]:text-white sm:text-sm">
                 <FolderOpen className="h-4 w-4" />
-                Saved Plans
+                <span className="truncate">Saved Plans</span>
               </TabsTrigger>
-              <TabsTrigger value="coupons" className="min-h-12 gap-2 rounded-xl data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+              <TabsTrigger value="coupons" className="h-12 min-w-0 gap-1.5 rounded-lg px-2 text-xs data-[state=active]:bg-teal-600 data-[state=active]:text-white sm:text-sm">
                 <BadgePercent className="h-4 w-4" />
-                Coupons
+                <span className="truncate">Coupons</span>
               </TabsTrigger>
-              <TabsTrigger value="waitlist" className="min-h-12 gap-2 rounded-xl data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+              <TabsTrigger value="waitlist" className="h-12 min-w-0 gap-1.5 rounded-lg px-2 text-xs data-[state=active]:bg-teal-600 data-[state=active]:text-white sm:text-sm">
                 <Users className="h-4 w-4" />
-                Waitlist ({waitlistResponses.length})
+                <span className="truncate">Waitlist ({waitlistResponses.length})</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="builder" className="mx-auto w-full max-w-4xl">
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-teal-100 bg-teal-50 px-4 py-3">
+              <p className="text-sm text-teal-800">Start with pricing and plan details, then continue to Pick Access.</p>
               <Button type="button" variant="outline" size="sm" onClick={resetForm} className="gap-2">
                 <RotateCcw className="h-4 w-4" />
                 Reset form
@@ -452,21 +453,48 @@ export default function PlanCreatorPage() {
               saving={saving}
               onSave={handleSave}
             />
+            <div className="mt-4 flex justify-end">
+              <Button type="button" onClick={() => setActiveTab("access")} className="bg-teal-600 text-white hover:bg-teal-700">
+                Continue to pick access
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="access" className="space-y-6">
+            <div className="flex flex-col gap-3 rounded-xl border border-teal-100 bg-teal-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-teal-900">Choose what this plan unlocks</p>
+                <p className="text-sm text-teal-700">Pick whole courses first. Use advanced selection only for exceptions.</p>
+              </div>
+              <div className="text-sm font-medium text-teal-900">
+                {totalScopedGroups} access groups · {totalSelected} individual items
+              </div>
+            </div>
             <PlanAccessScopePanel
               catalog={catalog}
               selectedScopes={form.accessScopes}
               onToggleScope={updateScopeSelection}
             />
-            <PlanManualOverridePanel
-              catalog={filteredCatalog}
-              search={search}
-              onSearchChange={setSearch}
-              selectedContent={form.selectedContent}
-              onToggleSelection={updateSelection}
-            />
+            <details className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <summary className="cursor-pointer list-none px-6 py-5 font-semibold text-slate-800">
+                Optional: pick individual content
+                <span className="ml-2 text-sm font-normal text-slate-500">({totalSelected} selected)</span>
+              </summary>
+              <div className="border-t border-slate-200 p-4">
+                <PlanManualOverridePanel
+                  catalog={filteredCatalog}
+                  search={search}
+                  onSearchChange={setSearch}
+                  selectedContent={form.selectedContent}
+                  onToggleSelection={updateSelection}
+                />
+              </div>
+            </details>
+            <div className="flex justify-end">
+              <Button type="button" onClick={() => setActiveTab("builder")} className="bg-teal-600 text-white hover:bg-teal-700">
+                Back to plan details
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="plans">

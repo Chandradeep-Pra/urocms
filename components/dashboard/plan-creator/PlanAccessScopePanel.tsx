@@ -16,16 +16,15 @@ export function PlanAccessScopePanel({
 }) {
   return (
     <Card className="border-slate-200 shadow-sm">
-      <CardContent className="space-y-6 p-6">
+      <CardContent className="space-y-5 p-6">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Scope-based access</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Select courses</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Build plans around courses first, then add chapter groups, video sections, and viva
-            folders when you need deeper scope control.
+            Selecting a course gives plan members access to the content configured inside that course.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div>
           <SelectionGroup
             title="Courses"
             icon={FolderKanban}
@@ -41,7 +40,18 @@ export function PlanAccessScopePanel({
             )}
             fullWidth
           />
+        </div>
 
+        <details className="group rounded-2xl border border-slate-200 bg-slate-50">
+          <summary className="cursor-pointer list-none px-5 py-4">
+            <span className="font-semibold text-slate-800">Advanced access groups</span>
+            <span className="ml-2 text-sm font-normal text-slate-500">
+              ({selectedScopes.chapterGroupIds.length + selectedScopes.videoSectionIds.length + selectedScopes.vivaFolderIds.length} selected)
+            </span>
+            <p className="mt-1 text-xs text-slate-500">Add chapter groups, video sections or viva folders only when whole-course access is not enough.</p>
+          </summary>
+
+          <div className="grid gap-4 border-t border-slate-200 p-4 md:grid-cols-2">
           <SelectionGroup
             title="Chapter Groups"
             icon={Layers3}
@@ -79,7 +89,8 @@ export function PlanAccessScopePanel({
             renderMeta={() => <span>Folder scope</span>}
             fullWidth
           />
-        </div>
+          </div>
+        </details>
       </CardContent>
     </Card>
   );
