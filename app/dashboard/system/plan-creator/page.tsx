@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { BadgePercent, ClipboardList, FolderOpen, Layers3, Users } from "lucide-react";
+import { BadgePercent, ClipboardList, FolderOpen, Layers3, RefreshCw, RotateCcw, Users } from "lucide-react";
 import { adminFetch } from "@/lib/client/adminApi";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlanAccessScopePanel } from "@/components/dashboard/plan-creator/PlanAccessScopePanel";
 import { CouponLauncherCard } from "@/components/dashboard/plan-creator/CouponLauncherCard";
@@ -15,7 +16,6 @@ import {
   emptyScopes,
   emptySelection,
 } from "@/components/dashboard/plan-creator/constants";
-import { PlanCreatorHeader } from "@/components/dashboard/plan-creator/PlanCreatorHeader";
 import { PlanFormCard } from "@/components/dashboard/plan-creator/PlanFormCard";
 import { PlanManualOverridePanel } from "@/components/dashboard/plan-creator/PlanManualOverridePanel";
 import { SavedPlansPanel } from "@/components/dashboard/plan-creator/SavedPlansPanel";
@@ -408,14 +408,7 @@ export default function PlanCreatorPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-8">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <PlanCreatorHeader
-          onRefresh={fetchData}
-          onReset={resetForm}
-          onImportPresets={importPresets}
-          importingPresets={importingPresets}
-        />
-
+      <div className="mx-auto max-w-7xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-6">
           <div className="sticky top-0 z-20 -mx-2 overflow-x-auto bg-slate-50/95 px-2 py-2 backdrop-blur">
             <TabsList className="grid h-auto min-w-[760px] w-full grid-cols-5 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
@@ -443,6 +436,12 @@ export default function PlanCreatorPage() {
           </div>
 
           <TabsContent value="builder" className="mx-auto w-full max-w-4xl">
+            <div className="mb-4 flex justify-end">
+              <Button type="button" variant="outline" size="sm" onClick={resetForm} className="gap-2">
+                <RotateCcw className="h-4 w-4" />
+                Reset form
+              </Button>
+            </div>
             <PlanFormCard
               editingId={editingId}
               form={form}
@@ -471,6 +470,21 @@ export default function PlanCreatorPage() {
           </TabsContent>
 
           <TabsContent value="plans">
+            <div className="mb-4 flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={fetchData} className="gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Refresh
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={importingPresets}
+                onClick={importPresets}
+                className="bg-slate-900 text-white hover:bg-slate-800"
+              >
+                {importingPresets ? "Loading presets..." : "Load FRCS presets"}
+              </Button>
+            </div>
             <SavedPlansPanel plans={plans} loading={loading} onEdit={hydrateForm} onDelete={handleDelete} />
           </TabsContent>
 
