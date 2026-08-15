@@ -353,6 +353,8 @@ export default function PlanCreatorPage() {
           startsAt: couponForm.startsAt || null,
           endsAt: couponForm.endsAt || null,
           isActive: couponForm.isActive,
+          isSecret: couponForm.isSecret,
+          allowedCourseIds: couponForm.allowedCourseIds,
         }),
       });
 
@@ -521,6 +523,7 @@ export default function PlanCreatorPage() {
               couponForm={couponForm}
               setCouponForm={setCouponForm}
               coupons={coupons}
+              courses={catalog.courses}
               savingCoupon={savingCoupon}
               onCreateCoupon={handleCreateCoupon}
               onToggleCoupon={toggleCoupon}

@@ -87,6 +87,8 @@ export type PricingCoupon = {
   startsAt?: string | null;
   endsAt?: string | null;
   isActive: boolean;
+  isSecret?: boolean;
+  allowedCourseIds?: string[];
 };
 
 export type PricingPlanWaitlistResponse = {
@@ -146,4 +148,6 @@ export type CouponFormValues = {
   startsAt: string;
   endsAt: string;
   isActive: boolean;
+  isSecret: boolean;
+  allowedCourseIds: string[];
 };

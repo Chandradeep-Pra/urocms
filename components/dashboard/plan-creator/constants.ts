@@ -83,6 +83,8 @@ export const emptyCouponForm: CouponFormValues = {
   startsAt: "",
   endsAt: "",
   isActive: true,
+  isSecret: true,
+  allowedCourseIds: [],
 };
 
 export const expiryPresets = [3, 6, 9, 12];
