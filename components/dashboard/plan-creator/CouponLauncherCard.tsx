@@ -37,7 +37,7 @@ export function CouponLauncherCard({
 }) {
   return (
     <Card className="border-slate-200 shadow-sm">
-      <CardContent className="space-y-5 p-6">
+      <CardContent className="space-y-4 p-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Create a secret plan coupon</h2>
@@ -265,7 +265,7 @@ export function CouponLauncherCard({
                       >
                         {coupon.isActive ? "Active" : "Inactive"}
                       </Badge>
-                      {coupon.isSecret !== false && (
+                      {coupon.isSecret === true && (
                         <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">
                           Secret
                         </Badge>

@@ -16,7 +16,7 @@ export function PlanAccessScopePanel({
 }) {
   return (
     <Card className="border-slate-200 shadow-sm">
-      <CardContent className="space-y-5 p-6">
+      <CardContent className="space-y-4 p-4">
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Select courses</h2>
           <p className="mt-1 text-sm text-slate-500">

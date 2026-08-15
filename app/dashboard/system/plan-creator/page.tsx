@@ -409,9 +409,9 @@ export default function PlanCreatorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
+    <div className="min-h-screen bg-slate-50 px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
       <div className="mx-auto max-w-7xl">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-3">
           <div className="sticky top-0 z-20 h-14 bg-slate-50/95 backdrop-blur">
             <TabsList className="grid !h-14 w-full grid-cols-5 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
               <TabsTrigger value="builder" className="h-12 min-w-0 gap-1.5 rounded-lg px-2 text-xs data-[state=active]:bg-teal-600 data-[state=active]:text-white sm:text-sm">
@@ -437,8 +437,8 @@ export default function PlanCreatorPage() {
             </TabsList>
           </div>
 
-          <TabsContent value="builder" className="mx-auto w-full max-w-4xl">
-            <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-teal-100 bg-teal-50 px-4 py-3">
+          <TabsContent value="builder" className="mx-auto w-full max-w-5xl">
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-teal-100 bg-teal-50 px-3 py-2">
               <p className="text-sm text-teal-800">Start with pricing and plan details, then continue to Pick Access.</p>
               <Button type="button" variant="outline" size="sm" onClick={resetForm} className="gap-2">
                 <RotateCcw className="h-4 w-4" />
@@ -455,15 +455,15 @@ export default function PlanCreatorPage() {
               saving={saving}
               onSave={handleSave}
             />
-            <div className="mt-4 flex justify-end">
+            <div className="mt-3 flex justify-end">
               <Button type="button" onClick={() => setActiveTab("access")} className="bg-teal-600 text-white hover:bg-teal-700">
                 Continue to pick access
               </Button>
             </div>
           </TabsContent>
 
-          <TabsContent value="access" className="space-y-6">
-            <div className="flex flex-col gap-3 rounded-xl border border-teal-100 bg-teal-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <TabsContent value="access" className="space-y-3">
+            <div className="flex flex-col gap-2 rounded-lg border border-teal-100 bg-teal-50 p-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-semibold text-teal-900">Choose what this plan unlocks</p>
                 <p className="text-sm text-teal-700">Pick whole courses first. Use advanced selection only for exceptions.</p>
@@ -478,11 +478,11 @@ export default function PlanCreatorPage() {
               onToggleScope={updateScopeSelection}
             />
             <details className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <summary className="cursor-pointer list-none px-6 py-5 font-semibold text-slate-800">
+              <summary className="cursor-pointer list-none px-4 py-3 font-semibold text-slate-800">
                 Optional: pick individual content
                 <span className="ml-2 text-sm font-normal text-slate-500">({totalSelected} selected)</span>
               </summary>
-              <div className="border-t border-slate-200 p-4">
+              <div className="border-t border-slate-200 p-3">
                 <PlanManualOverridePanel
                   catalog={filteredCatalog}
                   search={search}
@@ -500,7 +500,7 @@ export default function PlanCreatorPage() {
           </TabsContent>
 
           <TabsContent value="plans">
-            <div className="mb-4 flex flex-wrap justify-end gap-2">
+            <div className="mb-3 flex flex-wrap justify-end gap-2">
               <Button type="button" variant="outline" size="sm" onClick={fetchData} className="gap-2">
                 <RefreshCw className="h-4 w-4" />
                 Refresh

@@ -25,7 +25,7 @@ export function SelectionGroup({
 }) {
   return (
     <div className={fullWidth ? "md:col-span-2" : ""}>
-      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="grid h-9 w-9 place-items-center rounded-2xl bg-white text-slate-700 shadow-sm">

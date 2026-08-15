@@ -29,8 +29,8 @@ export function WaitlistResponsesPanel({
   responses: PricingPlanWaitlistResponse[];
 }) {
   return (
-    <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 bg-slate-50 px-6 py-5">
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
             Waitlist responses
@@ -45,7 +45,7 @@ export function WaitlistResponsesPanel({
       </div>
 
       {responses.length === 0 ? (
-        <div className="flex items-center gap-3 px-6 py-6 text-sm text-slate-500">
+        <div className="flex items-center gap-3 px-4 py-4 text-sm text-slate-500">
           <Inbox className="h-5 w-5" />
           No waitlist responses yet.
         </div>

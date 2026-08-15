@@ -21,7 +21,7 @@ export function PlanManualOverridePanel({
 }) {
   return (
     <Card className="border-slate-200 shadow-sm">
-      <CardContent className="space-y-6 p-6">
+      <CardContent className="space-y-4 p-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Manual overrides</h2>

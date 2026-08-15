@@ -105,7 +105,7 @@ export function PlanFormCard({
 
   return (
     <Card className="border-slate-200 shadow-sm">
-      <CardContent className="space-y-6 p-6">
+      <CardContent className="space-y-4 p-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">
