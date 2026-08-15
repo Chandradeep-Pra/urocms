@@ -53,7 +53,7 @@ export type PricingCouponInput = {
   endsAt: string | null;
   isActive: boolean;
   isSecret: boolean;
-  allowedCourseIds: string[];
+  allowedPlanIds: string[];
 };
 
 export type PricingPlanWaitlistInput = {
@@ -285,9 +285,9 @@ export function parsePricingCouponInput(body: any): PricingCouponInput {
     endsAt: body?.endsAt ? String(body.endsAt) : null,
     isActive: body?.isActive !== false,
     isSecret: body?.isSecret !== false,
-    allowedCourseIds: Array.from(
+    allowedPlanIds: Array.from(
       new Set(
-        (Array.isArray(body?.allowedCourseIds) ? body.allowedCourseIds : [])
+        (Array.isArray(body?.allowedPlanIds) ? body.allowedPlanIds : [])
           .map((id: unknown) => String(id || "").trim())
           .filter(Boolean)
       )
@@ -304,8 +304,8 @@ export function validatePricingCouponInput(input: PricingCouponInput) {
     return "Discount value must be greater than 0";
   }
 
-  if (input.isSecret && input.allowedCourseIds.length === 0) {
-    return "Select at least one course for a secret coupon";
+  if (input.isSecret && input.allowedPlanIds.length === 0) {
+    return "Select at least one plan for a secret coupon";
   }
 
   return null;
@@ -740,7 +740,7 @@ export async function createPricingCoupon(input: PricingCouponInput) {
     endsAt: input.endsAt,
     isActive: input.isActive,
     isSecret: input.isSecret,
-    allowedCourseIds: input.allowedCourseIds,
+    allowedPlanIds: input.allowedPlanIds,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });

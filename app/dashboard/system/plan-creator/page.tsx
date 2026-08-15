@@ -354,7 +354,7 @@ export default function PlanCreatorPage() {
           endsAt: couponForm.endsAt || null,
           isActive: couponForm.isActive,
           isSecret: couponForm.isSecret,
-          allowedCourseIds: couponForm.allowedCourseIds,
+          allowedPlanIds: couponForm.allowedPlanIds,
         }),
       });
 
@@ -412,8 +412,8 @@ export default function PlanCreatorPage() {
     <div className="min-h-screen bg-slate-50 p-8">
       <div className="mx-auto max-w-7xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-6">
-          <div className="sticky top-0 z-20 bg-slate-50/95 py-2 backdrop-blur">
-            <TabsList className="grid h-14 w-full grid-cols-5 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+          <div className="sticky top-0 z-20 h-14 bg-slate-50/95 backdrop-blur">
+            <TabsList className="grid !h-14 w-full grid-cols-5 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
               <TabsTrigger value="builder" className="h-12 min-w-0 gap-1.5 rounded-lg px-2 text-xs data-[state=active]:bg-teal-600 data-[state=active]:text-white sm:text-sm">
                 <ClipboardList className="h-4 w-4" />
                 <span className="truncate">1. Plan Details</span>
@@ -523,7 +523,7 @@ export default function PlanCreatorPage() {
               couponForm={couponForm}
               setCouponForm={setCouponForm}
               coupons={coupons}
-              courses={catalog.courses}
+              plans={plans}
               savingCoupon={savingCoupon}
               onCreateCoupon={handleCreateCoupon}
               onToggleCoupon={toggleCoupon}

@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/dashboard/shared/EmptyState";
 import { couponTypeOptions } from "@/components/dashboard/plan-creator/constants";
 import type {
   CouponFormValues,
-  CatalogItem,
+  PricingPlan,
   PricingCoupon,
 } from "@/components/dashboard/plan-creator/types";
 
@@ -20,7 +20,7 @@ export function CouponLauncherCard({
   couponForm,
   setCouponForm,
   coupons,
-  courses,
+  plans,
   savingCoupon,
   onCreateCoupon,
   onToggleCoupon,
@@ -29,7 +29,7 @@ export function CouponLauncherCard({
   couponForm: CouponFormValues;
   setCouponForm: Dispatch<SetStateAction<CouponFormValues>>;
   coupons: PricingCoupon[];
-  courses: CatalogItem[];
+  plans: PricingPlan[];
   savingCoupon: boolean;
   onCreateCoupon: () => void;
   onToggleCoupon: (coupon: PricingCoupon, nextValue: boolean) => void;
@@ -40,9 +40,9 @@ export function CouponLauncherCard({
       <CardContent className="space-y-5 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">Create a secret course coupon</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Create a secret plan coupon</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Create a private code and choose exactly which courses can accept it.
+              Create a private code and choose exactly which pricing plans can accept it.
             </p>
           </div>
           <Gift className="h-5 w-5 text-amber-500" />
@@ -51,11 +51,11 @@ export function CouponLauncherCard({
         <div className="space-y-3 rounded-2xl border border-teal-200 bg-teal-50 p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <Label className="text-sm font-semibold text-teal-950">Allowed courses</Label>
-              <p className="mt-1 text-xs text-teal-700">The code works only on plans that include one of these courses.</p>
+              <Label className="text-sm font-semibold text-teal-950">Allowed plans</Label>
+              <p className="mt-1 text-xs text-teal-700">The code works only on the pricing plans selected here.</p>
             </div>
             <Badge className="bg-teal-600 text-white hover:bg-teal-600">
-              {couponForm.allowedCourseIds.length} selected
+              {couponForm.allowedPlanIds.length} selected
             </Badge>
           </div>
 
@@ -67,7 +67,7 @@ export function CouponLauncherCard({
               onClick={() =>
                 setCouponForm((prev) => ({
                   ...prev,
-                  allowedCourseIds: courses.map((course) => course.id),
+                  allowedPlanIds: plans.map((plan) => plan.id),
                 }))
               }
             >
@@ -77,18 +77,18 @@ export function CouponLauncherCard({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setCouponForm((prev) => ({ ...prev, allowedCourseIds: [] }))}
+              onClick={() => setCouponForm((prev) => ({ ...prev, allowedPlanIds: [] }))}
             >
               Clear
             </Button>
           </div>
 
           <div className="grid max-h-64 gap-2 overflow-y-auto sm:grid-cols-2">
-            {courses.map((course) => {
-              const selected = couponForm.allowedCourseIds.includes(course.id);
+            {plans.map((plan) => {
+              const selected = couponForm.allowedPlanIds.includes(plan.id);
               return (
                 <label
-                  key={course.id}
+                  key={plan.id}
                   className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-sm transition ${
                     selected
                       ? "border-teal-600 bg-teal-600 text-white"
@@ -101,21 +101,21 @@ export function CouponLauncherCard({
                     onChange={() =>
                       setCouponForm((prev) => ({
                         ...prev,
-                        allowedCourseIds: selected
-                          ? prev.allowedCourseIds.filter((id) => id !== course.id)
-                          : [...prev.allowedCourseIds, course.id],
+                        allowedPlanIds: selected
+                          ? prev.allowedPlanIds.filter((id) => id !== plan.id)
+                          : [...prev.allowedPlanIds, plan.id],
                       }))
                     }
                     className="h-4 w-4"
                   />
-                  <span className="truncate font-medium">{course.title}</span>
+                  <span className="truncate font-medium">{plan.name}</span>
                 </label>
               );
             })}
           </div>
 
-          {courses.length === 0 && (
-            <p className="rounded-xl bg-white p-3 text-sm text-slate-500">No courses are available yet.</p>
+          {plans.length === 0 && (
+            <p className="rounded-xl bg-white p-3 text-sm text-slate-500">No pricing plans are available yet.</p>
           )}
         </div>
 
@@ -236,7 +236,7 @@ export function CouponLauncherCard({
 
         <Button
           onClick={onCreateCoupon}
-          disabled={savingCoupon || !couponForm.code.trim() || couponForm.allowedCourseIds.length === 0}
+          disabled={savingCoupon || !couponForm.code.trim() || couponForm.allowedPlanIds.length === 0}
           className="w-full bg-teal-600 text-white hover:bg-teal-700"
         >
           {savingCoupon ? "Creating..." : "Create secret coupon"}
@@ -280,7 +280,7 @@ export function CouponLauncherCard({
                         : `\u00A3${coupon.discountValue} off`}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      {(coupon.allowedCourseIds || []).length} allowed course{(coupon.allowedCourseIds || []).length === 1 ? "" : "s"}
+                      {(coupon.allowedPlanIds || []).length} allowed plan{(coupon.allowedPlanIds || []).length === 1 ? "" : "s"}
                     </p>
                   </div>
                   <Switch

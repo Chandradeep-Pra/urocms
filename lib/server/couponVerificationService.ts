@@ -82,16 +82,10 @@ export async function verifyPlanCoupon(
     ...legacyCouponIds,
     plan.couponId,
   ]);
-  const couponCourseIds = asIdList(coupon.allowedCourseIds);
-  const planCourseIds = asIdList(
-    plan.accessScopes && typeof plan.accessScopes === "object"
-      ? (plan.accessScopes as Record<string, unknown>).courseIds
-      : []
-  );
-  const courseEligible =
-    couponCourseIds.length > 0 && couponCourseIds.some((id) => planCourseIds.includes(id));
+  const allowedPlanIds = asIdList(coupon.allowedPlanIds);
+  const directlyEligible = allowedPlanIds.includes(planId);
 
-  if (!eligibleCouponIds.includes(couponDoc.id) && !courseEligible) {
+  if (!eligibleCouponIds.includes(couponDoc.id) && !directlyEligible) {
     throw new CouponVerificationError(
       "Coupon is not eligible for this plan",
       "coupon_not_eligible",
