@@ -74,7 +74,7 @@ export default function CaseDetailsPage() {
   }, [id]);
 
   const handleUpdate = async () => {
-    if (!caseData) return;
+    if (!caseData) return false;
 
     setSaving(true);
 
@@ -94,8 +94,10 @@ export default function CaseDetailsPage() {
       }
 
       toast.success("Case updated successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Update failed");
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Update failed");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -1101,6 +1103,7 @@ export default function CaseDetailsPage() {
         onQuestionKeywordsChange={updateCalmQuestionKeywords}
         onToggleQuestionExhibit={toggleCalmQuestionExhibit}
         onQuestionsGenerated={(questions) => applyGeneratedQuestions("calmAndComposed", questions)}
+        onSave={handleUpdate}
       />
 
       <VivaQuestionSetupDialog
@@ -1112,6 +1115,7 @@ export default function CaseDetailsPage() {
         onQuestionKeywordsChange={updateFastQuestionKeywords}
         onToggleQuestionExhibit={toggleFastQuestionExhibit}
         onQuestionsGenerated={(questions) => applyGeneratedQuestions("fastAndFurious", questions)}
+        onSave={handleUpdate}
       />
     </div>
   );

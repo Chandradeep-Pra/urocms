@@ -24,6 +24,7 @@ export interface VivaQuestionSetupDialogProps {
   onQuestionTextChange: (questionIndex: number, value: string) => void;
   onQuestionKeywordsChange: (questionIndex: number, value: string) => void;
   onToggleQuestionExhibit: (questionIndex: number, exhibitId: string) => void;
+  onSave?: () => Promise<boolean>;
   mode?: "calmAndComposed" | "fastAndFurious";
   onQuestionsGenerated: (questions: Array<{
     question: string;
@@ -40,11 +41,13 @@ export function VivaQuestionSetupDialog({
   onQuestionTextChange,
   onQuestionKeywordsChange,
   onToggleQuestionExhibit,
+  onSave,
   mode = "fastAndFurious",
   onQuestionsGenerated,
 }: VivaQuestionSetupDialogProps) {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [leftPanelTab, setLeftPanelTab] = useState<"config" | "questions">("config");
 
   const modeConfig = form.modes[mode];
@@ -96,6 +99,21 @@ export function VivaQuestionSetupDialog({
       toast.error(error instanceof Error ? error.message : "Question generation failed");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const saveQuestions = async () => {
+    if (!onSave) {
+      onOpenChange(false);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const saved = await onSave();
+      if (saved) onOpenChange(false);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -391,9 +409,11 @@ export function VivaQuestionSetupDialog({
             <Button
               type="button"
               className="bg-teal-600 text-white hover:bg-teal-700"
-              onClick={() => onOpenChange(false)}
+              disabled={saving}
+              onClick={saveQuestions}
             >
-              Save
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {saving ? "Saving..." : onSave ? "Save changes" : "Apply changes"}
             </Button>
           </div>
         </div>
