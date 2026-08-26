@@ -76,12 +76,14 @@ type PricingPlanCard = {
   }>;
   expiryMonths: number;
   durationLabel?: string;
+  categorySortOrder?: number;
   sortOrder?: number;
   isActive: boolean;
 };
 
 type GroupedPlans = {
   category: string;
+  categorySortOrder: number;
   plans: PricingPlanCard[];
 };
 

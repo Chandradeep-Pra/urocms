@@ -33,6 +33,7 @@ export type PricingPlanInput = {
   tag: string;
   availabilityNote: string;
   category: string;
+  categorySortOrder: number;
   sortOrder: number;
   vivaMinutes: number;
   featureBullets: string[];
@@ -147,6 +148,7 @@ export function parsePricingPlanInput(body: any): PricingPlanInput {
     tag: String(body?.tag ?? "").trim(),
     availabilityNote: String(body?.availabilityNote ?? "").trim(),
     category: String(body?.category ?? "").trim(),
+    categorySortOrder: Number(body?.categorySortOrder ?? 0),
     sortOrder: Number(body?.sortOrder ?? 0),
     vivaMinutes: Number(body?.vivaMinutes ?? 0),
     featureBullets: sanitizeFeatureBullets(body?.featureBullets),
@@ -256,6 +258,14 @@ async function resolvePlanPricing(input: PricingPlanInput) {
 export function validatePricingPlanInput(input: PricingPlanInput) {
   if (!input.name) {
     return "Plan name is required";
+  }
+
+  if (!Number.isInteger(input.categorySortOrder) || input.categorySortOrder < 0) {
+    return "Category sort order must be a non-negative integer";
+  }
+
+  if (!Number.isInteger(input.sortOrder) || input.sortOrder < 0) {
+    return "Plan sort order must be a non-negative integer";
   }
 
   if (!Array.isArray(input.versions) || input.versions.length === 0) {
@@ -399,6 +409,7 @@ export async function loadPricingAdminData() {
       marketingCouponId: String(data.marketingCouponId ?? data.couponId ?? ""),
       contentCounts: data.contentCounts ?? countPlanSelection(selectedContent),
       category: data.category ?? "",
+      categorySortOrder: Number(data.categorySortOrder ?? 0),
       durationLabel: data.durationLabel ?? "",
       billingLabel: data.billingLabel ?? "",
       availabilityNote: data.availabilityNote ?? "",
@@ -600,6 +611,7 @@ export async function createPricingPlan(input: PricingPlanInput) {
     billingLabel: primaryVersion.billingLabel,
     availabilityNote: input.availabilityNote,
     category: input.category,
+    categorySortOrder: input.categorySortOrder,
     sortOrder: Number.isFinite(input.sortOrder) ? input.sortOrder : 0,
     vivaMinutes: Number.isFinite(input.vivaMinutes) && input.vivaMinutes > 0 ? input.vivaMinutes : 0,
     featureBullets: input.featureBullets,
@@ -614,6 +626,8 @@ export async function createPricingPlan(input: PricingPlanInput) {
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
+
+  await syncCategorySortOrder(input.category, input.categorySortOrder);
 
   return docRef.id;
 }
@@ -642,6 +656,7 @@ export async function updatePricingPlan(id: string, input: PricingPlanInput) {
     billingLabel: primaryVersion.billingLabel,
     availabilityNote: input.availabilityNote,
     category: input.category,
+    categorySortOrder: input.categorySortOrder,
     sortOrder: Number.isFinite(input.sortOrder) ? input.sortOrder : 0,
     vivaMinutes: Number.isFinite(input.vivaMinutes) && input.vivaMinutes > 0 ? input.vivaMinutes : 0,
     featureBullets: input.featureBullets,
@@ -655,6 +670,29 @@ export async function updatePricingPlan(id: string, input: PricingPlanInput) {
     contentCounts: countPlanSelection(input.selectedContent),
     updatedAt: FieldValue.serverTimestamp(),
   });
+
+  await syncCategorySortOrder(input.category, input.categorySortOrder);
+}
+
+function normalizeCategoryName(value: unknown) {
+  return String(value ?? "").trim().toLocaleLowerCase();
+}
+
+async function syncCategorySortOrder(category: string, categorySortOrder: number) {
+  const db = getAdminDb();
+  const target = normalizeCategoryName(category);
+  if (!target) return;
+  const snapshot = await db.collection("pricingPlans").get();
+  const matching = snapshot.docs.filter(
+    (doc) => normalizeCategoryName(doc.data().category) === target,
+  );
+  for (let offset = 0; offset < matching.length; offset += 450) {
+    const batch = db.batch();
+    matching.slice(offset, offset + 450).forEach((doc) => {
+      batch.update(doc.ref, { categorySortOrder, updatedAt: FieldValue.serverTimestamp() });
+    });
+    await batch.commit();
+  }
 }
 
 export async function deletePricingPlan(id: string) {
@@ -679,6 +717,7 @@ export async function importPricingPresets() {
         presetKey: preset.presetKey,
         name: preset.name,
         category: preset.category,
+        categorySortOrder: 0,
         description: preset.description,
         tag: preset.tag ?? "",
         price: preset.price,

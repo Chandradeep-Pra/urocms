@@ -1,6 +1,7 @@
 "use client";
 
-import { Layers3 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, Layers3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +28,48 @@ export function SavedPlansPanel({
   onEdit: (plan: PricingPlan) => void;
   onDelete: (id: string) => void;
 }) {
+  const [openCategories, setOpenCategories] = useState<string[]>([]);
+  const groupedPlans = useMemo(() => {
+    const groups = new Map<string, { categorySortOrder: number; plans: PricingPlan[] }>();
+    plans.forEach((plan) => {
+      const category = plan.category?.trim() || "Programs";
+      const categoryKey = category.toLocaleLowerCase();
+      const existing = groups.get(categoryKey) || {
+        categorySortOrder: Number(plan.categorySortOrder ?? 0),
+        plans: [],
+      };
+      existing.categorySortOrder = Math.min(
+        existing.categorySortOrder,
+        Number(plan.categorySortOrder ?? 0),
+      );
+      existing.plans.push(plan);
+      groups.set(categoryKey, existing);
+    });
+    return Array.from(groups.entries())
+      .map(([, group]) => ({
+        category: group.plans[0]?.category?.trim() || "Programs",
+        categorySortOrder: group.categorySortOrder,
+        plans: group.plans.sort((left, right) => {
+          const order = Number(left.sortOrder ?? 0) - Number(right.sortOrder ?? 0);
+          if (order !== 0) return order;
+          const price = Number(left.price ?? 0) - Number(right.price ?? 0);
+          return price !== 0 ? price : left.name.localeCompare(right.name);
+        }),
+      }))
+      .sort((left, right) =>
+        left.categorySortOrder - right.categorySortOrder ||
+        left.category.localeCompare(right.category),
+      );
+  }, [plans]);
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories((current) =>
+      current.includes(category)
+        ? current.filter((item) => item !== category)
+        : [...current, category],
+    );
+  };
+
   return (
     <Card className="border-slate-200 shadow-sm">
       <CardContent className="space-y-3 p-4">
@@ -52,7 +95,29 @@ export function SavedPlansPanel({
           />
         ) : (
           <div className="space-y-3">
-            {plans.map((plan) => {
+            {groupedPlans.map((group) => {
+              const open = openCategories.includes(group.category);
+              return (
+                <section key={group.category} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(group.category)}
+                    aria-expanded={open}
+                    aria-controls={`saved-plans-${group.category.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
+                    className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition hover:bg-slate-100"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold text-slate-900">{group.category}</h3>
+                        <Badge variant="outline">{group.plans.length} plan{group.plans.length === 1 ? "" : "s"}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">Category order {group.categorySortOrder}</p>
+                    </div>
+                    <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`} />
+                  </button>
+                  {open ? (
+                    <div id={`saved-plans-${group.category.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`} className="space-y-3 border-t border-slate-200 p-3">
+            {group.plans.map((plan) => {
               const versions =
                 Array.isArray(plan.versions) && plan.versions.length > 0
                   ? [...plan.versions].sort((a, b) => Number(a.months) - Number(b.months))
@@ -203,6 +268,11 @@ export function SavedPlansPanel({
                     </Button>
                   </div>
                 </div>
+              );
+            })}
+                    </div>
+                  ) : null}
+                </section>
               );
             })}
           </div>

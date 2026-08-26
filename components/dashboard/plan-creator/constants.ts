@@ -63,6 +63,7 @@ export const emptyForm: PlanFormValues = {
   description: "",
   tag: "",
   category: "",
+  categorySortOrder: 0,
   availabilityNote: "",
   sortOrder: 0,
   vivaMinutes: 0,

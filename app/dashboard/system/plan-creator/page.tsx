@@ -180,6 +180,7 @@ export default function PlanCreatorPage() {
         description: plan.description || "",
         tag: plan.tag || "",
         category: plan.category || "",
+        categorySortOrder: Number(plan.categorySortOrder || 0),
       versions: fallbackVersions.map((version, index) =>
         createEmptyPlanVersion(Number(version.months || 3), {
           id: String(version.id || `version-${index + 1}`),
@@ -223,6 +224,7 @@ export default function PlanCreatorPage() {
       description: form.description.trim(),
       tag: form.tag.trim(),
       category: form.category.trim(),
+      categorySortOrder: Number(form.categorySortOrder),
       versions: form.versions.map((version) => ({
         id: version.id,
         months: Number(version.months),
@@ -253,6 +255,16 @@ export default function PlanCreatorPage() {
 
     if (!payload.category) {
       toast.error("Category is required");
+      return;
+    }
+
+    if (!Number.isInteger(payload.categorySortOrder) || payload.categorySortOrder < 0) {
+      toast.error("Category sort order must be a non-negative integer");
+      return;
+    }
+
+    if (!Number.isInteger(payload.sortOrder) || payload.sortOrder < 0) {
+      toast.error("Plan sort order must be a non-negative integer");
       return;
     }
 

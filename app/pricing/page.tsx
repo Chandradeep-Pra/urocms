@@ -94,6 +94,7 @@ type PricingPlanCard = {
   }>;
   expiryMonths: number;
   durationLabel?: string;
+  categorySortOrder?: number;
   sortOrder?: number;
   isActive: boolean;
 };
@@ -115,19 +116,32 @@ const selectionKeyMap: Record<keyof typeof featureMeta, string> = {
 };
 
 function groupPlansByCategory(plans: PricingPlanCard[]) {
-  const grouped = new Map<string, PricingPlanCard[]>();
+  const grouped = new Map<string, { categorySortOrder: number; plans: PricingPlanCard[] }>();
 
   for (const plan of plans) {
     const category = plan.category || "Programs";
-    const existing = grouped.get(category) || [];
-    existing.push(plan);
-    grouped.set(category, existing);
+    const categoryKey = category.trim().toLocaleLowerCase();
+    const existing = grouped.get(categoryKey) || {
+      categorySortOrder: Number(plan.categorySortOrder ?? 0),
+      plans: [],
+    };
+    existing.categorySortOrder = Math.min(
+      existing.categorySortOrder,
+      Number(plan.categorySortOrder ?? 0),
+    );
+    existing.plans.push(plan);
+    grouped.set(categoryKey, existing);
   }
 
-  return Array.from(grouped.entries()).map(([category, items]) => ({
-    category,
-    plans: items,
-  }));
+  return Array.from(grouped.entries())
+    .map(([, group]) => ({
+      category: group.plans[0]?.category?.trim() || "Programs",
+      ...group,
+    }))
+    .sort((left, right) =>
+      left.categorySortOrder - right.categorySortOrder ||
+      left.category.localeCompare(right.category),
+    );
 }
 
 async function getPricingPlans(): Promise<PricingPlanCard[]> {
@@ -299,6 +313,7 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
           items,
           expiryMonths: Number(data.expiryMonths ?? 1),
           durationLabel: String(data.durationLabel ?? "").trim(),
+          categorySortOrder: Number(data.categorySortOrder ?? 0),
           sortOrder: Number(data.sortOrder ?? 0),
           isActive: data.isActive !== false,
         };
@@ -306,7 +321,9 @@ async function getPricingPlans(): Promise<PricingPlanCard[]> {
       .sort((a, b) => {
         const orderDelta = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
         if (orderDelta !== 0) return orderDelta;
-        return a.price - b.price;
+        const priceDelta = a.price - b.price;
+        if (priceDelta !== 0) return priceDelta;
+        return a.name.localeCompare(b.name);
       });
 
     if (plans.length > 0) {

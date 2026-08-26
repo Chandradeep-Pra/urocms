@@ -146,7 +146,7 @@ export function PlanFormCard({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="plan-tag">Tag (optional)</Label>
               <Input
@@ -168,6 +168,23 @@ export function PlanFormCard({
                 placeholder="FRCS Urology Section 2"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category-sort-order">Category sort order</Label>
+              <Input
+                id="category-sort-order"
+                type="number"
+                min="0"
+                step="1"
+                value={form.categorySortOrder}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    categorySortOrder: Number(event.target.value || 0),
+                  }))
+                }
+              />
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -184,10 +201,12 @@ export function PlanFormCard({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="plan-sort-order">Sort order</Label>
+              <Label htmlFor="plan-sort-order">Plan sort order</Label>
               <Input
                 id="plan-sort-order"
                 type="number"
+                min="0"
+                step="1"
                 value={form.sortOrder}
                 onChange={(event) =>
                   setForm((prev) => ({

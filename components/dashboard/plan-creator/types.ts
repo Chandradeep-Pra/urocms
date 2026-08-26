@@ -35,6 +35,7 @@ export type PricingPlan = {
   description: string;
   tag?: string;
   category?: string;
+  categorySortOrder?: number;
   versions?: PricingPlanVersion[];
   price: number;
   originalPrice?: number;
@@ -118,6 +119,7 @@ export type PlanFormValues = {
   description: string;
   tag: string;
   category: string;
+  categorySortOrder: number;
   availabilityNote: string;
   sortOrder: number;
   vivaMinutes: number;
