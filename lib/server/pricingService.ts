@@ -678,6 +678,15 @@ function normalizeCategoryName(value: unknown) {
   return String(value ?? "").trim().toLocaleLowerCase();
 }
 
+export async function updatePricingCategorySortOrder(category: string, categorySortOrder: number) {
+  const normalizedCategory = String(category ?? "").trim();
+  if (!normalizedCategory) throw new Error("Category is required");
+  if (!Number.isInteger(categorySortOrder) || categorySortOrder < 0) {
+    throw new Error("Category sort order must be a non-negative integer");
+  }
+  await syncCategorySortOrder(normalizedCategory, categorySortOrder);
+}
+
 async function syncCategorySortOrder(category: string, categorySortOrder: number) {
   const db = getAdminDb();
   const target = normalizeCategoryName(category);

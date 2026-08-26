@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, Layers3 } from "lucide-react";
+import { ChevronDown, Layers3, Loader2, Save } from "lucide-react";
+import { toast } from "sonner";
+import { adminFetch } from "@/lib/client/adminApi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,13 +24,17 @@ export function SavedPlansPanel({
   loading,
   onEdit,
   onDelete,
+  onCategoryOrderUpdated,
 }: {
   plans: PricingPlan[];
   loading: boolean;
   onEdit: (plan: PricingPlan) => void;
   onDelete: (id: string) => void;
+  onCategoryOrderUpdated: () => Promise<void>;
 }) {
   const [openCategories, setOpenCategories] = useState<string[]>([]);
+  const [categoryOrders, setCategoryOrders] = useState<Record<string, number>>({});
+  const [savingCategory, setSavingCategory] = useState<string | null>(null);
   const groupedPlans = useMemo(() => {
     const groups = new Map<string, { categorySortOrder: number; plans: PricingPlan[] }>();
     plans.forEach((plan) => {
@@ -70,6 +76,35 @@ export function SavedPlansPanel({
     );
   };
 
+  const saveCategoryOrder = async (category: string, currentOrder: number) => {
+    const categorySortOrder = categoryOrders[category] ?? currentOrder;
+    if (!Number.isInteger(categorySortOrder) || categorySortOrder < 0) {
+      toast.error("Category sort order must be a non-negative integer");
+      return;
+    }
+    try {
+      setSavingCategory(category);
+      const response = await adminFetch("/api/pricing-plans/categories/order", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category, categorySortOrder }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to update category order");
+      await onCategoryOrderUpdated();
+      setCategoryOrders((current) => {
+        const next = { ...current };
+        delete next[category];
+        return next;
+      });
+      toast.success("Category order updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update category order");
+    } finally {
+      setSavingCategory(null);
+    }
+  };
+
   return (
     <Card className="border-slate-200 shadow-sm">
       <CardContent className="space-y-3 p-4">
@@ -99,22 +134,60 @@ export function SavedPlansPanel({
               const open = openCategories.includes(group.category);
               return (
                 <section key={group.category} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                  <button
-                    type="button"
-                    onClick={() => toggleCategory(group.category)}
-                    aria-expanded={open}
-                    aria-controls={`saved-plans-${group.category.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
-                    className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition hover:bg-slate-100"
-                  >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition hover:bg-slate-100">
+                    <div className="min-w-0 flex-1">
+                      <button
+                        type="button"
+                        onClick={() => toggleCategory(group.category)}
+                        aria-expanded={open}
+                        aria-controls={`saved-plans-${group.category.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
+                        className="flex flex-wrap items-center gap-2 text-left"
+                      >
                         <h3 className="font-semibold text-slate-900">{group.category}</h3>
                         <Badge variant="outline">{group.plans.length} plan{group.plans.length === 1 ? "" : "s"}</Badge>
+                      </button>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <label className="text-xs font-medium text-slate-500" htmlFor={`category-order-${group.category.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}>
+                          Sort order
+                        </label>
+                        <input
+                          id={`category-order-${group.category.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={categoryOrders[group.category] ?? group.categorySortOrder}
+                          onChange={(event) => setCategoryOrders((current) => ({ ...current, [group.category]: Number(event.target.value || 0) }))}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") void saveCategoryOrder(group.category, group.categorySortOrder);
+                          }}
+                          className="h-8 w-20 rounded-md border border-slate-200 bg-white px-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8"
+                          disabled={savingCategory === group.category || categoryOrders[group.category] === undefined}
+                          onClick={() => {
+                            void saveCategoryOrder(group.category, group.categorySortOrder);
+                          }}
+                        >
+                          {savingCategory === group.category ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                          Save
+                        </Button>
                       </div>
-                      <p className="mt-1 text-xs text-slate-500">Category order {group.categorySortOrder}</p>
                     </div>
-                    <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`} />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(group.category)}
+                      aria-expanded={open}
+                      aria-controls={`saved-plans-${group.category.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
+                      aria-label={`${open ? "Collapse" : "Expand"} ${group.category}`}
+                      className="rounded-md p-2 hover:bg-white"
+                    >
+                      <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`} />
+                    </button>
+                  </div>
                   {open ? (
                     <div id={`saved-plans-${group.category.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`} className="space-y-3 border-t border-slate-200 p-3">
             {group.plans.map((plan) => {

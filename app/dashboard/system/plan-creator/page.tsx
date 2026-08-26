@@ -527,7 +527,13 @@ export default function PlanCreatorPage() {
                 {importingPresets ? "Loading presets..." : "Load FRCS presets"}
               </Button>
             </div>
-            <SavedPlansPanel plans={plans} loading={loading} onEdit={hydrateForm} onDelete={handleDelete} />
+            <SavedPlansPanel
+              plans={plans}
+              loading={loading}
+              onEdit={hydrateForm}
+              onDelete={handleDelete}
+              onCategoryOrderUpdated={fetchData}
+            />
           </TabsContent>
 
           <TabsContent value="coupons">
