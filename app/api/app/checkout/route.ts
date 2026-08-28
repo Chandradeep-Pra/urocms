@@ -65,6 +65,12 @@ export async function GET(req: NextRequest) {
   }
 
   const plan = planDoc.data() ?? {};
+  const planCourseIds = Array.isArray(plan.accessScopes?.courseIds)
+    ? plan.accessScopes.courseIds.map((id: unknown) => String(id || "")).filter(Boolean)
+    : [];
+  if (planCourseIds.length === 0) {
+    return NextResponse.json({ error: "No course is attached to this plan" }, { status: 409 });
+  }
   const versions = Array.isArray(plan.versions) ? plan.versions : [];
   const legacyVersion = {
     id: "legacy-default",
@@ -82,9 +88,7 @@ export async function GET(req: NextRequest) {
   }
 
   const checkoutUrl = String(version.embeddedLink || plan.embeddedLink || "").trim();
-  if (!checkoutUrl || !isSafeCheckoutUrl(checkoutUrl)) {
-    return NextResponse.json({ error: "Checkout is not configured for this plan" }, { status: 409 });
-  }
+  const safeCheckoutUrl = checkoutUrl && isSafeCheckoutUrl(checkoutUrl) ? checkoutUrl : "";
 
   const legacyCouponIds = versions
     .map((item: Record<string, unknown>) => String(item?.couponId || ""))
@@ -119,6 +123,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     plan: {
       id: planDoc.id,
+      courseId: planCourseIds[0],
       name: String(plan.name || "Selected course"),
       description: String(plan.description || ""),
     },
@@ -130,8 +135,9 @@ export async function GET(req: NextRequest) {
       originalPrice: Number(version.price ?? version.originalPrice ?? 0),
     },
     coupons,
-    checkoutUrl,
+    checkoutUrl: safeCheckoutUrl,
     taxPercent,
+    paypalClientId: process.env.PAYPAL_CLIENT_ID?.trim() || "",
     user: {
       uid: auth.user.uid,
       email: auth.user.email,

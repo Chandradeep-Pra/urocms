@@ -3,13 +3,13 @@
 import { Suspense, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, CircleHelp, Loader2, ReceiptText, ShieldCheck, Tag } from "lucide-react";
+import { Check, CircleHelp, Loader2, ReceiptText, ShieldCheck, Tag } from "lucide-react";
 import { auth } from "@/lib/firebaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type CheckoutDetails = {
-  plan: { id: string; name: string; description: string };
+  plan: { id: string; courseId: string; name: string; description: string };
   version: {
     id: string;
     months: number;
@@ -28,7 +28,17 @@ type CheckoutDetails = {
   }>;
   checkoutUrl: string;
   taxPercent: number;
+  paypalClientId: string;
 };
+
+type PayPalButtons = (options: {
+  createOrder: () => Promise<string>;
+  onApprove: (data: { orderID: string }) => Promise<void>;
+  onCancel: () => void;
+  onError: (error: unknown) => void;
+}) => { render: (selector: HTMLElement) => Promise<void>; close?: () => Promise<void> };
+
+declare global { interface Window { paypal?: { Buttons: PayPalButtons } } }
 
 type AppliedPricing = {
   couponCode: string;
@@ -36,19 +46,6 @@ type AppliedPricing = {
   discountedPrice: number;
   expiresAt: string | null;
 };
-
-function formatRemainingTime(milliseconds: number) {
-  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
-  const days = Math.floor(totalSeconds / 86_400);
-  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
-  const minutes = Math.floor((totalSeconds % 3_600) / 60);
-  const seconds = totalSeconds % 60;
-  const time = [hours, minutes, seconds]
-    .map((part) => String(part).padStart(2, "0"))
-    .join(":");
-
-  return days > 0 ? `${days}d ${time}` : time;
-}
 
 async function verifyCoupon(details: CheckoutDetails, couponCode: string) {
   const response = await fetch("/api/verify-coupon-web", {
@@ -82,7 +79,9 @@ function CheckoutContent() {
   const [couponError, setCouponError] = useState("");
   const [appliedPricing, setAppliedPricing] = useState<AppliedPricing | null>(null);
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
-  const [countdownNow, setCountdownNow] = useState(Date.now());
+  const [paymentState, setPaymentState] = useState<"idle" | "loading" | "processing" | "success" | "cancelled" | "failed" | "pending">("idle");
+  const [paymentError, setPaymentError] = useState("");
+  const paymentComplete = paymentState === "success";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -127,7 +126,6 @@ function CheckoutContent() {
     const expiresAt = new Date(appliedPricing.expiresAt).getTime();
     const interval = window.setInterval(() => {
       const now = Date.now();
-      setCountdownNow(now);
       if (now >= expiresAt) {
         setAppliedPricing(null);
         setCouponError("This coupon has expired");
@@ -135,6 +133,48 @@ function CheckoutContent() {
     }, 1000);
     return () => window.clearInterval(interval);
   }, [appliedPricing?.expiresAt]);
+
+  useEffect(() => {
+    if (!details?.paypalClientId || paymentComplete) return;
+    let disposed = false;
+    let buttons: ReturnType<PayPalButtons> | null = null;
+    const container = document.getElementById("paypal-button-container");
+    if (!container) return;
+    container.innerHTML = "";
+    const render = async () => {
+      if (disposed || !window.paypal || !container) return;
+      buttons = window.paypal.Buttons({
+        createOrder: async () => {
+          setPaymentState("loading"); setPaymentError("");
+          const user = auth.currentUser; if (!user) throw new Error("Please sign in again");
+          const response = await fetch("/api/paypal/create-order", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` }, body: JSON.stringify({ courseId: details.plan.courseId, planId: details.plan.id, versionId: details.version.id, couponCode: appliedPricing?.couponCode || undefined }) });
+          const data = await response.json(); if (!response.ok) throw new Error(data.error || "Unable to create payment");
+          setPaymentState("idle"); return String(data.orderId);
+        },
+        onApprove: async ({ orderID }) => {
+          setPaymentState("processing"); setPaymentError("");
+          try {
+            const user = auth.currentUser; if (!user) throw new Error("Please sign in again");
+            const response = await fetch("/api/paypal/capture-order", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` }, body: JSON.stringify({ orderId: orderID }) });
+            const data = await response.json();
+            if (!response.ok) { setPaymentState(data.pending ? "pending" : "failed"); throw new Error(data.error || "Payment verification failed"); }
+            setPaymentState("success");
+          } catch (error) { setPaymentError(error instanceof Error ? error.message : "Payment verification failed"); setPaymentState((state) => state === "pending" ? state : "failed"); }
+        },
+        onCancel: () => { setPaymentState("cancelled"); setPaymentError("Payment was cancelled. You have not been charged."); },
+        onError: (error) => { console.error("PayPal checkout error", error); setPaymentState("failed"); setPaymentError("PayPal checkout failed. Please retry this order before starting another payment."); },
+      });
+      await buttons.render(container);
+    };
+    const existing = document.querySelector<HTMLScriptElement>("script[data-paypal-sdk]");
+    if (existing) { if (window.paypal) void render(); else existing.addEventListener("load", render, { once: true }); }
+    else {
+      const script = document.createElement("script"); script.dataset.paypalSdk = "true";
+      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(details.paypalClientId)}&currency=${encodeURIComponent(details.version.currency)}&intent=capture`;
+      script.addEventListener("load", render, { once: true }); script.addEventListener("error", () => { setPaymentState("failed"); setPaymentError("Unable to load PayPal checkout"); }); document.head.appendChild(script);
+    }
+    return () => { disposed = true; void buttons?.close?.(); };
+  }, [details, appliedPricing?.couponCode, paymentComplete]);
 
   async function applySelectedCoupon(nextCode = couponCode) {
     if (!details || !nextCode.trim()) return;
@@ -179,14 +219,8 @@ function CheckoutContent() {
     }).format(value);
   const subtotal = appliedPricing?.discountedPrice ?? details.version.originalPrice;
   const taxAmount = Math.round(subtotal * details.taxPercent) / 100;
-  const total = Math.round(subtotal + taxAmount);
+  const total = Math.round((subtotal + taxAmount) * 100) / 100;
   const queryId = new URLSearchParams(window.location.search).get("queryId");
-  const countdownMs = appliedPricing?.expiresAt
-    ? Math.max(0, new Date(appliedPricing.expiresAt).getTime() - countdownNow)
-    : null;
-  const countdownLabel = countdownMs === null
-    ? null
-    : formatRemainingTime(countdownMs);
   const expiryDateLabel = appliedPricing?.expiresAt
     ? new Intl.DateTimeFormat("en-GB", {
         day: "numeric",
@@ -383,11 +417,11 @@ function CheckoutContent() {
           </div>
         </div>
       </div>
-      <Button asChild className="w-full rounded-full py-6 text-base">
-        <a href={details.checkoutUrl} rel="noopener noreferrer">
-          Continue to payment <ArrowRight className="ml-2 h-4 w-4" />
-        </a>
-      </Button>
+      {paymentState === "success" ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-800"><p className="font-semibold">Payment successful</p><p className="mt-1 text-sm">Your verified course access is active. Refresh your profile or course list to continue.</p></div> : null}
+      {paymentState === "processing" ? <div className="flex items-center gap-2 rounded-2xl bg-cyan-50 p-4 text-cyan-800"><Loader2 className="h-4 w-4 animate-spin" /> Processing and verifying payment...</div> : null}
+      {paymentState === "pending" ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">Payment verification is pending. Retry the same PayPal order; do not create another charge.</div> : null}
+      {paymentError ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{paymentError}</div> : null}
+      {!details.paypalClientId ? <p className="rounded-2xl bg-amber-50 p-4 text-amber-800">PayPal Sandbox is not configured.</p> : <div id="paypal-button-container" className={paymentState === "processing" || paymentState === "success" ? "pointer-events-none opacity-50" : ""} />}
     </div>
   );
 }
