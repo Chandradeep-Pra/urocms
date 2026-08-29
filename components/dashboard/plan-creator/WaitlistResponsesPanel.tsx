@@ -72,6 +72,12 @@ export function WaitlistResponsesPanel({
                     Institution
                   </p>
                   <p className="mt-1 text-slate-700">{response.institution}</p>
+                  {response.requestedCourseMaterial ? (
+                    <div className="mt-3 rounded-xl bg-cyan-50 p-3 text-sm text-slate-700">
+                      <p className="font-semibold text-cyan-900">Requested course material</p>
+                      <p className="mt-1 whitespace-pre-wrap">{response.requestedCourseMaterial}</p>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex items-start gap-2 text-slate-500">
                   <Clock3 className="mt-0.5 h-4 w-4 shrink-0" />

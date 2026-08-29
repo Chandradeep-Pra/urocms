@@ -99,6 +99,8 @@ export type PricingPlanWaitlistResponse = {
   name: string;
   email: string;
   institution: string;
+  requestedCourseMaterial?: string;
+  requestType?: string;
   createdAt?: string | null;
 };
 

@@ -361,3 +361,21 @@ export async function sendPurchaseConfirmationEmail(params: {
     html: `<div style="font-family:Arial,sans-serif;background:#eefbff;padding:28px"><div style="max-width:600px;margin:auto;background:white;border-radius:24px;padding:30px"><h1 style="color:#071014">Purchase confirmed</h1><p>Dear ${escapeHtml(name)},</p><p>Your course access is now active.</p><div style="background:#f4fbfd;border-radius:16px;padding:18px;line-height:1.8"><strong>Course:</strong> ${escapeHtml(params.courseName)}<br><strong>Plan:</strong> ${escapeHtml(params.planName)}<br><strong>Amount paid:</strong> ${escapeHtml(amount)} (${escapeHtml(params.currency)})<br><strong>PayPal order:</strong> ${escapeHtml(params.orderReference)}<br><strong>PayPal capture:</strong> ${escapeHtml(params.captureReference)}<br><strong>Purchased:</strong> ${escapeHtml(purchased)}<br><strong>Access expires:</strong> ${escapeHtml(expires)}</div></div></div>`,
   });
 }
+
+export async function sendPlanMaterialRequestConfirmationEmail(params: {
+  to: string;
+  name?: string | null;
+  planName: string;
+  requestedCourseMaterial: string;
+  requestId: string;
+}) {
+  const { user, transporter } = createEmailTransporter();
+  const name = params.name?.trim() || "Member";
+  await transporter.sendMail({
+    from: `"Urologics" <${user}>`,
+    to: params.to,
+    subject: `We received your ${params.planName} request`,
+    text: `Dear ${name},\n\nPurchase for ${params.planName} is not available right now. We have added you to the priority list and recorded the course material you need.\n\nRequested material: ${params.requestedCourseMaterial}\nReference: ${params.requestId}\n\nWe will contact you when a suitable course becomes available.\n\nUrologics Support`,
+    html: `<div style="font-family:Arial,sans-serif;background:#eefbff;padding:28px"><div style="max-width:600px;margin:auto;background:white;border-radius:24px;padding:30px"><h1 style="color:#071014">Your request is on our list</h1><p>Dear ${escapeHtml(name)},</p><p>Purchase for <strong>${escapeHtml(params.planName)}</strong> is not available right now. We have added you to our priority list.</p><div style="background:#f4fbfd;border-radius:16px;padding:18px;line-height:1.8"><strong>Course material requested:</strong><br>${escapeHtml(params.requestedCourseMaterial).replace(/\r?\n/g, "<br>")}<br><br><strong>Reference:</strong> ${escapeHtml(params.requestId)}</div><p>We will contact you when a suitable course becomes available.</p></div></div>`,
+  });
+}

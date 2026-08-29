@@ -1,14 +1,16 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, CircleHelp, Loader2, ReceiptText, ShieldCheck, Tag } from "lucide-react";
 import { auth } from "@/lib/firebaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
-type CheckoutDetails = {
+type AvailableCheckoutDetails = {
+  purchaseAvailable: true;
   plan: { id: string; courseId: string; name: string; description: string };
   version: {
     id: string;
@@ -31,6 +33,15 @@ type CheckoutDetails = {
   paypalClientId: string;
 };
 
+type UnavailableCheckoutDetails = {
+  purchaseAvailable: false;
+  message: string;
+  plan: { id: string; name: string; description: string };
+  user: { uid: string; email: string | null; name: string | null };
+};
+
+type CheckoutDetails = AvailableCheckoutDetails | UnavailableCheckoutDetails;
+
 type PayPalButtons = (options: {
   createOrder: () => Promise<string>;
   onApprove: (data: { orderID: string }) => Promise<void>;
@@ -47,7 +58,7 @@ type AppliedPricing = {
   expiresAt: string | null;
 };
 
-async function verifyCoupon(details: CheckoutDetails, couponCode: string) {
+async function verifyCoupon(details: AvailableCheckoutDetails, couponCode: string) {
   const response = await fetch("/api/verify-coupon-web", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -81,6 +92,10 @@ function CheckoutContent() {
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "processing" | "success" | "cancelled" | "failed" | "pending">("idle");
   const [paymentError, setPaymentError] = useState("");
+  const [materialRequest, setMaterialRequest] = useState("");
+  const [requestSaving, setRequestSaving] = useState(false);
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
+  const [requestError, setRequestError] = useState("");
   const paymentComplete = paymentState === "success";
 
   useEffect(() => {
@@ -102,6 +117,7 @@ function CheckoutContent() {
         if (!response.ok) throw new Error(data.error || "Unable to open checkout");
         const checkoutDetails = data as CheckoutDetails;
         setDetails(checkoutDetails);
+        if (!checkoutDetails.purchaseAvailable) return;
         const requestedCouponCode = params.get("couponCode")?.trim().toUpperCase();
         const selectedCoupon = checkoutDetails.coupons.find(
           (coupon) => requestedCouponCode && coupon.code.toUpperCase() === requestedCouponCode,
@@ -135,7 +151,8 @@ function CheckoutContent() {
   }, [appliedPricing?.expiresAt]);
 
   useEffect(() => {
-    if (!details?.paypalClientId || paymentComplete) return;
+    if (!details?.purchaseAvailable || !details.paypalClientId || paymentComplete) return;
+    const availableDetails = details;
     let disposed = false;
     let buttons: ReturnType<PayPalButtons> | null = null;
     const container = document.getElementById("paypal-button-container");
@@ -147,7 +164,7 @@ function CheckoutContent() {
         createOrder: async () => {
           setPaymentState("loading"); setPaymentError("");
           const user = auth.currentUser; if (!user) throw new Error("Please sign in again");
-          const response = await fetch("/api/paypal/create-order", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` }, body: JSON.stringify({ courseId: details.plan.courseId, planId: details.plan.id, versionId: details.version.id, couponCode: appliedPricing?.couponCode || undefined }) });
+          const response = await fetch("/api/paypal/create-order", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` }, body: JSON.stringify({ courseId: availableDetails.plan.courseId, planId: availableDetails.plan.id, versionId: availableDetails.version.id, couponCode: appliedPricing?.couponCode || undefined }) });
           const data = await response.json(); if (!response.ok) throw new Error(data.error || "Unable to create payment");
           setPaymentState("idle"); return String(data.orderId);
         },
@@ -170,14 +187,14 @@ function CheckoutContent() {
     if (existing) { if (window.paypal) void render(); else existing.addEventListener("load", render, { once: true }); }
     else {
       const script = document.createElement("script"); script.dataset.paypalSdk = "true";
-      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(details.paypalClientId)}&currency=${encodeURIComponent(details.version.currency)}&intent=capture`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(availableDetails.paypalClientId)}&currency=${encodeURIComponent(availableDetails.version.currency)}&intent=capture`;
       script.addEventListener("load", render, { once: true }); script.addEventListener("error", () => { setPaymentState("failed"); setPaymentError("Unable to load PayPal checkout"); }); document.head.appendChild(script);
     }
     return () => { disposed = true; void buttons?.close?.(); };
   }, [details, appliedPricing?.couponCode, paymentComplete]);
 
   async function applySelectedCoupon(nextCode = couponCode) {
-    if (!details || !nextCode.trim()) return;
+    if (!details?.purchaseAvailable || !nextCode.trim()) return;
     try {
       setVerifyingCoupon(true);
       setCouponError("");
@@ -202,6 +219,66 @@ function CheckoutContent() {
       <div className="flex items-center justify-center gap-3 py-16 text-slate-600">
         <Loader2 className="h-5 w-5 animate-spin" />
         Checking your account and course...
+      </div>
+    );
+  }
+
+  if (!details.purchaseAvailable) {
+    const submitMaterialRequest = async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      try {
+        setRequestSaving(true);
+        setRequestError("");
+        const user = auth.currentUser;
+        if (!user) throw new Error("Please sign in again");
+        const response = await fetch("/api/pricing-plans/waitlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` },
+          body: JSON.stringify({ requestType: "course-material", planId: details.plan.id, requestedCourseMaterial: materialRequest }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to submit your request");
+        setRequestSubmitted(true);
+      } catch (requestSubmitError) {
+        setRequestError(requestSubmitError instanceof Error ? requestSubmitError.message : "Unable to submit your request");
+      } finally {
+        setRequestSaving(false);
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-700">Plan availability</p>
+          <h1 className="mt-2 text-3xl font-bold text-slate-950">{details.plan.name}</h1>
+          <p className="mt-3 text-slate-600">Purchase for this plan isn&apos;t available right now.</p>
+        </div>
+        {requestSubmitted ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-800">
+            <p className="font-semibold">Your request has been received</p>
+            <p className="mt-2 text-sm leading-6">We sent a confirmation to {details.user.email}. We will contact you when suitable course material becomes available.</p>
+          </div>
+        ) : (
+          <form onSubmit={submitMaterialRequest} className="space-y-4 rounded-2xl border border-cyan-900/10 bg-cyan-50/40 p-5">
+            <p className="text-sm leading-6 text-slate-600">Please fill out this request and tell us what course material you need.</p>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-900">Name</label>
+              <Input value={details.user.name || "Member"} readOnly className="bg-white" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-900">Email</label>
+              <Input value={details.user.email || ""} readOnly className="bg-white" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-900">What course material do you need?</label>
+              <Textarea required minLength={10} value={materialRequest} onChange={(event) => setMaterialRequest(event.target.value)} placeholder="Tell us the topics, videos, question banks, mock exams, or other material you are looking for..." className="min-h-32 bg-white" />
+            </div>
+            {requestError ? <p className="text-sm font-medium text-rose-600">{requestError}</p> : null}
+            <Button type="submit" disabled={requestSaving || materialRequest.trim().length < 10} className="w-full rounded-full py-6">
+              {requestSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending request...</> : "Join priority list"}
+            </Button>
+          </form>
+        )}
       </div>
     );
   }

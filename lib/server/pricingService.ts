@@ -470,6 +470,8 @@ export async function loadPricingAdminData() {
       name: String(data.name ?? ""),
       email: String(data.email ?? ""),
       institution: String(data.institution ?? ""),
+      requestedCourseMaterial: String(data.requestedCourseMaterial ?? ""),
+      requestType: String(data.requestType ?? "waitlist"),
       createdAt: serializeDate(data.createdAt),
     };
   });
@@ -672,6 +674,31 @@ export async function updatePricingPlan(id: string, input: PricingPlanInput) {
   });
 
   await syncCategorySortOrder(input.category, input.categorySortOrder);
+}
+
+export async function createPlanMaterialRequest(input: {
+  planId: string;
+  userId: string;
+  name: string;
+  email: string;
+  requestedCourseMaterial: string;
+}) {
+  const planDoc = await getAdminDb().collection("pricingPlans").doc(input.planId).get();
+  if (!planDoc.exists) throw new Error("Plan not found");
+  const plan = planDoc.data() ?? {};
+  const docRef = await getAdminDb().collection("pricingPlanWaitlist").add({
+    planId: planDoc.id,
+    planName: String(plan.name ?? "Untitled plan"),
+    userId: input.userId,
+    name: input.name,
+    email: input.email,
+    institution: "",
+    requestedCourseMaterial: input.requestedCourseMaterial,
+    requestType: "course-material",
+    source: "checkout-unavailable",
+    createdAt: FieldValue.serverTimestamp(),
+  });
+  return { id: docRef.id, planName: String(plan.name ?? "Untitled plan") };
 }
 
 function normalizeCategoryName(value: unknown) {

@@ -69,7 +69,21 @@ export async function GET(req: NextRequest) {
     ? plan.accessScopes.courseIds.map((id: unknown) => String(id || "")).filter(Boolean)
     : [];
   if (planCourseIds.length === 0) {
-    return NextResponse.json({ error: "No course is attached to this plan" }, { status: 409 });
+    return NextResponse.json({
+      purchaseAvailable: false,
+      reason: "course-not-attached",
+      message: "Purchase for this plan isn't available right now.",
+      plan: {
+        id: planDoc.id,
+        name: String(plan.name || "Selected plan"),
+        description: String(plan.description || ""),
+      },
+      user: {
+        uid: auth.user.uid,
+        email: auth.user.email,
+        name: auth.user.name,
+      },
+    });
   }
   const versions = Array.isArray(plan.versions) ? plan.versions : [];
   const legacyVersion = {
@@ -121,6 +135,7 @@ export async function GET(req: NextRequest) {
     });
 
   return NextResponse.json({
+    purchaseAvailable: true,
     plan: {
       id: planDoc.id,
       courseId: planCourseIds[0],
