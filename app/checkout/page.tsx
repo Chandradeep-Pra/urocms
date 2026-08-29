@@ -31,6 +31,7 @@ type AvailableCheckoutDetails = {
   checkoutUrl: string;
   taxPercent: number;
   paypalClientId: string;
+  user: { uid: string; email: string | null; name: string | null };
 };
 
 type UnavailableCheckoutDetails = {
@@ -96,6 +97,12 @@ function CheckoutContent() {
   const [requestSaving, setRequestSaving] = useState(false);
   const [requestSubmitted, setRequestSubmitted] = useState(false);
   const [requestError, setRequestError] = useState("");
+  const [concernOpen, setConcernOpen] = useState(false);
+  const [paymentQuery, setPaymentQuery] = useState("");
+  const [concernSaving, setConcernSaving] = useState(false);
+  const [concernError, setConcernError] = useState("");
+  const [concernReference, setConcernReference] = useState("");
+  const [concernEmailSent, setConcernEmailSent] = useState(false);
   const paymentComplete = paymentState === "success";
 
   useEffect(() => {
@@ -308,6 +315,36 @@ function CheckoutContent() {
         timeZoneName: "short",
       }).format(new Date(appliedPricing.expiresAt))
     : null;
+  const canRaiseConcern = paymentState === "failed" || paymentState === "cancelled" || paymentState === "pending";
+
+  const submitPaymentConcern = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    try {
+      setConcernSaving(true);
+      setConcernError("");
+      const response = await fetch("/api/payment-queries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: details.user.name || "Member",
+          email: details.user.email || "",
+          query: paymentQuery,
+          planId: details.plan.id,
+          versionId: details.version.id,
+          couponCode: appliedPricing?.couponCode || couponCode.trim(),
+          platform: "web",
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to raise your concern");
+      setConcernReference(String(data.queryId || ""));
+      setConcernEmailSent(data.emailSent === true);
+    } catch (concernSubmitError) {
+      setConcernError(concernSubmitError instanceof Error ? concernSubmitError.message : "Unable to raise your concern");
+    } finally {
+      setConcernSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -498,6 +535,30 @@ function CheckoutContent() {
       {paymentState === "processing" ? <div className="flex items-center gap-2 rounded-2xl bg-cyan-50 p-4 text-cyan-800"><Loader2 className="h-4 w-4 animate-spin" /> Processing and verifying payment...</div> : null}
       {paymentState === "pending" ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">Payment verification is pending. Retry the same PayPal order; do not create another charge.</div> : null}
       {paymentError ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{paymentError}</div> : null}
+      {canRaiseConcern ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          {!concernOpen ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div><p className="font-semibold text-slate-950">Need help with this payment?</p><p className="mt-1 text-sm text-slate-600">Send the payment details to our support team.</p></div>
+              <Button type="button" variant="outline" onClick={() => setConcernOpen(true)} className="rounded-full">Raise concern</Button>
+            </div>
+          ) : concernReference ? (
+            <div className="text-emerald-800"><p className="font-semibold">Your payment concern has been raised</p><p className="mt-2 text-sm">Reference: {concernReference}. {concernEmailSent ? `A confirmation email was sent to ${details.user.email}.` : "Your concern was saved successfully."}</p></div>
+          ) : (
+            <form onSubmit={submitPaymentConcern} className="space-y-4">
+              <div><p className="font-semibold text-slate-950">Raise a payment concern</p><p className="mt-1 text-sm text-slate-600">Your account and selected plan details are filled automatically.</p></div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1"><label className="text-sm font-medium text-slate-800">Name</label><Input value={details.user.name || "Member"} readOnly className="bg-white" /></div>
+                <div className="space-y-1"><label className="text-sm font-medium text-slate-800">Email</label><Input value={details.user.email || ""} readOnly className="bg-white" /></div>
+              </div>
+              <div className="rounded-xl bg-white p-3 text-sm text-slate-600"><p><strong>Plan:</strong> {details.plan.name}</p><p><strong>Duration:</strong> {details.version.durationLabel || `${details.version.months} months`}</p><p><strong>Coupon:</strong> {appliedPricing?.couponCode || couponCode.trim() || "Not provided"}</p></div>
+              <div className="space-y-1"><label className="text-sm font-medium text-slate-800">Describe the payment problem</label><Textarea required maxLength={2000} value={paymentQuery} onChange={(event) => setPaymentQuery(event.target.value)} placeholder="Tell us what happened during payment..." className="min-h-28 bg-white" /></div>
+              {concernError ? <p className="text-sm font-medium text-rose-600">{concernError}</p> : null}
+              <div className="flex gap-2"><Button type="submit" disabled={concernSaving || !paymentQuery.trim()} className="rounded-full">{concernSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</> : "Submit concern"}</Button><Button type="button" variant="ghost" onClick={() => setConcernOpen(false)} disabled={concernSaving}>Cancel</Button></div>
+            </form>
+          )}
+        </div>
+      ) : null}
       {!details.paypalClientId ? <p className="rounded-2xl bg-amber-50 p-4 text-amber-800">PayPal Sandbox is not configured.</p> : <div id="paypal-button-container" className={paymentState === "processing" || paymentState === "success" ? "pointer-events-none opacity-50" : ""} />}
     </div>
   );
