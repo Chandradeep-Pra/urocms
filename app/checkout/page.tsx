@@ -100,7 +100,6 @@ function CheckoutContent() {
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "processing" | "success" | "cancelled" | "failed" | "pending">("idle");
   const [paymentError, setPaymentError] = useState("");
-  const [checkoutStarted, setCheckoutStarted] = useState(false);
   const [materialRequest, setMaterialRequest] = useState("");
   const [requestSaving, setRequestSaving] = useState(false);
   const [requestSubmitted, setRequestSubmitted] = useState(false);
@@ -166,7 +165,7 @@ function CheckoutContent() {
   }, [appliedPricing?.expiresAt]);
 
   useEffect(() => {
-    if (!details?.purchaseAvailable || !details.paypalClientId || paymentComplete || !checkoutStarted) return;
+    if (!details?.purchaseAvailable || !details.paypalClientId || paymentComplete) return;
     const availableDetails = details;
     let disposed = false;
     let buttons: ReturnType<PayPalButtons> | null = null;
@@ -176,7 +175,6 @@ function CheckoutContent() {
     const render = async () => {
       if (disposed || !window.paypal || !container) return;
       buttons = window.paypal.Buttons({
-        fundingSource: window.paypal.FUNDING?.PAYPAL,
         style: { layout: "vertical", shape: "pill", label: "paypal", height: 48 },
         createOrder: async () => {
           setPaymentState("loading"); setPaymentError("");
@@ -208,7 +206,7 @@ function CheckoutContent() {
       script.addEventListener("load", render, { once: true }); script.addEventListener("error", () => { setPaymentState("failed"); setPaymentError("Unable to load PayPal checkout"); }); document.head.appendChild(script);
     }
     return () => { disposed = true; void buttons?.close?.(); };
-  }, [details, appliedPricing?.couponCode, checkoutStarted, paymentComplete]);
+  }, [details, appliedPricing?.couponCode, paymentComplete]);
 
   async function applySelectedCoupon(nextCode = couponCode) {
     if (!details?.purchaseAvailable || !nextCode.trim()) return;
@@ -359,7 +357,15 @@ function CheckoutContent() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`relative space-y-6 ${paymentState === "loading" ? "min-h-40 [&>*:not(.payment-loading)]:invisible" : ""}`}>
+      {paymentState === "loading" ? (
+        <div className="payment-loading absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 text-center">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-cyan-50 text-cyan-700 ring-1 ring-cyan-100">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+          <p className="text-sm font-semibold text-slate-700">Proceeding to checkout...</p>
+        </div>
+      ) : null}
       <div className="flex items-center gap-3 text-emerald-700">
         <ShieldCheck className="h-6 w-6" />
         <span className="font-semibold">Signed in and ready for secure checkout</span>
@@ -570,7 +576,7 @@ function CheckoutContent() {
           )}
         </div>
       ) : null}
-      {!details.paypalClientId ? <p className="rounded-2xl bg-amber-50 p-4 text-amber-800">PayPal Sandbox is not configured.</p> : !checkoutStarted ? <Button type="button" onClick={() => setCheckoutStarted(true)} className="w-full rounded-full py-6 text-base font-bold">Continue to payment</Button> : <div className="space-y-3"><p className="text-center text-sm text-slate-500">Continue securely with PayPal</p><div id="paypal-button-container" className={paymentState === "processing" ? "pointer-events-none opacity-50" : ""} /></div>}
+      {!details.paypalClientId ? <p className="rounded-2xl bg-amber-50 p-4 text-amber-800">PayPal Sandbox is not configured.</p> : <div id="paypal-button-container" className={paymentState === "processing" ? "pointer-events-none opacity-50" : ""} />}
     </div>
   );
 }
