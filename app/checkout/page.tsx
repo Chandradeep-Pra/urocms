@@ -44,13 +44,20 @@ type UnavailableCheckoutDetails = {
 type CheckoutDetails = AvailableCheckoutDetails | UnavailableCheckoutDetails;
 
 type PayPalButtons = (options: {
+  fundingSource?: string;
+  style?: { layout?: "vertical" | "horizontal"; shape?: "pill" | "rect"; label?: "paypal" | "checkout" | "pay" | "buynow"; height?: number };
   createOrder: () => Promise<string>;
   onApprove: (data: { orderID: string }) => Promise<void>;
   onCancel: () => void;
   onError: (error: unknown) => void;
 }) => { render: (selector: HTMLElement) => Promise<void>; close?: () => Promise<void> };
 
-declare global { interface Window { paypal?: { Buttons: PayPalButtons } } }
+declare global { interface Window { paypal?: { Buttons: PayPalButtons; FUNDING?: { PAYPAL?: string } } } }
+
+function PurchaseSuccess() {
+  const colors = ["#0f7896", "#1294ba", "#f59e0b", "#10b981", "#ec4899"];
+  return <div className="relative overflow-hidden py-8 text-center">{Array.from({ length: 36 }, (_, index) => <span key={index} className="pointer-events-none absolute top-[-20px] h-3 w-2 animate-[confetti-fall_3s_ease-in_infinite]" style={{ left: `${(index * 29) % 100}%`, backgroundColor: colors[index % colors.length], animationDelay: `${(index % 12) * 0.16}s`, animationDuration: `${2.4 + (index % 7) * 0.2}s`, transform: `rotate(${index * 37}deg)` }} />)}<div className="relative mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-100 text-emerald-700"><Check className="h-10 w-10" /></div><p className="relative mt-6 text-sm font-bold uppercase tracking-[0.18em] text-[#0f7896]">Payment confirmed</p><h1 className="relative mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950">Thank you for your purchase!</h1><p className="relative mx-auto mt-4 max-w-md text-base leading-7 text-slate-600">Your payment was verified successfully and your course access is now active.</p><a href="https://urologics.co.uk" className="relative mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-[#0f7896] px-8 font-bold text-white shadow-lg transition hover:bg-[#0b647d]">Login to Urologics</a><p className="relative mt-4 text-xs text-slate-500">A purchase confirmation has been sent to your email.</p><style jsx>{`@keyframes confetti-fall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(620px) rotate(720deg); opacity: 0; } }`}</style></div>;
+}
 
 type AppliedPricing = {
   couponCode: string;
@@ -93,6 +100,7 @@ function CheckoutContent() {
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "processing" | "success" | "cancelled" | "failed" | "pending">("idle");
   const [paymentError, setPaymentError] = useState("");
+  const [checkoutStarted, setCheckoutStarted] = useState(false);
   const [materialRequest, setMaterialRequest] = useState("");
   const [requestSaving, setRequestSaving] = useState(false);
   const [requestSubmitted, setRequestSubmitted] = useState(false);
@@ -158,7 +166,7 @@ function CheckoutContent() {
   }, [appliedPricing?.expiresAt]);
 
   useEffect(() => {
-    if (!details?.purchaseAvailable || !details.paypalClientId || paymentComplete) return;
+    if (!details?.purchaseAvailable || !details.paypalClientId || paymentComplete || !checkoutStarted) return;
     const availableDetails = details;
     let disposed = false;
     let buttons: ReturnType<PayPalButtons> | null = null;
@@ -168,6 +176,8 @@ function CheckoutContent() {
     const render = async () => {
       if (disposed || !window.paypal || !container) return;
       buttons = window.paypal.Buttons({
+        fundingSource: window.paypal.FUNDING?.PAYPAL,
+        style: { layout: "vertical", shape: "pill", label: "paypal", height: 48 },
         createOrder: async () => {
           setPaymentState("loading"); setPaymentError("");
           const user = auth.currentUser; if (!user) throw new Error("Please sign in again");
@@ -198,7 +208,7 @@ function CheckoutContent() {
       script.addEventListener("load", render, { once: true }); script.addEventListener("error", () => { setPaymentState("failed"); setPaymentError("Unable to load PayPal checkout"); }); document.head.appendChild(script);
     }
     return () => { disposed = true; void buttons?.close?.(); };
-  }, [details, appliedPricing?.couponCode, paymentComplete]);
+  }, [details, appliedPricing?.couponCode, checkoutStarted, paymentComplete]);
 
   async function applySelectedCoupon(nextCode = couponCode) {
     if (!details?.purchaseAvailable || !nextCode.trim()) return;
@@ -289,6 +299,8 @@ function CheckoutContent() {
       </div>
     );
   }
+
+  if (paymentComplete) return <PurchaseSuccess />;
 
   const money = (value: number) =>
     new Intl.NumberFormat("en-GB", {
@@ -531,7 +543,6 @@ function CheckoutContent() {
           </div>
         </div>
       </div>
-      {paymentState === "success" ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-800"><p className="font-semibold">Payment successful</p><p className="mt-1 text-sm">Your verified course access is active. Refresh your profile or course list to continue.</p></div> : null}
       {paymentState === "processing" ? <div className="flex items-center gap-2 rounded-2xl bg-cyan-50 p-4 text-cyan-800"><Loader2 className="h-4 w-4 animate-spin" /> Processing and verifying payment...</div> : null}
       {paymentState === "pending" ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">Payment verification is pending. Retry the same PayPal order; do not create another charge.</div> : null}
       {paymentError ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{paymentError}</div> : null}
@@ -559,7 +570,7 @@ function CheckoutContent() {
           )}
         </div>
       ) : null}
-      {!details.paypalClientId ? <p className="rounded-2xl bg-amber-50 p-4 text-amber-800">PayPal Sandbox is not configured.</p> : <div id="paypal-button-container" className={paymentState === "processing" || paymentState === "success" ? "pointer-events-none opacity-50" : ""} />}
+      {!details.paypalClientId ? <p className="rounded-2xl bg-amber-50 p-4 text-amber-800">PayPal Sandbox is not configured.</p> : !checkoutStarted ? <Button type="button" onClick={() => setCheckoutStarted(true)} className="w-full rounded-full py-6 text-base font-bold">Continue to payment</Button> : <div className="space-y-3"><p className="text-center text-sm text-slate-500">Continue securely with PayPal</p><div id="paypal-button-container" className={paymentState === "processing" ? "pointer-events-none opacity-50" : ""} /></div>}
     </div>
   );
 }

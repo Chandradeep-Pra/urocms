@@ -351,14 +351,61 @@ export async function sendPurchaseConfirmationEmail(params: {
 }) {
   const { user, transporter } = createEmailTransporter();
   const name = params.name?.trim() || "Member";
-  const amount = new Intl.NumberFormat("en-GB", { style: "currency", currency: params.currency }).format(params.amount);
-  const purchased = params.purchaseDate.toLocaleString("en-GB", { timeZone: "Europe/London" });
-  const expires = params.accessEndsAt.toLocaleString("en-GB", { timeZone: "Europe/London" });
+  const firstName = name.split(/\s+/)[0] || "Member";
+  const amount = new Intl.NumberFormat("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(params.amount);
+  const purchased = params.purchaseDate.toLocaleString("en-GB", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/London" });
+  const expires = params.accessEndsAt.toLocaleString("en-GB", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/London" });
+  const appUrl = (process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://urologics.co.uk").replace(/\/$/, "");
+  const courseUrl = `${appUrl}/web`;
+  const safeFirstName = escapeHtml(firstName);
+  const safeCourseName = escapeHtml(params.courseName);
+  const safePlanName = escapeHtml(params.planName);
+  const safeAmount = escapeHtml(amount);
+  const safePurchased = escapeHtml(purchased);
+  const safeExpires = escapeHtml(expires);
+  const safeOrderReference = escapeHtml(params.orderReference);
+  const safeCourseUrl = escapeHtml(courseUrl);
+  const safeLogoUrl = escapeHtml(`${appUrl}/logo.webp`);
   await transporter.sendMail({
     from: `"Urologics" <${user}>`, to: params.to,
-    subject: `Purchase confirmed - ${params.courseName}`,
-    text: `Dear ${name},\n\nYour purchase is confirmed.\n\nCourse: ${params.courseName}\nPlan: ${params.planName}\nAmount paid: ${amount} (${params.currency})\nPayPal order: ${params.orderReference}\nPayPal capture: ${params.captureReference}\nPurchased: ${purchased}\nAccess expires: ${expires}\n\nUrologics Support`,
-    html: `<div style="font-family:Arial,sans-serif;background:#eefbff;padding:28px"><div style="max-width:600px;margin:auto;background:white;border-radius:24px;padding:30px"><h1 style="color:#071014">Purchase confirmed</h1><p>Dear ${escapeHtml(name)},</p><p>Your course access is now active.</p><div style="background:#f4fbfd;border-radius:16px;padding:18px;line-height:1.8"><strong>Course:</strong> ${escapeHtml(params.courseName)}<br><strong>Plan:</strong> ${escapeHtml(params.planName)}<br><strong>Amount paid:</strong> ${escapeHtml(amount)} (${escapeHtml(params.currency)})<br><strong>PayPal order:</strong> ${escapeHtml(params.orderReference)}<br><strong>PayPal capture:</strong> ${escapeHtml(params.captureReference)}<br><strong>Purchased:</strong> ${escapeHtml(purchased)}<br><strong>Access expires:</strong> ${escapeHtml(expires)}</div></div></div>`,
+    subject: `Purchase confirmed — ${params.courseName}`,
+    text: `Hi ${firstName},\n\nThank you for your purchase. Your payment has been successfully confirmed and your course access is now active.\n\nPURCHASE DETAILS\nCourse: ${params.courseName}\nPlan: ${params.planName}\nAmount paid: £${amount} GBP\nPurchase date: ${purchased}\nAccess valid until: ${expires}\n\nPAYMENT REFERENCE\nOrder ID: ${params.orderReference}\nPayment status: Confirmed\n\nYou can now sign in to Urologics and continue your course.\n\nAccess Your Course: ${courseUrl}\n\nIf you have any questions regarding your purchase or course access, simply reply to this email and our team will be happy to help.\n\nBest regards,\nUrologics Team\n\nThis is an automated purchase confirmation. Please keep this email for your records.`,
+    html: `
+      <div style="margin:0;background:#eaf8fc;padding:36px 14px;font-family:Arial,Helvetica,sans-serif;color:#071014;">
+        <div style="max-width:620px;margin:0 auto;overflow:hidden;border:1px solid rgba(15,120,150,0.14);border-radius:28px;background:#ffffff;box-shadow:0 20px 60px rgba(15,120,150,0.14);">
+          <div style="padding:30px 32px;text-align:center;background:linear-gradient(135deg,#e9fbff 0%,#ffffff 100%);border-bottom:1px solid rgba(15,120,150,0.12);">
+            <img src="${safeLogoUrl}" alt="Urologics" width="72" height="72" style="display:block;margin:0 auto 14px;border-radius:18px;object-fit:contain;" />
+            <div style="font-size:12px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#0f7896;">Payment confirmed</div>
+            <h1 style="margin:10px 0 0;font-size:30px;line-height:1.2;letter-spacing:-0.04em;color:#071014;">Your course access is active</h1>
+          </div>
+          <div style="padding:30px 32px 34px;">
+            <p style="margin:0 0 16px;font-size:17px;font-weight:700;line-height:1.6;">Hi ${safeFirstName},</p>
+            <p style="margin:0;color:rgba(7,16,20,0.68);font-size:15px;line-height:1.8;">Thank you for your purchase. Your payment has been successfully confirmed and your course access is now active.</p>
+
+            <div style="margin-top:26px;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#0f7896;">Purchase details</div>
+            <div style="margin-top:10px;border:1px solid rgba(15,120,150,0.12);border-radius:20px;background:#f5fcfe;padding:18px 20px;font-size:14px;line-height:1.9;">
+              <div><strong>Course:</strong> ${safeCourseName}</div>
+              <div><strong>Plan:</strong> ${safePlanName}</div>
+              <div><strong>Amount paid:</strong> £${safeAmount} GBP</div>
+              <div><strong>Purchase date:</strong> ${safePurchased}</div>
+              <div><strong>Access valid until:</strong> ${safeExpires}</div>
+            </div>
+
+            <div style="margin-top:24px;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#0f7896;">Payment reference</div>
+            <div style="margin-top:10px;border-radius:18px;background:#071014;padding:17px 20px;color:#ffffff;font-size:14px;line-height:1.9;">
+              <div><strong>Order ID:</strong> ${safeOrderReference}</div>
+              <div><strong>Payment status:</strong> <span style="color:#7ce6b2;">Confirmed</span></div>
+            </div>
+
+            <p style="margin:26px 0 0;color:rgba(7,16,20,0.68);font-size:15px;line-height:1.8;">You can now sign in to Urologics and continue your course.</p>
+            <a href="${safeCourseUrl}" style="display:block;margin:20px 0 26px;padding:16px 24px;border-radius:999px;background:linear-gradient(135deg,#0f7896,#1294ba);color:#ffffff;text-align:center;text-decoration:none;font-size:15px;font-weight:800;box-shadow:0 10px 26px rgba(15,120,150,0.25);">Access Your Course</a>
+            <p style="margin:0;color:rgba(7,16,20,0.66);font-size:14px;line-height:1.8;">If you have any questions regarding your purchase or course access, simply reply to this email and our team will be happy to help.</p>
+            <p style="margin:22px 0 0;font-size:14px;line-height:1.7;">Best regards,<br><strong>Urologics Team</strong></p>
+            <div style="margin-top:24px;padding-top:18px;border-top:1px solid rgba(15,120,150,0.12);color:rgba(7,16,20,0.48);font-size:12px;font-style:italic;line-height:1.7;">This is an automated purchase confirmation. Please keep this email for your records.</div>
+          </div>
+        </div>
+      </div>
+    `,
   });
 }
 
