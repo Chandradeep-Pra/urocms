@@ -58,10 +58,6 @@ async function paypalFetch(path: string, init: RequestInit = {}) {
   return body;
 }
 
-export function paypalClientId() {
-  return process.env.PAYPAL_CLIENT_ID?.trim() || "";
-}
-
 export async function createPayPalOrder(input: {
   amount: PayPalMoney;
   purchaseId: string;
@@ -92,23 +88,4 @@ export async function capturePayPalOrder(orderId: string, requestId: string) {
     headers: { "PayPal-Request-Id": requestId },
     body: "{}",
   });
-}
-
-export async function verifyPayPalWebhook(headers: Headers, event: unknown) {
-  const webhookId = process.env.PAYPAL_WEBHOOK_ID?.trim();
-  if (!webhookId) throw new PayPalError("PayPal webhook is not configured", 503);
-  const required = (name: string) => headers.get(name) || "";
-  const result = await paypalFetch("/v1/notifications/verify-webhook-signature", {
-    method: "POST",
-    body: JSON.stringify({
-      auth_algo: required("paypal-auth-algo"),
-      cert_url: required("paypal-cert-url"),
-      transmission_id: required("paypal-transmission-id"),
-      transmission_sig: required("paypal-transmission-sig"),
-      transmission_time: required("paypal-transmission-time"),
-      webhook_id: webhookId,
-      webhook_event: event,
-    }),
-  });
-  return result.verification_status === "SUCCESS";
 }

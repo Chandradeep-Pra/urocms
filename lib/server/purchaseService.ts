@@ -28,8 +28,9 @@ export async function resolvePurchasePricing(input: { planId: string; versionId:
   if (!courseIds.includes(input.courseId)) throw new Error("Plan does not belong to this course");
   const versions = Array.isArray(plan.versions) ? plan.versions : [];
   const legacy = { id: "legacy-default", months: plan.expiryMonths, price: plan.price, durationLabel: plan.durationLabel };
-  const version = versions.find((item: Record<string, unknown>) => String(item.id) === input.versionId)
-    || (input.versionId === "legacy-default" ? legacy : null);
+  const version = (input.versionId
+    ? versions.find((item: Record<string, unknown>) => String(item.id) === input.versionId)
+    : versions[0]) || (input.versionId === "legacy-default" || (!input.versionId && versions.length === 0) ? legacy : null);
   if (!version) throw new Error("Plan version is unavailable");
   const originalAmount = money(Number(version.price ?? version.originalPrice ?? 0));
   if (!Number.isFinite(originalAmount) || originalAmount <= 0) throw new Error("Plan price is invalid");
@@ -71,7 +72,7 @@ export async function resolvePurchasePricing(input: { planId: string; versionId:
     planName: String(plan.name || "Plan"),
     durationMonths: Number(version.months || plan.expiryMonths || 0),
     originalAmount, discountAmount, taxAmount, paidAmount,
-    currency: String(plan.currency || "GBP").toUpperCase(), couponCode,
+    currency: "GBP", couponCode,
   };
 }
 
@@ -111,7 +112,7 @@ export async function completePurchase(input: { purchaseId: string; paypalOrderI
       tier: "paid", activePlanId: purchase.planId, activePlanStatus: "active", planActivatedAt: accessStartsAt.toISOString(), planExpiresAt: accessEndsAt.toISOString(),
       activeCourseIds: FieldValue.arrayUnion(purchase.courseId), updatedAt: now.toISOString(), upgradedAt: now.toISOString(),
     }, { merge: true });
-    const email: Parameters<typeof sendPurchaseConfirmationEmail>[0] = { to: String(purchase.userEmail || ""), name: String(purchase.userName || ""), courseName: String(purchase.courseNameSnapshot), planName: String(purchase.planNameSnapshot), amount: Number(purchase.paidAmount), currency: String(purchase.currency), orderReference: input.paypalOrderId, purchaseDate: now, accessEndsAt };
+    const email: Parameters<typeof sendPurchaseConfirmationEmail>[0] = { to: String(purchase.userEmail || ""), name: String(purchase.userName || ""), courseName: String(purchase.courseNameSnapshot), planName: String(purchase.planNameSnapshot), amount: Number(purchase.paidAmount), currency: "GBP", orderReference: input.paypalOrderId, captureReference: input.paypalCaptureId, purchaseDate: now, accessEndsAt };
     return { alreadyCompleted: false, data: { ...purchase, ...completed }, email };
   });
 

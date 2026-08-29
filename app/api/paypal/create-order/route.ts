@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requireAppUser } from "@/lib/server/appSession";
-import { createPayPalOrder } from "@/lib/server/paypalService";
+import { createPayPalOrder, PayPalError } from "@/lib/server/paypalService";
 import { resolvePurchasePricing } from "@/lib/server/purchaseService";
 
 export async function POST(req: NextRequest) {
@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ orderId: String(order.id), purchaseId: purchaseRef.id, amount: pricing.paidAmount, currency: pricing.currency, paypalClientId: process.env.PAYPAL_CLIENT_ID?.trim() || "" });
   } catch (error) {
     console.error("PayPal create order failed", { error: error instanceof Error ? error.message : "unknown" });
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to create payment" }, { status: 400 });
+    const status = error instanceof PayPalError ? error.status : 400;
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to create payment" }, { status });
   }
 }

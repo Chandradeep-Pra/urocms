@@ -345,6 +345,7 @@ export async function sendPurchaseConfirmationEmail(params: {
   amount: number;
   currency: string;
   orderReference: string;
+  captureReference: string;
   purchaseDate: Date;
   accessEndsAt: Date;
 }) {
@@ -356,7 +357,7 @@ export async function sendPurchaseConfirmationEmail(params: {
   await transporter.sendMail({
     from: `"Urologics" <${user}>`, to: params.to,
     subject: `Purchase confirmed - ${params.courseName}`,
-    text: `Dear ${name},\n\nYour purchase is confirmed.\n\nCourse: ${params.courseName}\nPlan: ${params.planName}\nAmount paid: ${amount} (${params.currency})\nPayPal order: ${params.orderReference}\nPurchased: ${purchased}\nAccess expires: ${expires}\n\nUrologics Support`,
-    html: `<div style="font-family:Arial,sans-serif;background:#eefbff;padding:28px"><div style="max-width:600px;margin:auto;background:white;border-radius:24px;padding:30px"><h1 style="color:#071014">Purchase confirmed</h1><p>Dear ${escapeHtml(name)},</p><p>Your course access is now active.</p><div style="background:#f4fbfd;border-radius:16px;padding:18px;line-height:1.8"><strong>Course:</strong> ${escapeHtml(params.courseName)}<br><strong>Plan:</strong> ${escapeHtml(params.planName)}<br><strong>Amount paid:</strong> ${escapeHtml(amount)} (${escapeHtml(params.currency)})<br><strong>PayPal order:</strong> ${escapeHtml(params.orderReference)}<br><strong>Purchased:</strong> ${escapeHtml(purchased)}<br><strong>Access expires:</strong> ${escapeHtml(expires)}</div></div></div>`,
+    text: `Dear ${name},\n\nYour purchase is confirmed.\n\nCourse: ${params.courseName}\nPlan: ${params.planName}\nAmount paid: ${amount} (${params.currency})\nPayPal order: ${params.orderReference}\nPayPal capture: ${params.captureReference}\nPurchased: ${purchased}\nAccess expires: ${expires}\n\nUrologics Support`,
+    html: `<div style="font-family:Arial,sans-serif;background:#eefbff;padding:28px"><div style="max-width:600px;margin:auto;background:white;border-radius:24px;padding:30px"><h1 style="color:#071014">Purchase confirmed</h1><p>Dear ${escapeHtml(name)},</p><p>Your course access is now active.</p><div style="background:#f4fbfd;border-radius:16px;padding:18px;line-height:1.8"><strong>Course:</strong> ${escapeHtml(params.courseName)}<br><strong>Plan:</strong> ${escapeHtml(params.planName)}<br><strong>Amount paid:</strong> ${escapeHtml(amount)} (${escapeHtml(params.currency)})<br><strong>PayPal order:</strong> ${escapeHtml(params.orderReference)}<br><strong>PayPal capture:</strong> ${escapeHtml(params.captureReference)}<br><strong>Purchased:</strong> ${escapeHtml(purchased)}<br><strong>Access expires:</strong> ${escapeHtml(expires)}</div></div></div>`,
   });
 }

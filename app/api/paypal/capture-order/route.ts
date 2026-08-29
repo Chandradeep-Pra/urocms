@@ -13,11 +13,14 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json(); const orderId = String(body.orderId || "").trim();
     if (!orderId) return NextResponse.json({ error: "PayPal order ID is required" }, { status: 400 });
-    const snap = await getAdminDb().collection("purchases").where("paypalOrderId", "==", orderId).limit(1).get();
-    if (snap.empty) return NextResponse.json({ error: "Purchase not found" }, { status: 404 });
-    const purchaseDoc = snap.docs[0]; const purchase = purchaseDoc.data();
+    const orderMap = await getAdminDb().collection("paypalOrders").doc(orderId).get();
+    if (!orderMap.exists) return NextResponse.json({ error: "Purchase not found" }, { status: 404 });
+    const purchaseDoc = await getAdminDb().collection("purchases").doc(String(orderMap.data()?.purchaseId || "")).get();
+    if (!purchaseDoc.exists) return NextResponse.json({ error: "Purchase not found" }, { status: 404 });
+    const purchase = purchaseDoc.data() || {};
     if (purchase.userId !== auth.user.uid) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     if (purchase.status === "COMPLETED") return NextResponse.json({ success: true, alreadyCompleted: true, purchaseId: purchaseDoc.id });
+    if (!["CREATED", "PENDING"].includes(String(purchase.status))) return NextResponse.json({ error: "Purchase cannot be captured in its current state" }, { status: 409 });
     let order = await getPayPalOrder(orderId);
     if (order.status !== "COMPLETED") order = await capturePayPalOrder(orderId, `capture-${purchaseDoc.id}`);
     const capture = captureFrom(order);
