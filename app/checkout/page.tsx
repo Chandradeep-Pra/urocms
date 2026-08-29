@@ -233,7 +233,7 @@ function CheckoutContent() {
     return (
       <div className="flex items-center justify-center gap-3 py-16 text-slate-600">
         <Loader2 className="h-5 w-5 animate-spin" />
-        Checking your account and course...
+        Continuing to checkout...
       </div>
     );
   }
