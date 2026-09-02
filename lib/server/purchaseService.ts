@@ -46,12 +46,19 @@ export async function resolvePurchasePricing(input: { planId: string; versionId:
     const now = Date.now();
     const starts = dateValue(coupon.startsAt)?.getTime();
     const ends = dateValue(coupon.endsAt)?.getTime();
-    const eligible = new Set([
+    const legacyCouponIds = Array.isArray(plan.versions)
+      ? plan.versions.map((item: Record<string, unknown>) => String(item?.couponId || ""))
+      : [];
+    const eligibleCouponIds = new Set([
       ...(Array.isArray(plan.eligibleCouponIds) ? plan.eligibleCouponIds.map(String) : []),
-      ...(Array.isArray(coupon.allowedPlanIds) ? coupon.allowedPlanIds.map(String) : []),
+      ...legacyCouponIds,
       String(plan.couponId || ""),
     ]);
-    if (coupon.isActive === false || (starts && starts > now) || (ends && ends < now) || !eligible.has(couponDoc.id)) {
+    const allowedPlanIds = Array.isArray(coupon.allowedPlanIds)
+      ? coupon.allowedPlanIds.map(String)
+      : [];
+    const isEligible = eligibleCouponIds.has(couponDoc.id) || allowedPlanIds.includes(planDoc.id);
+    if (coupon.isActive === false || (starts && starts > now) || (ends && ends < now) || !isEligible) {
       throw new Error("Coupon is not valid for this plan");
     }
     const value = Number(coupon.discountValue || 0);
