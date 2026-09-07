@@ -3,7 +3,7 @@
 import { fillRemainingQuestions } from "@/lib/viva-question-generation";
 
 import { useEffect, useState } from "react";
-import { FileText, Folder, FolderOpen, FolderPlus, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
+import { FileText, Folder, FolderOpen, FolderPlus, Loader2, Plus, Save, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/client/adminApi";
@@ -70,7 +70,8 @@ export default function AIVivaPage() {
   const [form, setForm] = useState<VivaCaseForm>(createInitialVivaForm());
   const [folderForm, setFolderForm] = useState({ title: "", description: "", sortOrder: 0 });
 
-  const [savingFolderOrder, setSavingFolderOrder] = useState(false);
+  const [savingFolderOrder, setSavingFolderOrder] = useState<string | null>(null);
+  const [folderOrderDrafts, setFolderOrderDrafts] = useState<Record<string, string>>({});
 
   const fetchFolders = async () => {
     try {
@@ -203,12 +204,13 @@ export default function AIVivaPage() {
   };
 
   const saveFolderOrder = async (id: string, value: string) => {
+    if (savingFolderOrder) return;
     const sortOrder = Number(value);
     if (!value.trim() || !Number.isSafeInteger(sortOrder) || sortOrder < 0) {
       toast.error("Sort order must be a non-negative integer");
       return;
     }
-    setSavingFolderOrder(true);
+    setSavingFolderOrder(id);
     try {
       const res = await adminFetch("/api/viva-folders", {
         method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -217,9 +219,14 @@ export default function AIVivaPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save order");
       await fetchFolders();
+      setFolderOrderDrafts(current => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
       toast.success("Folder order saved");
     } catch (error) { toast.error(getErrorMessage(error, "Failed to save order")); }
-    finally { setSavingFolderOrder(false); }
+    finally { setSavingFolderOrder(null); }
   };
 
   const handleDeleteFolder = async () => {
@@ -1188,10 +1195,17 @@ export default function AIVivaPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
               Viva Explorer
             </p>
+            <p className="mt-2 text-xs text-slate-500">Set folder order below. Lower numbers appear first.</p>
           </div>
           <div className="mt-3 space-y-1">
             {folderNodes.map((node) => {
               const active = activeFolderId === node.id;
+              const savedOrder = folders.find(folder => folder.id === node.id)?.sortOrder;
+              const orderValue = folderOrderDrafts[node.id] ?? (
+                savedOrder === undefined || savedOrder === Number.MAX_SAFE_INTEGER ? "" : String(savedOrder)
+              );
+              const orderChanged = folderOrderDrafts[node.id] !== undefined &&
+                orderValue.trim() !== "" && Number(orderValue) !== savedOrder;
               const isFolder = node.id !== "all";
               const FolderIcon =
                 active && isFolder ? FolderOpen : isFolder ? Folder : FileText;
@@ -1199,7 +1213,7 @@ export default function AIVivaPage() {
               return (
                 <div
                   key={node.id}
-                  className={`group flex w-full items-center gap-2 rounded-2xl px-2 py-2 transition ${
+                  className={`group flex w-full flex-wrap items-center gap-2 rounded-2xl px-2 py-2 transition ${
                     active
                       ? "bg-teal-50 text-teal-700"
                       : "text-slate-600 hover:bg-slate-50"
@@ -1221,13 +1235,37 @@ export default function AIVivaPage() {
                   </span>
 
                   {node.canDelete && (
-                    <label className="text-[10px] text-slate-500">Order
-                      <Input key={`${node.id}-${folders.find(folder => folder.id === node.id)?.sortOrder}`}
-                        aria-label={`Sort order for ${node.title}`} title="Lower numbers appear first. Leave the field to save."
-                        type="number" min={0} step={1} className="h-8 w-20" disabled={savingFolderOrder}
-                        defaultValue={folders.find(folder => folder.id === node.id)?.sortOrder === Number.MAX_SAFE_INTEGER ? "" : folders.find(folder => folder.id === node.id)?.sortOrder ?? ""}
-                        onBlur={e => { if (e.target.value !== "" && Number(e.target.value) !== folders.find(folder => folder.id === node.id)?.sortOrder) void saveFolderOrder(node.id, e.target.value); }} />
-                    </label>
+                    <div className="order-last flex w-full items-center gap-2 px-1 pb-1">
+                      <label htmlFor={`folder-order-${node.id}`} className="shrink-0 text-xs font-medium text-slate-500">
+                        Sort order
+                      </label>
+                      <Input
+                        id={`folder-order-${node.id}`}
+                        aria-label={`Sort order for ${node.title}`}
+                        title="Lower numbers appear first"
+                        type="number" min={0} step={1}
+                        className="h-8 min-w-0 flex-1 bg-white"
+                        placeholder="Unset"
+                        disabled={savingFolderOrder !== null}
+                        value={orderValue}
+                        onChange={event => setFolderOrderDrafts(current => ({ ...current, [node.id]: event.target.value }))}
+                        onKeyDown={event => {
+                          if (event.key === "Enter" && orderChanged) {
+                            event.preventDefault();
+                            void saveFolderOrder(node.id, orderValue);
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button" variant="outline" size="sm" className="h-8 shrink-0"
+                        aria-label={`Save sort order for ${node.title}`}
+                        disabled={savingFolderOrder !== null || !orderChanged}
+                        onClick={() => { void saveFolderOrder(node.id, orderValue); }}
+                      >
+                        {savingFolderOrder === node.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        Save
+                      </Button>
+                    </div>
                   )}
                   {node.canDelete ? (
                     <button
