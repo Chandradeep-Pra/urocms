@@ -1,5 +1,7 @@
 "use client";
 
+import { fillRemainingQuestions } from "@/lib/viva-question-generation";
+
 import { useEffect, useState } from "react";
 import { FileText, Folder, FolderOpen, FolderPlus, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -48,7 +50,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export default function AIVivaPage() {
   const router = useRouter();
-  const [folders, setFolders] = useState<{ id: string; title: string; description?: string }[]>([]);
+  const [folders, setFolders] = useState<{ id: string; title: string; description?: string; sortOrder?: number }[]>([]);
   const [cases, setCases] = useState<VivaCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -66,7 +68,9 @@ export default function AIVivaPage() {
   const [editorTab, setEditorTab] = useState<VivaEditorTab>("details");
   const [activeFolderId, setActiveFolderId] = useState<"all" | "unfoldered" | string>("all");
   const [form, setForm] = useState<VivaCaseForm>(createInitialVivaForm());
-  const [folderForm, setFolderForm] = useState({ title: "", description: "" });
+  const [folderForm, setFolderForm] = useState({ title: "", description: "", sortOrder: 0 });
+
+  const [savingFolderOrder, setSavingFolderOrder] = useState(false);
 
   const fetchFolders = async () => {
     try {
@@ -191,11 +195,31 @@ export default function AIVivaPage() {
 
       toast.success("Folder created");
       setFolderDialogOpen(false);
-      setFolderForm({ title: "", description: "" });
+      setFolderForm({ title: "", description: "", sortOrder: 0 });
       fetchFolders();
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to create folder"));
     }
+  };
+
+  const saveFolderOrder = async (id: string, value: string) => {
+    const sortOrder = Number(value);
+    if (!value.trim() || !Number.isSafeInteger(sortOrder) || sortOrder < 0) {
+      toast.error("Sort order must be a non-negative integer");
+      return;
+    }
+    setSavingFolderOrder(true);
+    try {
+      const res = await adminFetch("/api/viva-folders", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, sortOrder }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save order");
+      await fetchFolders();
+      toast.success("Folder order saved");
+    } catch (error) { toast.error(getErrorMessage(error, "Failed to save order")); }
+    finally { setSavingFolderOrder(false); }
   };
 
   const handleDeleteFolder = async () => {
@@ -482,12 +506,7 @@ export default function AIVivaPage() {
     generated: Array<{ question: string; answerKeywords: string[]; linkedExhibitIds: string[] }>
   ) => setForm((prev) => {
     const current = prev.modes[modeKey].questions;
-    const questions = generated.map((item, index) => ({
-      ...(current[index] || createFastQuestion()),
-      question: item.question,
-      answerKeywords: item.answerKeywords,
-      linkedExhibitIds: item.linkedExhibitIds,
-    }));
+    const questions = fillRemainingQuestions(current, generated, prev.modes[modeKey].questionCount);
     return {
       ...prev,
       modes: {
@@ -593,6 +612,10 @@ export default function AIVivaPage() {
                   setFolderForm((prev) => ({ ...prev, description: e.target.value }))
                 }
               />
+              <label className="block text-sm">Sort order (lower numbers first)
+                <Input type="number" min={0} step={1} value={folderForm.sortOrder}
+                  onChange={e => setFolderForm(prev => ({ ...prev, sortOrder: Number(e.target.value) }))} />
+              </label>
               <div className="flex justify-end">
                 <Button onClick={handleCreateFolder}>Create Folder</Button>
               </div>
@@ -1197,6 +1220,15 @@ export default function AIVivaPage() {
                     {node.count}
                   </span>
 
+                  {node.canDelete && (
+                    <label className="text-[10px] text-slate-500">Order
+                      <Input key={`${node.id}-${folders.find(folder => folder.id === node.id)?.sortOrder}`}
+                        aria-label={`Sort order for ${node.title}`} title="Lower numbers appear first. Leave the field to save."
+                        type="number" min={0} step={1} className="h-8 w-20" disabled={savingFolderOrder}
+                        defaultValue={folders.find(folder => folder.id === node.id)?.sortOrder === Number.MAX_SAFE_INTEGER ? "" : folders.find(folder => folder.id === node.id)?.sortOrder ?? ""}
+                        onBlur={e => { if (e.target.value !== "" && Number(e.target.value) !== folders.find(folder => folder.id === node.id)?.sortOrder) void saveFolderOrder(node.id, e.target.value); }} />
+                    </label>
+                  )}
                   {node.canDelete ? (
                     <button
                       type="button"

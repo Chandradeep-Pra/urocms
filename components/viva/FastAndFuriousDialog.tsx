@@ -61,12 +61,14 @@ export function VivaQuestionSetupDialog({
   const configuredQuestions = modeConfig.questions.filter((question) =>
     question.question.trim()
   ).length;
+  const remainingCount = Math.max(0, questionCount - configuredQuestions);
   const activeQuestion = modeConfig.questions[displayedQuestionIndex];
   const populatedQuestions = modeConfig.questions
     .map((question, index) => ({ question, index }))
     .filter(({ question }) => question.question.trim().length > 0);
 
   const generateSampleQuestions = async () => {
+    if (generating || remainingCount === 0) return;
     if (!form.case.stem.trim()) {
       toast.error("Add a case stem before generating questions");
       return;
@@ -79,7 +81,8 @@ export function VivaQuestionSetupDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode,
-          questionCount,
+          questionCount: remainingCount,
+          existingQuestions: modeConfig.questions.filter(item => item.question.trim()).map(item => item.question),
           title: form.case.title,
           level: form.case.level,
           stem: form.case.stem,
@@ -94,7 +97,7 @@ export function VivaQuestionSetupDialog({
       onQuestionsGenerated(data.questions || []);
       setActiveQuestionIndex(0);
       setLeftPanelTab("questions");
-      toast.success("Sample viva questions generated. Review them before saving.");
+      toast.success("Remaining viva questions generated. Existing questions are unchanged. Review before saving.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Question generation failed");
     } finally {
@@ -209,12 +212,12 @@ export function VivaQuestionSetupDialog({
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={generating || !form.case.stem.trim()}
+                      disabled={generating || remainingCount === 0 || !form.case.stem.trim()}
                       onClick={generateSampleQuestions}
                       className="mt-3 w-full gap-2 text-xs"
                     >
                       {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                      {generating ? "Generating..." : "Generate sample questions with AI"}
+                      {generating ? "Generating..." : `Generate Remaining AI Questions (${remainingCount})`}
                     </Button>
                   </div>
                 ) : (

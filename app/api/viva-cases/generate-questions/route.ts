@@ -19,6 +19,9 @@ export async function POST(req: NextRequest) {
     const level = String(body?.level || "Intermediate").trim();
     const mode = body?.mode === "fastAndFurious" ? "fastAndFurious" : "calmAndComposed";
     const questionCount = Math.min(15, Math.max(1, Number(body?.questionCount) || 3));
+    const existingQuestions: string[] = Array.isArray(body?.existingQuestions)
+      ? body.existingQuestions.map(String).map((item: string) => item.trim()).filter(Boolean).slice(0, 100)
+      : [];
     const objectives = Array.isArray(body?.objectives)
       ? body.objectives.map(String).map((item: string) => item.trim()).filter(Boolean).slice(0, 20)
       : [];
@@ -55,6 +58,7 @@ Use the supplied case facts without inventing patient findings, results or exhib
 
 Exhibits are optional. Link an exhibit only when the examiner explicitly asks the candidate to view or interpret it. When linked, briefly introduce what the candidate has just performed or is being shown, then ask for interpretation. Do not repeat every detail from the exhibit description or reveal the conclusion. A good style is: "You've performed a flexible cystoscopy and are shown this finding. What is your interpretation?" Questions that do not need an exhibit must return an empty linkedExhibitIds array.
 
+Existing questions (fixed, do not repeat or rewrite these; continue the clinical sequence): ${JSON.stringify(existingQuestions)}
 Mode: ${mode}
 Pacing: ${pace}
 Title: ${title || "Untitled case"}
@@ -93,7 +97,7 @@ Return only this JSON shape:
           ? Array.from(new Set(item.linkedExhibitIds.map(String).map((id) => id.trim()).filter((id) => validExhibitIds.has(id)))).slice(0, 1)
           : [],
       }))
-      .filter((item: GeneratedQuestion) => item.question)
+      .filter((item: GeneratedQuestion) => item.question && !existingQuestions.some(existing => existing.toLowerCase() === item.question.toLowerCase()))
       .slice(0, questionCount);
 
     if (!questions.length) throw new Error("AI did not generate usable questions");

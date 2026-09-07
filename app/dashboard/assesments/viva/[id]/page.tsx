@@ -1,5 +1,7 @@
 "use client";
 
+import { fillRemainingQuestions } from "@/lib/viva-question-generation";
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ExternalLink, Loader2, Upload } from "lucide-react";
@@ -357,12 +359,7 @@ export default function CaseDetailsPage() {
   ) => setCaseData((prev) => {
     if (!prev) return prev;
     const current = prev.modes[modeKey].questions;
-    const questions = generated.map((item, index) => ({
-      ...(current[index] || createFastQuestion()),
-      question: item.question,
-      answerKeywords: item.answerKeywords,
-      linkedExhibitIds: item.linkedExhibitIds,
-    }));
+    const questions = fillRemainingQuestions(current, generated, prev.modes[modeKey].questionCount);
     return {
       ...prev,
       modes: {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 import {
+  updateVivaFolderOrder,
   createVivaFolder,
   deleteVivaFolder,
   listVivaFolders,
@@ -48,13 +49,27 @@ export async function POST(req: NextRequest) {
       { error: message },
       {
         status:
-          message === "Folder title is required"
+          (message === "Folder title is required" || message === "Sort order must be a non-negative integer")
             ? 400
             : message === "Folder already exists"
               ? 409
               : 500,
       }
     );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
+  try {
+    const body = await req.json();
+    return NextResponse.json(await updateVivaFolderOrder(String(body.id || "").trim(), body.sortOrder));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update folder";
+    const status = message === "Folder not found" ? 404
+      : message === "Folder id is required" || message === "Sort order must be a non-negative integer" ? 400 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 

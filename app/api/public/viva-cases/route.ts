@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { withVivaModeQuestionContract } from "@/lib/server/vivaService";
+import { attachVivaFolderOrder, withVivaModeQuestionContract } from "@/lib/server/vivaService";
 
 export async function GET() {
   try {
@@ -28,7 +28,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ cases });
+    return NextResponse.json({ cases: await attachVivaFolderOrder(cases) });
   } catch (error) {
     console.error("Public viva cases fetch error:", error);
     return NextResponse.json(

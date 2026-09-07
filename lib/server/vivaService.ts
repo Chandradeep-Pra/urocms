@@ -43,10 +43,11 @@ export function withVivaModeQuestionContract<T extends Record<string, unknown>>(
   };
 }
 
-function normalizeFolderInput(input: { title?: unknown; description?: unknown }) {
+function normalizeFolderInput(input: { title?: unknown; description?: unknown; sortOrder?: unknown }) {
   return {
     title: String(input.title || "").trim(),
     description: String(input.description || "").trim(),
+    sortOrder: validateFolderSortOrder(input.sortOrder ?? 0),
   };
 }
 
@@ -112,6 +113,28 @@ function extractAiVivaIdsFromSections(sections: unknown) {
   );
 }
 
+export function validateFolderSortOrder(value: unknown): number {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
+    throw new Error("Sort order must be a non-negative integer");
+  }
+  return value;
+}
+
+export async function attachVivaFolderOrder<T extends Record<string, unknown>>(cases: T[]) {
+  const folders = await listVivaFolders();
+  const orders = new Map(folders.map(folder => [folder.id, folder.sortOrder]));
+  return cases.map(item => ({ ...item, folderSortOrder: orders.get(String(item.folderId || "")) ?? Number.MAX_SAFE_INTEGER }));
+}
+
+export async function updateVivaFolderOrder(id: string, sortOrder: unknown) {
+  if (!id || id.includes("/")) throw new Error("Folder id is required");
+  const order = validateFolderSortOrder(sortOrder);
+  const ref = getAdminDb().collection("vivaFolders").doc(id);
+  if (!(await ref.get()).exists) throw new Error("Folder not found");
+  await ref.update({ sortOrder: order, updatedAt: FieldValue.serverTimestamp() });
+  return { success: true };
+}
+
 export async function listVivaCases() {
   const snapshot = await getAdminDb()
     .collection("vivaCases")
@@ -119,10 +142,10 @@ export async function listVivaCases() {
     .orderBy("createdAt", "desc")
     .get();
 
-  return snapshot.docs.map((doc) => ({
+  return attachVivaFolderOrder(snapshot.docs.map((doc) => ({
     ...withVivaModeQuestionContract(doc.data()),
     id: doc.id,
-  }));
+  })));
 }
 
 async function getAiVivaIdsForCourseIds(courseIds: string[]) {
@@ -192,7 +215,8 @@ export async function listVivaFoldersForCourseIds(courseIds: string[]) {
     })
   );
 
-  return folders.filter(Boolean);
+  const allowedIds = new Set(folders.filter(Boolean).map(folder => folder!.id));
+  return (await listVivaFolders()).filter(folder => allowedIds.has(folder.id));
 }
 
 export async function canAccessVivaCaseFromCourseIds(id: string, courseIds: string[]) {
@@ -285,13 +309,14 @@ export async function listVivaFolders() {
     .orderBy("createdAt", "asc")
     .get();
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return { ...data, id: doc.id, title: String(data.title || ""),
+      sortOrder: typeof data.sortOrder === "number" && Number.isFinite(data.sortOrder) ? data.sortOrder : Number.MAX_SAFE_INTEGER };
+  }).sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
 }
 
-export async function createVivaFolder(input: { title?: unknown; description?: unknown }) {
+export async function createVivaFolder(input: { title?: unknown; description?: unknown; sortOrder?: unknown }) {
   const folder = normalizeFolderInput(input);
   if (!folder.title) {
     throw new Error("Folder title is required");
@@ -309,6 +334,7 @@ export async function createVivaFolder(input: { title?: unknown; description?: u
   const docRef = await getAdminDb().collection("vivaFolders").add({
     title: folder.title,
     description: folder.description,
+    sortOrder: folder.sortOrder,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
@@ -318,6 +344,7 @@ export async function createVivaFolder(input: { title?: unknown; description?: u
       id: docRef.id,
       title: folder.title,
       description: folder.description,
+    sortOrder: folder.sortOrder,
     },
   };
 }
