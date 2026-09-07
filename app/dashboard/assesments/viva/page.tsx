@@ -3,7 +3,7 @@
 import { fillRemainingQuestions } from "@/lib/viva-question-generation";
 
 import { useEffect, useState } from "react";
-import { FileText, Folder, FolderOpen, FolderPlus, Loader2, Plus, Save, Trash2, Upload, X } from "lucide-react";
+import { FileText, Folder, FolderOpen, FolderPlus, Loader2, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/client/adminApi";
@@ -71,6 +71,7 @@ export default function AIVivaPage() {
   const [folderForm, setFolderForm] = useState({ title: "", description: "", sortOrder: 0 });
 
   const [savingFolderOrder, setSavingFolderOrder] = useState<string | null>(null);
+  const [editingFolderOrder, setEditingFolderOrder] = useState<string | null>(null);
   const [folderOrderDrafts, setFolderOrderDrafts] = useState<Record<string, string>>({});
 
   const fetchFolders = async () => {
@@ -219,6 +220,7 @@ export default function AIVivaPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save order");
       await fetchFolders();
+      setEditingFolderOrder(null);
       setFolderOrderDrafts(current => {
         const next = { ...current };
         delete next[id];
@@ -1234,8 +1236,27 @@ export default function AIVivaPage() {
                     {node.count}
                   </span>
 
-                  {node.canDelete && (
-                    <div className="order-last flex w-full items-center gap-2 px-1 pb-1">
+                  {node.canDelete && editingFolderOrder !== node.id && (
+                    <div className="order-last flex w-full items-center justify-between gap-2 px-1 pb-1">
+                      <span className="text-xs text-slate-500">
+                        Sort order: {savedOrder === undefined || savedOrder === Number.MAX_SAFE_INTEGER ? "Unset" : savedOrder}
+                      </span>
+                      <Button
+                        type="button" variant="ghost" size="sm" className="h-8"
+                        aria-label={`Edit sort order for ${node.title}`}
+                        disabled={savingFolderOrder !== null}
+                        onClick={() => {
+                          setFolderOrderDrafts({});
+                          setEditingFolderOrder(node.id);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                    </div>
+                  )}
+                  {node.canDelete && editingFolderOrder === node.id && (
+                    <div className="order-last flex w-full flex-wrap items-center gap-2 px-1 pb-1">
                       <label htmlFor={`folder-order-${node.id}`} className="shrink-0 text-xs font-medium text-slate-500">
                         Sort order
                       </label>
@@ -1246,6 +1267,7 @@ export default function AIVivaPage() {
                         type="number" min={0} step={1}
                         className="h-8 min-w-0 flex-1 bg-white"
                         placeholder="Unset"
+                        autoFocus
                         disabled={savingFolderOrder !== null}
                         value={orderValue}
                         onChange={event => setFolderOrderDrafts(current => ({ ...current, [node.id]: event.target.value }))}
@@ -1253,6 +1275,10 @@ export default function AIVivaPage() {
                           if (event.key === "Enter" && orderChanged) {
                             event.preventDefault();
                             void saveFolderOrder(node.id, orderValue);
+                          }
+                          if (event.key === "Escape" && savingFolderOrder === null) {
+                            setFolderOrderDrafts({});
+                            setEditingFolderOrder(null);
                           }
                         }}
                       />
@@ -1264,6 +1290,16 @@ export default function AIVivaPage() {
                       >
                         {savingFolderOrder === node.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                         Save
+                      </Button>
+                      <Button
+                        type="button" variant="ghost" size="sm" className="h-8"
+                        disabled={savingFolderOrder !== null}
+                        onClick={() => {
+                          setFolderOrderDrafts({});
+                          setEditingFolderOrder(null);
+                        }}
+                      >
+                        Cancel
                       </Button>
                     </div>
                   )}
