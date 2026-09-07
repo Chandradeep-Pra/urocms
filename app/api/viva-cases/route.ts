@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     const result = await createVivaCase(await req.json());
     await publishNotification({
       kind: "ai-viva",
-      title: "New AI Viva Case Posted",
+      title: "New Uro AI Viva case available",
       body: result.title || "A new AI viva case is now available.",
       sourceId: result.id,
       sourceType: "vivaCase",
