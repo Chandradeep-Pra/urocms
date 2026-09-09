@@ -1171,6 +1171,7 @@ export default function AIVivaPage() {
         form={form}
         onOpenChange={setCalmModeDialogOpen}
         onQuestionCountChange={syncCalmQuestionCount}
+        onQuestionsChange={(questions) => setForm(prev => prev ? ({ ...prev, modes: { ...prev.modes, calmAndComposed: { ...prev.modes.calmAndComposed, questions, questionCount: questions.length } } }) : prev)}
         onQuestionTextChange={updateCalmQuestion}
         onQuestionKeywordsChange={updateCalmQuestionKeywords}
         onToggleQuestionExhibit={toggleCalmQuestionExhibit}
@@ -1182,6 +1183,7 @@ export default function AIVivaPage() {
           form={form}
           onOpenChange={setFastModeDialogOpen}
           onQuestionCountChange={syncFastQuestionCount}
+        onQuestionsChange={(questions) => setForm(prev => prev ? ({ ...prev, modes: { ...prev.modes, fastAndFurious: { ...prev.modes.fastAndFurious, questions, questionCount: questions.length } } }) : prev)}
           onQuestionTextChange={updateFastQuestion}
           onQuestionKeywordsChange={updateFastQuestionKeywords}
         onToggleQuestionExhibit={toggleFastQuestionExhibit}

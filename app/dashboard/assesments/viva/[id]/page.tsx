@@ -1096,6 +1096,7 @@ export default function CaseDetailsPage() {
         form={caseData}
         onOpenChange={setCalmModeDialogOpen}
         onQuestionCountChange={syncCalmQuestionCount}
+        onQuestionsChange={(questions) => setCaseData(prev => prev ? ({ ...prev, modes: { ...prev.modes, calmAndComposed: { ...prev.modes.calmAndComposed, questions, questionCount: questions.length } } }) : prev)}
         onQuestionTextChange={updateCalmQuestionText}
         onQuestionKeywordsChange={updateCalmQuestionKeywords}
         onToggleQuestionExhibit={toggleCalmQuestionExhibit}
@@ -1108,6 +1109,7 @@ export default function CaseDetailsPage() {
         form={caseData}
         onOpenChange={setFastModeDialogOpen}
         onQuestionCountChange={syncFastQuestionCount}
+        onQuestionsChange={(questions) => setCaseData(prev => prev ? ({ ...prev, modes: { ...prev.modes, fastAndFurious: { ...prev.modes.fastAndFurious, questions, questionCount: questions.length } } }) : prev)}
         onQuestionTextChange={updateFastQuestionText}
         onQuestionKeywordsChange={updateFastQuestionKeywords}
         onToggleQuestionExhibit={toggleFastQuestionExhibit}

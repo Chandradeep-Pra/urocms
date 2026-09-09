@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
+import { GripVertical, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/client/adminApi";
 import { Button } from "@/components/ui/button";
@@ -14,13 +14,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { VivaCaseForm } from "@/components/viva/types";
+import { createFastQuestion, type VivaCaseForm, type VivaQuestionConfig } from "@/components/viva/types";
 
 export interface VivaQuestionSetupDialogProps {
   open: boolean;
   form: VivaCaseForm;
   onOpenChange: (open: boolean) => void;
   onQuestionCountChange: (count: number) => void;
+  onQuestionsChange: (questions: VivaQuestionConfig[]) => void;
   onQuestionTextChange: (questionIndex: number, value: string) => void;
   onQuestionKeywordsChange: (questionIndex: number, value: string) => void;
   onToggleQuestionExhibit: (questionIndex: number, exhibitId: string) => void;
@@ -38,6 +39,7 @@ export function VivaQuestionSetupDialog({
   form,
   onOpenChange,
   onQuestionCountChange,
+  onQuestionsChange,
   onQuestionTextChange,
   onQuestionKeywordsChange,
   onToggleQuestionExhibit,
@@ -48,6 +50,8 @@ export function VivaQuestionSetupDialog({
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [leftPanelTab, setLeftPanelTab] = useState<"config" | "questions">("config");
 
   const modeConfig = form.modes[mode];
@@ -66,6 +70,26 @@ export function VivaQuestionSetupDialog({
   const populatedQuestions = modeConfig.questions
     .map((question, index) => ({ question, index }))
     .filter(({ question }) => question.question.trim().length > 0);
+
+  const moveQuestion = (id: string, target: number) => {
+    if (generating || saving) return;
+    const questions = [...modeConfig.questions];
+    const source = questions.findIndex(question => question.id === id);
+    if (source < 0 || target < 0 || target >= questions.length || source === target) return;
+    const [question] = questions.splice(source, 1);
+    questions.splice(target, 0, question);
+    onQuestionsChange(questions);
+    setActiveQuestionIndex(Math.max(0, questions.findIndex(item => item.id === activeQuestion?.id)));
+  };
+
+  const deleteQuestion = (id: string) => {
+    if (generating || saving) return;
+    const questions = modeConfig.questions.filter(question => question.id !== id);
+    if (!questions.length) questions.push(createFastQuestion());
+    const selected = questions.findIndex(question => question.id === activeQuestion?.id);
+    onQuestionsChange(questions);
+    setActiveQuestionIndex(selected >= 0 ? selected : Math.min(displayedQuestionIndex, questions.length - 1));
+  };
 
   const generateSampleQuestions = async () => {
     if (generating || remainingCount === 0) return;
@@ -224,7 +248,7 @@ export function VivaQuestionSetupDialog({
                   <div className="flex min-h-0 flex-1 flex-col">
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-sm font-semibold text-slate-800">Generated Questions</p>
-                      <p className="text-xs text-slate-500">Click to edit</p>
+                      <p className="text-xs text-slate-500">Drag to reorder</p>
                     </div>
 
                     <div className="min-h-0 flex-1 overflow-y-auto pr-1">
@@ -240,16 +264,65 @@ export function VivaQuestionSetupDialog({
                     const active = displayedQuestionIndex === index;
 
                     return (
-                      <button
+                      <div
                         key={question.id}
-                        type="button"
-                        onClick={() => setActiveQuestionIndex(index)}
-                        className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
+                        onDragOver={event => {
+                          if (draggedQuestionId && !generating && !saving) {
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = "move";
+                            setDropTargetId(question.id);
+                          }
+                        }}
+                        onDrop={event => {
+                          event.preventDefault();
+                          if (draggedQuestionId) moveQuestion(draggedQuestionId, index);
+                          setDraggedQuestionId(null);
+                          setDropTargetId(null);
+                        }}
+                        className={`w-full rounded-2xl border px-3 py-3 text-left transition ${dropTargetId === question.id ? "ring-2 ring-teal-500" : ""} ${draggedQuestionId === question.id ? "opacity-50" : ""} ${
                           active
                             ? "border-teal-500 bg-teal-50 ring-2 ring-teal-100"
                             : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
                         }`}
                       >
+                        <div className="mb-2 flex items-center justify-between">
+                          <button
+                            type="button"
+                            draggable={!generating && !saving}
+                            disabled={generating || saving}
+                            aria-label={`Reorder question ${index + 1}`}
+                            title="Drag to reorder, or use Alt + Up/Down"
+                            className="cursor-grab rounded p-1 text-slate-500 hover:bg-slate-200 active:cursor-grabbing"
+                            onDragStart={event => {
+                              event.dataTransfer.effectAllowed = "move";
+                              event.dataTransfer.setData("text/plain", question.id);
+                              setDraggedQuestionId(question.id);
+                            }}
+                            onDragEnd={() => {
+                              setDraggedQuestionId(null);
+                              setDropTargetId(null);
+                            }}
+                            onKeyDown={event => {
+                              if (event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+                                event.preventDefault();
+                                moveQuestion(question.id, index + (event.key === "ArrowUp" ? -1 : 1));
+                              }
+                            }}
+                          >
+                            <GripVertical className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={generating || saving}
+                            aria-label={`Delete question ${index + 1}`}
+                            title="Delete question"
+                            className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-red-600"
+                            onClick={() => deleteQuestion(question.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <button type="button" className="w-full text-left" onClick={() => setActiveQuestionIndex(index)}>
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-medium text-slate-800">
                             Question {index + 1}
@@ -261,7 +334,9 @@ export function VivaQuestionSetupDialog({
                         <p className="mt-2 text-xs text-slate-500">
                           {linkedCount} exhibits linked, {keywordCount} keywords
                         </p>
+                        <p className="mt-2 line-clamp-2 text-xs text-slate-700">{question.question}</p>
                       </button>
+                      </div>
                     );
                   })}
                         </div>
