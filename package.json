@@ -12,6 +12,9 @@
     "import:grand-mock-1": "node scripts/import-grand-mock-1.js"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@google-cloud/tasks": "^6.3.0",
     "@google/generative-ai": "^0.24.1",
     "@opentelemetry/api": "^1.9.0",

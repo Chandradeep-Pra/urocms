@@ -5,7 +5,8 @@ const vm = require('node:vm');
 const ts = require('typescript');
 
 function setup() {
-  const state = [0, false, false, null, null, 'questions'];
+  const state = [0, false, false, 'questions'];
+  const messages = [];
   let cursor = 0;
   const jsx = (type, props) => ({ type, props });
   const module = { exports: {} };
@@ -14,6 +15,7 @@ function setup() {
   }).outputText;
   vm.runInNewContext(code, { module, exports: module.exports, require(name) {
     if (name === 'react') return { useState(initial) { const i = cursor++; if (state[i] === undefined) state[i] = initial; return [state[i], value => { state[i] = value; }]; } };
+    if (name === 'sonner') return { toast: { success: message => messages.push(message) } };
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
     if (name.endsWith('/types')) return { createFastQuestion: () => ({ id: 'blank', question: '', answerKeywords: [], linkedExhibitIds: [] }) };
     return new Proxy({}, { get: (_, key) => key });
@@ -28,16 +30,14 @@ function setup() {
     visit(tree);
     return nodes;
   }
-  return { render, questions, current: () => current, state };
+  return { render, questions, current: () => current, state, messages };
 }
 
 test('dragging a middle question preserves its data and the active question', () => {
   const ui = setup();
   ui.state[0] = 1;
-  let nodes = ui.render();
-  nodes.find(n => n.props?.['aria-label'] === 'Reorder question 2').props.onDragStart({ dataTransfer: { setData() {} } });
-  nodes = ui.render();
-  nodes.filter(n => n.props?.onDrop)[2].props.onDrop({ preventDefault() {} });
+  ui.render().find(n => n.type === 'SortableQuestionList').props.onMove('b', 2);
+  assert.deepEqual(ui.messages, ['Question order updated']);
   assert.deepEqual(Array.from(ui.current(), q => q.id), ['a', 'c', 'b']);
   assert.equal(ui.current()[2], ui.questions[1]);
   assert.equal(ui.state[0], 2);
@@ -46,13 +46,25 @@ test('dragging a middle question preserves its data and the active question', ()
 test('deleting from the middle preserves survivors and selects the next question', () => {
   const ui = setup();
   ui.state[0] = 1;
-  ui.render().find(n => n.props?.['aria-label'] === 'Delete question 2').props.onClick();
+  ui.render().find(n => n.type === 'SortableQuestionList').props.onDelete('b');
   assert.deepEqual(Array.from(ui.current(), q => q.id), ['a', 'c']);
   assert.equal(ui.current()[1], ui.questions[2]);
   assert.equal(ui.state[0], 1);
-  ui.render().find(n => n.props?.['aria-label'] === 'Delete question 2').props.onClick();
-  ui.render().find(n => n.props?.['aria-label'] === 'Delete question 1').props.onClick();
+  ui.render().find(n => n.type === 'SortableQuestionList').props.onDelete('c');
+  ui.render().find(n => n.type === 'SortableQuestionList').props.onDelete('a');
+  assert.deepEqual(ui.messages, ['Question deleted', 'Question deleted', 'Question deleted']);
   assert.equal(ui.current().length, 1);
   assert.equal(ui.current()[0].question, '');
   assert.equal(ui.state[0], 0);
+});
+
+ test('unchanged order and busy operations do not report success', () => {
+  const ui = setup();
+  ui.render().find(n => n.type === 'SortableQuestionList').props.onMove('a', 0);
+  ui.state[1] = true;
+  const list = ui.render().find(n => n.type === 'SortableQuestionList');
+  list.props.onMove('a', 2);
+  list.props.onDelete('b');
+  assert.deepEqual(ui.messages, []);
+  assert.equal(ui.current(), ui.questions);
 });

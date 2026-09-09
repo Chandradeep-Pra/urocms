@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { GripVertical, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { SortableQuestionList } from "@/components/viva/SortableQuestionList";
+import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/client/adminApi";
 import { Button } from "@/components/ui/button";
@@ -50,8 +51,6 @@ export function VivaQuestionSetupDialog({
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
-  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [leftPanelTab, setLeftPanelTab] = useState<"config" | "questions">("config");
 
   const modeConfig = form.modes[mode];
@@ -80,6 +79,7 @@ export function VivaQuestionSetupDialog({
     questions.splice(target, 0, question);
     onQuestionsChange(questions);
     setActiveQuestionIndex(Math.max(0, questions.findIndex(item => item.id === activeQuestion?.id)));
+    toast.success("Question order updated", { description: "Save or apply changes when you are finished." });
   };
 
   const deleteQuestion = (id: string) => {
@@ -89,6 +89,7 @@ export function VivaQuestionSetupDialog({
     const selected = questions.findIndex(question => question.id === activeQuestion?.id);
     onQuestionsChange(questions);
     setActiveQuestionIndex(selected >= 0 ? selected : Math.min(displayedQuestionIndex, questions.length - 1));
+    toast.success("Question deleted", { description: "Save or apply changes when you are finished." });
   };
 
   const generateSampleQuestions = async () => {
@@ -257,89 +258,14 @@ export function VivaQuestionSetupDialog({
                           No generated questions yet. Open Config to generate them.
                         </div>
                       ) : (
-                        <div className="space-y-3">
-                  {populatedQuestions.map(({ question, index }) => {
-                    const linkedCount = question.linkedExhibitIds.length;
-                    const keywordCount = question.answerKeywords.length;
-                    const active = displayedQuestionIndex === index;
-
-                    return (
-                      <div
-                        key={question.id}
-                        onDragOver={event => {
-                          if (draggedQuestionId && !generating && !saving) {
-                            event.preventDefault();
-                            event.dataTransfer.dropEffect = "move";
-                            setDropTargetId(question.id);
-                          }
-                        }}
-                        onDrop={event => {
-                          event.preventDefault();
-                          if (draggedQuestionId) moveQuestion(draggedQuestionId, index);
-                          setDraggedQuestionId(null);
-                          setDropTargetId(null);
-                        }}
-                        className={`w-full rounded-2xl border px-3 py-3 text-left transition ${dropTargetId === question.id ? "ring-2 ring-teal-500" : ""} ${draggedQuestionId === question.id ? "opacity-50" : ""} ${
-                          active
-                            ? "border-teal-500 bg-teal-50 ring-2 ring-teal-100"
-                            : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
-                        }`}
-                      >
-                        <div className="mb-2 flex items-center justify-between">
-                          <button
-                            type="button"
-                            draggable={!generating && !saving}
-                            disabled={generating || saving}
-                            aria-label={`Reorder question ${index + 1}`}
-                            title="Drag to reorder, or use Alt + Up/Down"
-                            className="cursor-grab rounded p-1 text-slate-500 hover:bg-slate-200 active:cursor-grabbing"
-                            onDragStart={event => {
-                              event.dataTransfer.effectAllowed = "move";
-                              event.dataTransfer.setData("text/plain", question.id);
-                              setDraggedQuestionId(question.id);
-                            }}
-                            onDragEnd={() => {
-                              setDraggedQuestionId(null);
-                              setDropTargetId(null);
-                            }}
-                            onKeyDown={event => {
-                              if (event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
-                                event.preventDefault();
-                                moveQuestion(question.id, index + (event.key === "ArrowUp" ? -1 : 1));
-                              }
-                            }}
-                          >
-                            <GripVertical className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={generating || saving}
-                            aria-label={`Delete question ${index + 1}`}
-                            title="Delete question"
-                            className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-red-600"
-                            onClick={() => deleteQuestion(question.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <button type="button" className="w-full text-left" onClick={() => setActiveQuestionIndex(index)}>
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-medium text-slate-800">
-                            Question {index + 1}
-                          </p>
-                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
-                            Ready
-                          </span>
-                        </div>
-                        <p className="mt-2 text-xs text-slate-500">
-                          {linkedCount} exhibits linked, {keywordCount} keywords
-                        </p>
-                        <p className="mt-2 line-clamp-2 text-xs text-slate-700">{question.question}</p>
-                      </button>
-                      </div>
-                    );
-                  })}
-                        </div>
+                        <SortableQuestionList
+                          items={populatedQuestions}
+                          activeQuestionId={activeQuestion?.id}
+                          disabled={generating || saving}
+                          onSelect={setActiveQuestionIndex}
+                          onMove={moveQuestion}
+                          onDelete={deleteQuestion}
+                        />
                       )}
                     </div>
                   </div>
