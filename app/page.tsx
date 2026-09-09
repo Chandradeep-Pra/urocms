@@ -21,9 +21,9 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Urologics | World's First App Based Urology Course ",
+  title: "Urologics | World's First App Based FRCS Urology Course ",
   description:
-    "Explore Urologics for FRCS Urology preparation with AI viva practice, video courses, chapter-wise quizzes, weekly mocks, grand mocks, and structured exam support.",
+    "Urologics founded by Dr Ankit Goel for FRCS Urology and Postgraduate Urology exam preparation with Live sessions, AI viva practice, video courses, daily quizzes, chapter-wise tests, weekly mocks, grand mocks, and structured exam support.",
   alternates: {
     canonical: "/",
   },
