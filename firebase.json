@@ -1,0 +1,34 @@
+{
+  "hosting": {
+    "site": "proud-woods-489814-s6",
+    "public": "firebase-hosting-empty",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/web",
+        "run": {
+          "serviceId": "urologics-web-app",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/web/**",
+        "run": {
+          "serviceId": "urologics-web-app",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "urologics-web",
+          "region": "asia-south1"
+        }
+      }
+    ]
+  }
+}

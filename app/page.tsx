@@ -50,7 +50,9 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 300;
+// Read server data at runtime so a credential-free image build cannot cache
+// empty testimonials into the deployed page.
+export const dynamic = "force-dynamic";
 
 export default function Page() {
   const organizationSchema = {

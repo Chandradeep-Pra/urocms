@@ -30,14 +30,7 @@ import { Chrome, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 
-const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "https://urologics.co.uk/web"
-const NON_ADMIN_REDIRECT_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.app")
-  ? "/web"
-  : CONFIGURED_USER_APP_URL
-const ALLOWED_APP_REDIRECT_ORIGINS = new Set([
-  "https://urologics.co.uk",
-  "https://testing-zone-five.vercel.app",
-])
+import { getSafeAppRedirect } from "@/lib/user-app"
 
 async function verifyAdminAccess(idToken: string) {
   const response = await fetch("/api/auth/role", {
@@ -90,36 +83,6 @@ function getPhoneDigits(value: string) {
   return value.replace(/\D/g, "")
 }
 
-function getSafeAppRedirect(rawRedirect: string | null) {
-  if (!rawRedirect) return NON_ADMIN_REDIRECT_URL
-
-  try {
-    const redirectUrl = new URL(rawRedirect)
-
-    if (ALLOWED_APP_REDIRECT_ORIGINS.has(redirectUrl.origin)) {
-      if (
-        redirectUrl.origin === "https://urologics.co.uk" &&
-        !redirectUrl.pathname.startsWith("/web") &&
-        redirectUrl.pathname !== "/checkout"
-      ) {
-        return NON_ADMIN_REDIRECT_URL
-      }
-
-      if (
-        redirectUrl.origin === "https://testing-zone-five.vercel.app" &&
-        !redirectUrl.pathname.startsWith("/web")
-      ) {
-        redirectUrl.pathname = `/web${redirectUrl.pathname === "/" ? "" : redirectUrl.pathname}`
-      }
-
-      return redirectUrl.toString()
-    }
-  } catch {
-    return NON_ADMIN_REDIRECT_URL
-  }
-
-  return NON_ADMIN_REDIRECT_URL
-}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -144,7 +107,7 @@ export default function LoginPage() {
   const [resetLoading, setResetLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [appRedirectUrl, setAppRedirectUrl] = useState(NON_ADMIN_REDIRECT_URL)
+  const [appRedirectUrl, setAppRedirectUrl] = useState("/web")
   const initialAuthCheckedRef = useRef(false)
   const signupInProgressRef = useRef(false)
   const selectedCountry = splitCountryValue(countryValue)

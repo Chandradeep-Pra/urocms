@@ -5,7 +5,7 @@ Urologics is a premium digital learning ecosystem for FRCS Urology preparation, 
 The platform is built as a connected product suite: a marketing website, an admin CMS, a React Native learner app, and an AI-powered testing/viva experience. Together, they support the complete journey from discovery and registration to course access, practice, assessment, feedback, and progress tracking.
 
 <p align="center">
-  <img src="https://skillicons.dev/icons?i=nextjs,react,typescript,tailwind,firebase,gcp,vercel,nodejs" alt="Technology stack icons" />
+  <img src="https://skillicons.dev/icons?i=nextjs,react,typescript,tailwind,firebase,gcp,nodejs" alt="Technology stack icons" />
 </p>
 
 ## Product Overview
@@ -65,7 +65,7 @@ flowchart LR
 | Database & Auth | Firebase Authentication, Firestore |
 | Media & Storage | Google Drive API, Google Cloud Storage, Cloudinary |
 | AI & Voice | Gemini, Google AI tooling, Google text-to-speech/speech services |
-| Deployment | Vercel, Firebase, Google Cloud |
+| Deployment | Firebase Hosting, Google Cloud Run |
 | UI & DX | Radix UI, Lucide Icons, ESLint, TypeScript |
 
 ## Connected Applications
@@ -115,3 +115,5 @@ npm run start
 ## Environment
 
 The platform uses Firebase, Google Cloud, Google Drive, Cloudinary, and AI provider credentials. Secrets should be configured through `.env.local` during development and secure environment variables in production.
+
+Deployment routing and commands: [Firebase Hosting + Cloud Run](docs/firebase-hosting.md).

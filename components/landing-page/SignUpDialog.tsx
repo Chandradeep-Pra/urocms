@@ -23,10 +23,7 @@ import {
 import { completeSignupProfile } from "@/lib/signupCompletion";
 import { setSignupAutoRouteSuppressed } from "@/lib/testingZoneAuthHandoff";
 
-const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "/web";
-const USER_APP_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.app")
-  ? "/web"
-  : CONFIGURED_USER_APP_URL;
+const USER_APP_URL = "/web";
 
 function getPhoneDigits(value: string) {
   return value.replace(/\D/g, "");

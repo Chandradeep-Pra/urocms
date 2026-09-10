@@ -20,10 +20,7 @@ const navItems = [
   { label: "Plans", href: "/pricing" },
 ];
 
-const CONFIGURED_USER_APP_URL = process.env.NEXT_PUBLIC_USER_APP_URL || "/web";
-const USER_APP_URL = CONFIGURED_USER_APP_URL.includes("testing-zone-five.vercel.app")
-  ? "/web"
-  : CONFIGURED_USER_APP_URL;
+const USER_APP_URL = "/web";
 const LOGOUT_FLAG_KEY = "urologics-auth-logged-out";
 
 function getFirstName(user: User | null) {

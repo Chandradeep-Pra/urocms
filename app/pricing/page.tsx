@@ -14,7 +14,8 @@ import { PricingCategoryAccordion } from "@/components/pricing/PricingCategoryAc
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { absoluteUrl, siteConfig } from "@/lib/site";
 
-export const revalidate = 3600;
+// Pricing requires runtime Firebase credentials, never build-time secrets.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Pricing",

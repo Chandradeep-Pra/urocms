@@ -7,9 +7,25 @@ build
 out
 .vercel
 
-.env
-.env.*
-!.env.example
+.env.prod
+.env*
+**/.env*
+**/.npmrc
+**/.netrc
+**/.ssh
+**/.aws
+**/.config/gcloud
+**/*service-account*.json
+**/*serviceAccount*.json
+**/*firebase-adminsdk*.json
+**/credentials*.json
+**/*credentials*.json
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.pem
+.agents
+.codex
 
 *.log
 *.pem
@@ -17,5 +33,3 @@ out
 
 Dockerfile*
 docker-compose*.yml
-README.md
-docs
