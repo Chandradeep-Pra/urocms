@@ -1,3 +1,4 @@
+import { requireDashboardSession } from "@/lib/server/dashboardSession";
 import Link from "next/link";
 import { ArrowLeft, Brain, FileText, Trophy, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -112,6 +113,7 @@ export default async function UserProfilePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireDashboardSession();
   const { id } = await params;
   const profile = await getAdminUserProfile(id);
 

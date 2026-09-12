@@ -1,10 +1,10 @@
 "use client";
 
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onIdTokenChanged, signOut } from "firebase/auth";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebaseClient";
-import { clearTestingZoneAuth } from "@/lib/testingZoneAuthHandoff";
+import { syncTestingZoneAuth } from "@/lib/testingZoneAuthHandoff";
 
 export default function AdminGuard({
   children,
@@ -18,28 +18,35 @@ export default function AdminGuard({
   useEffect(() => {
     let cancelled = false;
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const handleLogout = (event: StorageEvent) => {
+      if (event.key !== "urologics-auth-logged-out" || event.newValue !== "1") return;
+      void signOut(auth).then(() => router.replace("/login"));
+    };
+    window.addEventListener("storage", handleLogout);
+
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
       if (!user) {
         if (!cancelled) {
-          router.replace("/login");
+          router.replace(`/login?next=${encodeURIComponent(pathname)}`);
         }
         return;
       }
 
       try {
         const token = await user.getIdToken();
-        const response = await fetch("/api/admin/session", {
+        const response = await fetch("/api/auth/role", {
+          cache: "no-store",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        if (!response.ok) {
-          clearTestingZoneAuth();
-          await signOut(auth);
-          if (!cancelled) {
-            router.replace("/login");
-          }
+        if (!response.ok) throw new Error("Unable to verify admin access");
+        const role = await response.json();
+        if (cancelled || auth.currentUser?.uid !== user.uid) return;
+        if (!role.isAdmin) {
+          await syncTestingZoneAuth(user, token);
+          if (!cancelled) window.location.assign("/web");
           return;
         }
 
@@ -48,16 +55,15 @@ export default function AdminGuard({
         }
       } catch (error) {
         console.error("Admin guard error:", error);
-        clearTestingZoneAuth();
-        await signOut(auth).catch(() => {});
         if (!cancelled) {
-          router.replace("/login");
+          router.replace(`/login?next=${encodeURIComponent(pathname)}`);
         }
       }
     });
 
     return () => {
       cancelled = true;
+      window.removeEventListener("storage", handleLogout);
       unsubscribe();
     };
   }, [pathname, router]);

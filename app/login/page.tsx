@@ -27,13 +27,14 @@ import {
   type User,
 } from "firebase/auth"
 import { Chrome, Loader2 } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import { getSafeAppRedirect } from "@/lib/user-app"
 
 async function verifyAdminAccess(idToken: string) {
-  const response = await fetch("/api/auth/role", {
+  const params = new URLSearchParams(window.location.search)
+  const next = params.get("next") ?? params.get("redirect") ?? params.get("callbackUrl") ?? params.get("redirectTo") ?? params.get("returnTo") ?? ""
+  const response = await fetch(`/api/auth/role?next=${encodeURIComponent(next)}`, {
+    cache: "no-store",
     headers: {
       Authorization: `Bearer ${idToken}`,
     },
@@ -44,7 +45,7 @@ async function verifyAdminAccess(idToken: string) {
     throw new Error(data?.error || "Failed to verify account role")
   }
 
-  return data?.isAdmin === true
+  return data as { isAdmin: boolean; destination: string; studentDestination: string }
 }
 
 async function completeEmailOnboarding(idToken: string) {
@@ -85,7 +86,6 @@ function getPhoneDigits(value: string) {
 
 
 export default function LoginPage() {
-  const router = useRouter()
   const [mode, setMode] = useState<"login" | "signup">("login")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -101,13 +101,13 @@ export default function LoginPage() {
     token: string
     provider: "email" | "google"
     isSignUp?: boolean
+    studentDestination: string
   } | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [appRedirectUrl, setAppRedirectUrl] = useState("/web")
   const initialAuthCheckedRef = useRef(false)
   const signupInProgressRef = useRef(false)
   const selectedCountry = splitCountryValue(countryValue)
@@ -118,11 +118,6 @@ export default function LoginPage() {
     return countries.filter((country) => country.label.toLowerCase().includes(search))
   }, [countries, countrySearch])
   const fullPhone = phone.trim() ? `${selectedCountry.dialCode} ${phone.trim()}`.trim() : ""
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    setAppRedirectUrl(getSafeAppRedirect(params.get("redirect")))
-  }, [])
 
   useEffect(() => {
     if (mode !== "signup") return
@@ -148,8 +143,8 @@ export default function LoginPage() {
     }
   }, [mode])
 
-  const redirectNonAdmin = () => {
-    window.location.assign(appRedirectUrl)
+  const redirectNonAdmin = (destination: string) => {
+    window.location.assign(destination)
   }
 
   const routeAuthenticatedUser = async (
@@ -158,19 +153,16 @@ export default function LoginPage() {
   ) => {
     const token = await user.getIdToken(Boolean(options.isSignUp))
 
-    try {
-      const isAdmin = await verifyAdminAccess(token)
-
-      if (isAdmin) {
-        setPendingAdminChoice({
-          token,
-          provider: options.provider,
-          isSignUp: options.isSignUp,
-        })
-        return
-      }
-    } catch (roleError: unknown) {
-      throw roleError
+    const role = await verifyAdminAccess(token)
+    if (auth.currentUser?.uid !== user.uid) return
+    if (role.isAdmin) {
+      setPendingAdminChoice({
+        token,
+        studentDestination: role.studentDestination,
+        provider: options.provider,
+        isSignUp: options.isSignUp,
+      })
+      return
     }
 
     if (options.provider === "google") {
@@ -180,7 +172,7 @@ export default function LoginPage() {
     }
 
     await syncTestingZoneAuth(user, token)
-    redirectNonAdmin()
+    redirectNonAdmin(role.destination)
   }
 
   useEffect(() => {
@@ -215,7 +207,7 @@ export default function LoginPage() {
       cancelled = true
       unsubscribe()
     }
-  }, [appRedirectUrl])
+  }, [])
 
   const continueAsUser = async () => {
     if (!pendingAdminChoice) return
@@ -232,7 +224,7 @@ export default function LoginPage() {
         await syncTestingZoneAuth(auth.currentUser, pendingAdminChoice.token)
       }
 
-      redirectNonAdmin()
+      redirectNonAdmin(pendingAdminChoice.studentDestination)
     } catch (err: unknown) {
       console.error("User redirect error:", err)
       setError(getErrorMessage(err, "Failed to continue as user"))
@@ -242,9 +234,15 @@ export default function LoginPage() {
     }
   }
 
-  const continueAsAdmin = () => {
-    setPendingAdminChoice(null)
-    router.push("/dashboard")
+  const continueAsAdmin = async () => {
+    if (!auth.currentUser || !pendingAdminChoice) return
+    try {
+      setLoading(true)
+      const role = await verifyAdminAccess(await auth.currentUser.getIdToken())
+      window.location.assign(role.destination)
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to verify admin access"))
+    } finally { setLoading(false) }
   }
 
   const login = async () => {
@@ -254,6 +252,7 @@ export default function LoginPage() {
 
     try {
       setLoading(true)
+      initialAuthCheckedRef.current = true
       const credential = await signInWithEmailAndPassword(auth, normalizedEmail, password)
       await routeAuthenticatedUser(credential.user, { provider: "email" })
     } catch (err: unknown) {
@@ -364,6 +363,7 @@ export default function LoginPage() {
         prompt: "select_account",
       })
 
+      initialAuthCheckedRef.current = true
       const credential = await signInWithPopup(auth, provider)
       await routeAuthenticatedUser(credential.user, { provider: "google" })
     } catch (err: unknown) {

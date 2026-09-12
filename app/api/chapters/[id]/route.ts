@@ -1,3 +1,4 @@
+import { requireAdminSession } from "@/lib/server/adminAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
@@ -6,6 +7,8 @@ export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
   try {
     const { id } = await context.params;
     const body = await req.json();
@@ -33,6 +36,8 @@ export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
   const { id } = await context.params;
 
   await getAdminDb()

@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
 FROM node:24.11.0-bookworm-slim AS base
-RUN npm install --global npm@11.18.0
 
 FROM base AS dependencies
 WORKDIR /app
@@ -26,7 +25,6 @@ ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_APP_URL
 ARG NEXT_PUBLIC_USER_APP_URL
 ARG NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-ARG NEXT_PUBLIC_ADMIN_ALLOWED_EMAILS
 RUN npm run build
 
 FROM node:24.11.0-bookworm-slim AS runner

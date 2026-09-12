@@ -1,3 +1,4 @@
+import { requireDashboardSession } from "@/lib/server/dashboardSession";
 //@ts-ignore
 import { getAllUsers } from "@/lib/server/guestService";
 import UsersClient from "./UserClient";
@@ -5,6 +6,7 @@ import UsersClient from "./UserClient";
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
+  await requireDashboardSession();
   const users = await getAllUsers();
 
   return <UsersClient users={users} />;

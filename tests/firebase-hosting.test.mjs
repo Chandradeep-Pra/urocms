@@ -33,7 +33,8 @@ test('main Next configuration retains standalone/external packages without web i
 test('login redirects allow only production app routes and preserve checkout parameters',()=>{
   const {getSafeAppRedirect: safe}=load('lib/user-app.ts');
   for (const bad of [null,'https://evil.test/web','https://legacy.vercel.app/web','/dashboard','/website','/web-other','/\\evil.test/web','https://user:pass@urologics.co.uk/web']) assert.equal(safe(bad),'/web');
-  assert.equal(safe('https://urologics.co.uk/web/courses?x=1'),'/web/courses?x=1');
+  assert.equal(safe('https://urologics.co.uk/web/courses?x=1'),'/web');
+  assert.equal(safe('/web/courses?x=1'),'/web/courses?x=1');
   assert.equal(safe('/checkout?planId=1&versionId=2'),'/checkout?planId=1&versionId=2');
   assert.equal(safe('/web'),'/web');
 });

@@ -1,7 +1,10 @@
+import { requireAdminSession } from "@/lib/server/adminAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminStorage } from "@/lib/firebaseAdmin";
 
 export async function POST(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;

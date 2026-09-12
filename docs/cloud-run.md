@@ -79,8 +79,8 @@ docker build --platform linux/amd64 --build-arg NEXT_PUBLIC_FIREBASE_API_KEY=PUB
 ```
 
 Other supported public arguments: `NEXT_PUBLIC_APP_URL`,
-`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `NEXT_PUBLIC_ADMIN_ALLOWED_EMAILS`.
-Prefer the server-only `ADMIN_ALLOWED_EMAILS` runtime variable for admin policy.
+`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`.
+Admin authorization uses only the server-only `ADMIN_ALLOWED_EMAILS` runtime variable.
 Public values are embedded during build; changing runtime variables cannot
 replace them in browser bundles. Never pass server secrets as build arguments.
 Build requires registry/npm access and Google Fonts access (`next/font/google`).

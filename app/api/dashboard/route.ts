@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { requireAdminSession } from "@/lib/server/adminAccess";
+import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 
 type ChartPoint = {
@@ -56,7 +57,9 @@ function buildCumulativeUserGrowth(userCreatedAtDates: Date[]): ChartPoint[] {
   }));
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
   try {
     const [
       usersSnap,

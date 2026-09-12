@@ -10,6 +10,8 @@ const values = {
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: "example-cloud",
   FIREBASE_PRIVATE_KEY: "private\nkey",
   UNKNOWN_SECRET: "secret-value",
+  ADMIN_ALLOWED_EMAILS: "admin@example.com",
+  NEXT_PUBLIC_ADMIN_ALLOWED_EMAILS: "admin@example.com",
 };
 
 test("build forwards only approved public configuration and targets amd64", () => {
@@ -19,6 +21,9 @@ test("build forwards only approved public configuration and targets amd64", () =
   assert.equal(env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, "example-cloud");
   assert.equal(env.FIREBASE_PRIVATE_KEY, undefined);
   assert.equal(env.UNKNOWN_SECRET, undefined);
+  assert.equal(env.ADMIN_ALLOWED_EMAILS, undefined);
+  assert.equal(env.NEXT_PUBLIC_ADMIN_ALLOWED_EMAILS, undefined);
+  assert.ok(!args.some((arg) => arg.includes("ADMIN_ALLOWED_EMAILS")));
   assert.equal(env.PATH, "tools");
   assert.ok(!args.some((arg) => arg.includes("secret-value") || arg.includes("PRIVATE_KEY")));
 });

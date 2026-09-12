@@ -1,3 +1,4 @@
+import { requireAdminSession } from "@/lib/server/adminAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { buildDriveVideoStreamResponse } from "@/lib/server/videoStreamService";
 
@@ -5,6 +6,8 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const { response } = await requireAdminSession(req);
+  if (response) return response;
   try {
     const params = await context.params;
     return await buildDriveVideoStreamResponse({

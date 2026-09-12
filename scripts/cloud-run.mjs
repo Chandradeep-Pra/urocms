@@ -14,7 +14,6 @@ const publicBuildKeys = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_USER_APP_URL",
   "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME",
-  "NEXT_PUBLIC_ADMIN_ALLOWED_EMAILS",
 ];
 
 export function dockerInvocation(mode, values, image = defaultImage, inherited = process.env) {

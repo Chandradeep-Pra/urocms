@@ -27,7 +27,7 @@ const SettingsPage = () => {
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
-      clearTestingZoneAuth();
+      await clearTestingZoneAuth();
       await signOut(auth);
       router.replace("/login");
     } catch (error) {

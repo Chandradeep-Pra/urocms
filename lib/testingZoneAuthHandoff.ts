@@ -81,9 +81,11 @@ export async function syncTestingZoneAuth(
   )
 }
 
-export function clearTestingZoneAuth() {
+export async function clearTestingZoneAuth() {
   if (typeof window === "undefined") return
 
+  const response = await fetch("/api/auth/role", { method: "DELETE", cache: "no-store" })
+  if (!response.ok) throw new Error("Failed to clear server session")
   window.localStorage.removeItem(TESTING_ZONE_AUTH_STORAGE_KEY)
   window.localStorage.setItem(LOGOUT_FLAG_KEY, "1")
 }

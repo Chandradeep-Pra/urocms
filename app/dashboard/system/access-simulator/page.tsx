@@ -1,3 +1,4 @@
+import { requireDashboardSession } from "@/lib/server/dashboardSession";
 import AccessSimulatorClient from "@/components/dashboard/AccessSimulatorClient";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 
@@ -153,6 +154,7 @@ async function getSimulatorSnapshot(): Promise<SimulatorSnapshot> {
 }
 
 export default async function AccessSimulatorPage() {
+  await requireDashboardSession();
   const snapshot = await getSimulatorSnapshot();
 
   return <AccessSimulatorClient snapshot={snapshot} />;

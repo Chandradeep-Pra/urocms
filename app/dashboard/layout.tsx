@@ -1,11 +1,13 @@
 import AdminGuard from "@/components/dashboard/AdminGuard";
 import Sidebar from "@/components/dashboard/Sidebar";
+import { requireDashboardSession } from "@/lib/server/dashboardSession";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await requireDashboardSession();
   return (
     <AdminGuard>
       <div className="flex h-screen overflow-hidden">

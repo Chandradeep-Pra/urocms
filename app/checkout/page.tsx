@@ -115,7 +115,7 @@ function CheckoutContent() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        const redirect = window.location.href;
+        const redirect = window.location.pathname + window.location.search;
         window.location.assign(`/login?redirect=${encodeURIComponent(redirect)}`);
         return;
       }
