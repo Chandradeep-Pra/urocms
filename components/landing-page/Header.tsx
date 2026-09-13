@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { usePortalRole } from "@/lib/usePortalRole"
 import { auth } from "@/lib/firebaseClient";
 import {
   consumeRecentLogoutFlag,
   isSignupAutoRouteSuppressed,
   syncTestingZoneAuth,
 } from "@/lib/testingZoneAuthHandoff";
+import { LogoutButton } from "@/components/LogoutButton";
 import { LazySignUpDialog } from "./LazySignUpDialog";
 
 const navItems = [
@@ -22,11 +24,6 @@ const navItems = [
 
 const USER_APP_URL = "/web";
 const LOGOUT_FLAG_KEY = "urologics-auth-logged-out";
-
-function getFirstName(user: User | null) {
-  const source = user?.displayName || user?.email?.split("@")[0] || "";
-  return source.trim().split(/\s+/)[0] || "Learner";
-}
 
 function scrollToSection(href: string) {
   if (!href.startsWith("#")) return false;
@@ -42,11 +39,10 @@ function scrollToSection(href: string) {
 export function LandingHeader() {
   const [isOpen, setIsOpen] = useState(false);
   const [authUser, setAuthUser] = useState<User | null>(null);
+  const portalRole = usePortalRole(authUser)
   const [authReady, setAuthReady] = useState(false);
-  const [openingPlatform, setOpeningPlatform] = useState(false);
   const [checkingDestination, setCheckingDestination] = useState(false);
-  const [showAdminChoice, setShowAdminChoice] = useState(false);
-  const handledAuthUidRef = useRef<string | null>(null);
+  const [portalError, setPortalError] = useState("");
   const skipAutoRouteRef = useRef(false);
 
   const [showHeader, setShowHeader] = useState(true);
@@ -59,10 +55,8 @@ useEffect(() => {
   const forceSignedOutState = () => {
     setAuthUser(null);
     setAuthReady(true);
-    setShowAdminChoice(false);
     setCheckingDestination(false);
-    setOpeningPlatform(false);
-    handledAuthUidRef.current = null;
+
     skipAutoRouteRef.current = false;
   };
 
@@ -86,6 +80,7 @@ useEffect(() => {
       return;
     }
 
+    skipAutoRouteRef.current = false;
     setAuthUser(user);
     setAuthReady(true);
   });
@@ -122,17 +117,6 @@ useEffect(() => {
   return () => window.removeEventListener("scroll", handleScroll);
 }, []);
 
-const openPlatform = async () => {
-  if (!authUser) return;
-
-  try {
-    setOpeningPlatform(true);
-    await syncTestingZoneAuth(authUser);
-  } finally {
-    window.location.assign(USER_APP_URL);
-  }
-};
-
 const verifyAdminAccess = async (idToken: string) => {
   const response = await fetch("/api/auth/role", {
     headers: {
@@ -149,47 +133,29 @@ const verifyAdminAccess = async (idToken: string) => {
   return payload?.isAdmin === true;
 };
 
-useEffect(() => {
-  if (skipAutoRouteRef.current) return;
-  if (isSignupAutoRouteSuppressed()) return;
-  if (!authReady || !authUser || handledAuthUidRef.current === authUser.uid) return;
-
-  handledAuthUidRef.current = authUser.uid;
+const continueToPortal = async (student = false) => {
+  if (!authUser || checkingDestination || isSignupAutoRouteSuppressed()) return;
   const currentUser = authUser;
-
-  let cancelled = false;
-
-  async function routeLoggedInUser() {
-    try {
-      setCheckingDestination(true);
-      const token = await currentUser.getIdToken();
-      const isAdmin = await verifyAdminAccess(token);
-
-      if (cancelled) return;
-
-      if (isAdmin) {
-        setShowAdminChoice(true);
-        return;
-      }
-
-      await syncTestingZoneAuth(currentUser, token);
-      if (!cancelled) {
-        window.location.assign(USER_APP_URL);
-      }
-    } catch (error) {
-      console.error("Landing auth routing error:", error);
-      handledAuthUidRef.current = null;
-    } finally {
-      if (!cancelled) setCheckingDestination(false);
+  setPortalError("");
+  try {
+    setCheckingDestination(true);
+    const token = await currentUser.getIdToken();
+    const isAdmin = await verifyAdminAccess(token);
+    if (auth.currentUser?.uid !== currentUser.uid) return;
+    if (isAdmin && !student) {
+      window.location.assign("/dashboard");
+      return;
     }
+    await syncTestingZoneAuth(currentUser, token);
+    if (auth.currentUser?.uid === currentUser.uid) window.location.assign(USER_APP_URL);
+  } catch (error) {
+    console.error("Portal routing error:", error);
+    setPortalError("Unable to open portal. Please try again.");
+  } finally {
+    setCheckingDestination(false);
   }
+};
 
-  void routeLoggedInUser();
-
-  return () => {
-    cancelled = true;
-  };
-}, [authReady, authUser]);
 
   return (
     <header
@@ -233,9 +199,13 @@ useEffect(() => {
 
         <div className="hidden items-center gap-2 md:flex">
           {authReady && authUser ? (
-            <span className="rounded-full bg-cyan-50 px-4 py-2 text-xs font-bold text-[#0f7896]">
-              {checkingDestination ? "Opening platform..." : "Signed in"}
-            </span>
+            <div className="flex items-center gap-2">
+            <button type="button" onClick={portalRole.error ? portalRole.retry : () => continueToPortal()} disabled={checkingDestination || portalRole.checking} className="rounded-full bg-cyan-50 px-4 py-2 text-sm font-bold text-[#0f7896] disabled:opacity-70">
+              {portalRole.checking ? "Checking access..." : portalRole.error ? "Retry access check" : checkingDestination ? "Opening portal..." : portalRole.isAdmin ? "Continue as Admin" : "Continue to Urologics Web"}
+            </button>
+            {portalRole.isAdmin && <button type="button" onClick={() => continueToPortal(true)} disabled={checkingDestination} className="rounded-full border border-[#0f7896]/20 bg-white px-4 py-2 text-sm font-bold text-[#0f7896] disabled:opacity-70">Student</button>}
+            <LogoutButton disabled={checkingDestination} />
+            </div>
           ) : (
             <>
               <Link
@@ -298,8 +268,12 @@ useEffect(() => {
 
           <div className="mt-2 flex flex-col gap-2">
             {authReady && authUser ? (
-              <div className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-bold text-[#0f7896]">
-                {checkingDestination ? "Opening platform..." : "Signed in"}
+              <div className="flex items-center gap-2">
+            <button type="button" onClick={portalRole.error ? portalRole.retry : () => continueToPortal()} disabled={checkingDestination || portalRole.checking} className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-bold text-[#0f7896] disabled:opacity-70">
+                {portalRole.checking ? "Checking access..." : portalRole.error ? "Retry access check" : checkingDestination ? "Opening portal..." : portalRole.isAdmin ? "Continue as Admin" : "Continue to Urologics Web"}
+              </button>
+              {portalRole.isAdmin && <button type="button" onClick={() => continueToPortal(true)} disabled={checkingDestination} className="rounded-full border border-[#0f7896]/20 bg-white px-4 py-2 text-sm font-bold text-[#0f7896] disabled:opacity-70">Student</button>}
+            <LogoutButton disabled={checkingDestination} />
               </div>
             ) : (
               <>
@@ -317,35 +291,8 @@ useEffect(() => {
         </div>
       </div>
 
-      {showAdminChoice && authUser ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#071014]/55 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[32px] border border-[#0f7896]/14 bg-white p-6 text-[#071014] shadow-[0_24px_70px_rgba(15,120,150,0.18)]">
-            <div className="space-y-2 text-center">
-              <h2 className="text-2xl font-extrabold text-[#0f7896]">Continue as</h2>
-              <p className="text-sm text-[#071014]/58">
-                Signed in as {getFirstName(authUser)}. Choose where you want to go.
-              </p>
-            </div>
-
-            <div className="mt-6 grid gap-3">
-              <Link
-                href="/dashboard"
-                className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-4 text-base font-bold text-white hover:from-[#1294ba] hover:to-[#0f7896]"
-              >
-                Admin dashboard
-              </Link>
-              <button
-                type="button"
-                onClick={openPlatform}
-                disabled={openingPlatform}
-                className="w-full rounded-2xl border border-[#0f7896]/16 bg-white py-4 text-base font-bold text-[#071014] hover:bg-cyan-50 disabled:cursor-wait disabled:opacity-70"
-              >
-                {openingPlatform ? "Opening platform..." : "Platform"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {portalRole.error && <p role="alert" className="rounded-2xl bg-white p-3 text-center text-sm text-red-600">{portalRole.error}</p>}
+      {portalError && <p role="alert" className="rounded-2xl bg-white p-3 text-center text-sm text-red-600">{portalError}</p>}
     </header>
   );
 }

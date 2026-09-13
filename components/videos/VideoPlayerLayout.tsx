@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { adminFetch } from "@/lib/client/adminApi";
 
 interface Props {
-  video: any | null;
+  video: { id?: string; videoUrl: string } | null;
   onClose: () => void;
 }
 
@@ -17,8 +17,7 @@ interface Props {
 type ParsedVideo =
   | { provider: "youtube"; youtubeId: string | null }
   | { provider: "drive"; driveFileId: string; previewUrl: string }
-  | { provider: "file"; streamUrl: string }
-  | { provider: "drive-embed"; previewUrl: string; webViewUrl: string };
+  | { provider: "file"; streamUrl: string };
 
 function parseVideo(url: string): ParsedVideo {
   // YouTube
@@ -64,7 +63,7 @@ export default function VideoPlayerLayout({
   const [progress, setProgress] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [resolvedPlayback, setResolvedPlayback] = useState<any | null>(null);
+  const [resolvedPlayback, setResolvedPlayback] = useState<{ playback?: { provider: string; url: string; streamUrl: string } } | null>(null);
   const [loadingPlayback, setLoadingPlayback] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
 
@@ -81,13 +80,8 @@ export default function VideoPlayerLayout({
 
       if (resolvedPlayback?.playback?.provider === "drive") {
         return {
-          provider: "drive-embed",
-          previewUrl:
-            resolvedPlayback.playback.previewUrl ||
-            `https://drive.google.com/file/d/${resolvedPlayback.playback.driveFileId}/preview`,
-          webViewUrl:
-            resolvedPlayback.playback.webViewUrl ||
-            `https://drive.google.com/file/d/${resolvedPlayback.playback.driveFileId}/view`,
+          provider: "file",
+          streamUrl: resolvedPlayback.playback.streamUrl,
         };
       }
 
@@ -108,6 +102,9 @@ export default function VideoPlayerLayout({
     const loadPlayback = async () => {
       try {
         setLoadingPlayback(true);
+        setResolvedPlayback(null);
+        setPlaying(false);
+        setProgress(0);
         setPlaybackError(null);
         const res = await adminFetch(`/api/videos/videoItem/${video.id}/play`);
         const data = await res.json().catch(() => null);
@@ -119,10 +116,10 @@ export default function VideoPlayerLayout({
         if (!cancelled) {
           setResolvedPlayback(data);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (!cancelled) {
           setResolvedPlayback(null);
-          setPlaybackError(error.message || "Failed to load video playback");
+          setPlaybackError(error instanceof Error ? error.message : "Failed to load video playback");
         }
       } finally {
         if (!cancelled) {
@@ -146,7 +143,7 @@ export default function VideoPlayerLayout({
 
   /* Autoplay */
   useEffect(() => {
-    if (!video || !videoRef.current) return;
+    if (!video || loadingPlayback || !videoRef.current) return;
 
     if (parsed?.provider === "file") {
       videoRef.current
@@ -156,7 +153,7 @@ export default function VideoPlayerLayout({
           setPlaying(false);
         });
     }
-  }, [video, parsed]);
+  }, [video, parsed, loadingPlayback]);
 
   /* Keyboard Handling */
   useEffect(() => {
@@ -188,7 +185,7 @@ export default function VideoPlayerLayout({
 
   window.addEventListener("keydown", handleKey);
   return () => window.removeEventListener("keydown", handleKey);
-}, [isFullscreen, parsed]);
+}, [isFullscreen, parsed, onClose]);
 
   const togglePlay = async () => {
     if (!videoRef.current) return;
@@ -279,27 +276,14 @@ export default function VideoPlayerLayout({
                   allow="autoplay; encrypted-media"
                   allowFullScreen
                 />
-              ) : parsed?.provider === "drive-embed" ? (
-                <div className="space-y-3">
-                  <iframe
-                    src={parsed.previewUrl}
-                    className={`${
-                      isFullscreen
-                        ? "h-[calc(100vh-120px)] w-full"
-                        : "w-full aspect-video rounded-2xl"
-                    }`}
-                    allow="autoplay; encrypted-media"
-                    allowFullScreen
-                  />
-                  {!isFullscreen ? (
-                    <p className="text-center text-xs text-white/60">
-                      Google Drive controls this playback experience for unsynced videos.
-                    </p>
-                  ) : null}
-                </div>
               ) : (
                 <video
+                  key={parsed?.provider === "file" ? parsed.streamUrl : video.id}
                   ref={videoRef}
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                  onEnded={() => setPlaying(false)}
+                  onError={() => setPlaybackError("Unable to play this video. Check that the configured service account can read the file and that its format is supported by your browser.")}
                   src={parsed?.provider === "file" ? parsed.streamUrl : undefined}
                   className={`${
                     isFullscreen

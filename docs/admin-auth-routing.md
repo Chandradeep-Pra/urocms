@@ -28,12 +28,17 @@ authorize before reads, since layouts and pages can render in parallel.
 
 ## Final behavior
 
-- Verified admin: existing choice dialog, with Admin dashboard first. Choosing
-  admin opens `/dashboard` or a validated relative `/dashboard/...` destination.
-- Choosing the student app deliberately opens `/web` or a safe student/checkout
-  destination. Admin status does not get silently overridden by stale callbacks.
-- Authenticated non-admin: `/web`, or an allowed relative `/web/...` or `/checkout`
-  destination. Dashboard destinations are rejected.
+- Signing in with email or Google, or restoring an existing session, keeps the
+  user on the current page. The login page and desktop/mobile landing header
+  check `ADMIN_ALLOWED_EMAILS` through the server role endpoint after login.
+  Admins see **Continue as Admin** and a separate **Student** button; other users see
+  **Continue to Urologics Web**.
+- Clicking Continue to portal verifies the token email against the server-side
+  admin allowlist. Admin and Student buttons navigate directly without a popup.
+- Choosing Admin dashboard opens `/dashboard` or a validated relative
+  `/dashboard/...` destination. Choosing Platform opens `/web`.
+- Non-admins go to `/web` only after clicking Continue to portal. The existing
+  testing-zone authentication handoff runs before opening the platform.
 - Absolute URLs (including same-origin absolute URLs), protocol-relative URLs,
   backslashes, control characters, encoded traversal/external paths and malformed
   percent escapes fail closed. Checkout now sends a relative return path.

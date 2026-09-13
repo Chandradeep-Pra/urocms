@@ -49,6 +49,16 @@ export const AUTH_COOKIE = "__session";
 
 export function isSameOriginRequest(req: NextRequest) {
   try {
+    const requestUrl = new URL(req.url);
+    // Next.js normalizes loopback IPs in req.url; Host preserves the browser address.
+    const localUrl = new URL(`${requestUrl.protocol}//${req.headers.get("host") || requestUrl.host}`);
+    const origin = req.headers.get("origin");
+    // Local testing can retain the production canonical URL in its env file.
+    // Require an exact origin (including port), even on loopback.
+    if (["localhost", "127.0.0.1", "[::1]"].includes(requestUrl.hostname) &&
+        ["localhost", "127.0.0.1", "[::1]"].includes(localUrl.hostname) && origin === localUrl.origin) {
+      return true;
+    }
     const expected = process.env.NEXT_PUBLIC_SITE_URL ||
       (process.env.NODE_ENV === "production" ? "https://urologics.co.uk" : req.url);
     return req.headers.get("origin") === new URL(expected).origin;

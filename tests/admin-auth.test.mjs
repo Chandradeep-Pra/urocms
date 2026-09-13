@@ -117,6 +117,24 @@ test("cookie authentication verifies Firebase; mutations and logout enforce Orig
   assert.ok(logout.headers.get("set-cookie").includes("Max-Age=0"));
 });
 
+test("local logout accepts its exact loopback origin with a production site URL", async () => {
+  const { role } = setup({ NEXT_PUBLIC_SITE_URL: "https://urologics.co.uk" });
+  for (const host of ["localhost", "127.0.0.1", "[::1]"]) {
+    const origin = `http://${host}:3000`;
+    const response = await role.DELETE(new NextRequest(`${origin}/api/auth/role`, {
+      method: "DELETE", headers: { origin, host: `${host}:3000` },
+    }));
+    assert.equal(response.status, 200);
+    assert.ok(response.headers.get("set-cookie").includes("Max-Age=0"));
+  }
+  for (const origin of ["http://localhost:3001", "https://evil.test", "http://localhost.evil.test:3000"]) {
+    const response = await role.DELETE(new NextRequest("http://localhost:3000/api/auth/role", {
+      method: "DELETE", headers: { origin },
+    }));
+    assert.equal(response.status, 403);
+  }
+});
+
 test("server dashboard guard blocks missing, forged and non-admin cookies", async () => {
   const { access } = setup();
   let token;

@@ -1,5 +1,6 @@
 "use client"
 
+import { LogoutButton } from "@/components/LogoutButton"
 import { Button } from "@/components/ui/button"
 import {
   defaultCountryValue,
@@ -8,6 +9,7 @@ import {
   splitCountryValue,
   type CountryOption,
 } from "@/lib/countryOptions"
+import { usePortalRole } from "@/lib/usePortalRole"
 import { auth } from "@/lib/firebaseClient"
 import { getFriendlyFirebaseAuthError } from "@/lib/firebaseAuthErrors"
 import { completeSignupProfile } from "@/lib/signupCompletion"
@@ -97,18 +99,13 @@ export default function LoginPage() {
   const [countriesLoading, setCountriesLoading] = useState(false)
   const [phone, setPhone] = useState("")
   const [medicalInstitution, setMedicalInstitution] = useState("")
-  const [pendingAdminChoice, setPendingAdminChoice] = useState<{
-    token: string
-    provider: "email" | "google"
-    isSignUp?: boolean
-    studentDestination: string
-  } | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const initialAuthCheckedRef = useRef(false)
+  const [authUser, setAuthUser] = useState<User | null>(null)
+  const portalRole = usePortalRole(authUser)
   const signupInProgressRef = useRef(false)
   const selectedCountry = splitCountryValue(countryValue)
   const visibleCountries = useMemo(() => {
@@ -149,19 +146,14 @@ export default function LoginPage() {
 
   const routeAuthenticatedUser = async (
     user: User,
-    options: { provider: "email" | "google"; isSignUp?: boolean }
+    options: { provider: "email" | "google"; isSignUp?: boolean; student?: boolean }
   ) => {
     const token = await user.getIdToken(Boolean(options.isSignUp))
 
     const role = await verifyAdminAccess(token)
     if (auth.currentUser?.uid !== user.uid) return
-    if (role.isAdmin) {
-      setPendingAdminChoice({
-        token,
-        studentDestination: role.studentDestination,
-        provider: options.provider,
-        isSignUp: options.isSignUp,
-      })
+    if (role.isAdmin && !options.student) {
+      window.location.assign(role.destination)
       return
     }
 
@@ -172,35 +164,24 @@ export default function LoginPage() {
     }
 
     await syncTestingZoneAuth(user, token)
-    redirectNonAdmin(role.destination)
+    redirectNonAdmin("/web")
   }
 
   useEffect(() => {
     let cancelled = false
-    const shouldForceLogout = consumeRecentLogoutFlag()
+    let shouldForceLogout = consumeRecentLogoutFlag()
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (signupInProgressRef.current) return
-      if (initialAuthCheckedRef.current) return
-      initialAuthCheckedRef.current = true
-
-      if (shouldForceLogout && user) {
+      const forceLogout = shouldForceLogout
+      shouldForceLogout = false
+      if (forceLogout && user) {
         void signOut(auth)
         return
       }
-
-      if (!user || cancelled) return
-
-      setLoading(true)
-      void routeAuthenticatedUser(user, { provider: "email" })
-        .catch((err: unknown) => {
-          if (cancelled) return
-          console.error("Existing session redirect error:", err)
-          setError(getErrorMessage(err, "Failed to restore existing session"))
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false)
-        })
+      if (!cancelled) {
+        setAuthUser(user)
+      }
     })
 
     return () => {
@@ -209,40 +190,20 @@ export default function LoginPage() {
     }
   }, [])
 
-  const continueAsUser = async () => {
-    if (!pendingAdminChoice) return
-
+  const continueToPortal = async (student = false) => {
+    if (!authUser || isBusy) return
+    setError("")
     try {
       setLoading(true)
-      if (pendingAdminChoice.provider === "google") {
-        await completeGoogleOnboarding(pendingAdminChoice.token)
-      } else if (pendingAdminChoice.isSignUp) {
-        await completeEmailOnboarding(pendingAdminChoice.token)
-      }
-
-      if (auth.currentUser) {
-        await syncTestingZoneAuth(auth.currentUser, pendingAdminChoice.token)
-      }
-
-      redirectNonAdmin(pendingAdminChoice.studentDestination)
-    } catch (err: unknown) {
-      console.error("User redirect error:", err)
-      setError(getErrorMessage(err, "Failed to continue as user"))
-      setPendingAdminChoice(null)
+      await routeAuthenticatedUser(authUser, {
+        student,
+        provider: authUser.providerData.some((provider) => provider.providerId === "google.com") ? "google" : "email",
+      })
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to open portal"))
     } finally {
       setLoading(false)
     }
-  }
-
-  const continueAsAdmin = async () => {
-    if (!auth.currentUser || !pendingAdminChoice) return
-    try {
-      setLoading(true)
-      const role = await verifyAdminAccess(await auth.currentUser.getIdToken())
-      window.location.assign(role.destination)
-    } catch (err) {
-      setError(getErrorMessage(err, "Failed to verify admin access"))
-    } finally { setLoading(false) }
   }
 
   const login = async () => {
@@ -252,9 +213,9 @@ export default function LoginPage() {
 
     try {
       setLoading(true)
-      initialAuthCheckedRef.current = true
       const credential = await signInWithEmailAndPassword(auth, normalizedEmail, password)
-      await routeAuthenticatedUser(credential.user, { provider: "email" })
+      setAuthUser(credential.user)
+      setPassword("")
     } catch (err: unknown) {
       console.error("Login error:", err)
       setError(getErrorMessage(err, "Invalid email or password"))
@@ -363,9 +324,8 @@ export default function LoginPage() {
         prompt: "select_account",
       })
 
-      initialAuthCheckedRef.current = true
       const credential = await signInWithPopup(auth, provider)
-      await routeAuthenticatedUser(credential.user, { provider: "google" })
+      setAuthUser(credential.user)
     } catch (err: unknown) {
       console.error("Google login error:", err)
       setError(getErrorMessage(err, "Google sign-in failed"))
@@ -388,6 +348,7 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {!authUser && <>
         <div className="grid grid-cols-2 rounded-2xl border border-[#0f7896]/14 bg-cyan-50 p-1">
           <button
             type="button"
@@ -451,7 +412,7 @@ export default function LoginPage() {
               <label className="text-sm font-semibold text-[#071014]/68">
                 {mode === "signup" ? "Enter Password" : "Password"}
               </label>
-              {mode === "login" ? (
+              {!authUser && mode === "login" ? (
                 <button
                   type="button"
                   onClick={sendPasswordReset}
@@ -553,12 +514,17 @@ export default function LoginPage() {
           {error && <p className="text-sm text-red-400">{error}</p>}
         </div>
 
+        </>}
+        {authUser && <p className="text-center text-sm text-[#071014]/68">Signed in as {authUser.email}</p>}
+        {portalRole.error && <p role="alert" className="text-sm text-red-400">{portalRole.error}</p>}
+        {authUser && error && <p role="alert" className="text-sm text-red-400">{error}</p>}
+        <div className="flex items-center gap-3">
         <Button
-          onClick={mode === "login" ? login : signup}
-          disabled={isBusy}
-          className="w-full rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-6 text-base font-bold text-white shadow-[0_12px_36px_rgba(15,120,150,0.24)] hover:from-[#1294ba] hover:to-[#0f7896]"
+          onClick={authUser ? (portalRole.error ? portalRole.retry : () => continueToPortal()) : mode === "login" ? login : signup}
+          disabled={isBusy || portalRole.checking}
+          className="min-w-0 h-auto min-h-12 flex-1 whitespace-normal rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-6 text-base font-bold text-white shadow-[0_12px_36px_rgba(15,120,150,0.24)] hover:from-[#1294ba] hover:to-[#0f7896]"
         >
-          {loading
+          {authUser ? (portalRole.checking ? "Checking access..." : portalRole.error ? "Retry access check" : loading ? "Opening portal..." : portalRole.isAdmin ? "Continue as Admin" : "Continue to Urologics Web") : loading
             ? mode === "login"
               ? "Signing in..."
               : "Creating account..."
@@ -566,8 +532,11 @@ export default function LoginPage() {
               ? "Sign in"
               : "Create account"}
         </Button>
+        {authUser && portalRole.isAdmin && <Button type="button" variant="outline" disabled={isBusy} onClick={() => continueToPortal(true)} className="h-auto min-h-12 whitespace-normal rounded-2xl">Student</Button>}
+        {authUser && <LogoutButton disabled={isBusy} />}
+        </div>
 
-        {mode === "login" ? (
+        {!authUser && mode === "login" ? (
           <>
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-[#0f7896]/14" />
@@ -598,44 +567,10 @@ export default function LoginPage() {
         ) : null}
 
         <p className="text-center text-xs text-[#071014]/45">
-          Non-admin users continue to the app after authentication
+          Choose your destination after signing in.
         </p>
       </div>
 
-      {pendingAdminChoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#071014]/55 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[32px] border border-[#0f7896]/14 bg-white p-6 text-[#071014] shadow-[0_24px_70px_rgba(15,120,150,0.18)]">
-            <div className="space-y-2 text-center">
-              <h2 className="text-2xl font-extrabold text-[#0f7896]">
-                Continue as
-              </h2>
-              <p className="text-sm text-[#071014]/58">
-                This account has admin access. Choose where you want to go.
-              </p>
-            </div>
-
-            <div className="mt-6 grid gap-3">
-              <Button
-                type="button"
-                onClick={continueAsAdmin}
-                disabled={isBusy}
-                className="w-full rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-6 text-base font-bold text-white hover:from-[#1294ba] hover:to-[#0f7896]"
-              >
-                Admin dashboard
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={continueAsUser}
-                disabled={isBusy}
-                className="w-full rounded-2xl border border-[#0f7896]/16 bg-white py-6 text-base font-bold text-[#071014] hover:bg-cyan-50"
-              >
-                {loading ? "Opening app..." : "User app"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
