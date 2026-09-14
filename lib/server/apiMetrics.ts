@@ -32,7 +32,6 @@ export function jsonWithApiMetrics(
   options: JsonResponseOptions
 ) {
   const status = options.status ?? 200;
-  const byteSize = getJsonByteSize(payload);
   const durationMs = Math.round(performance.now() - options.startedAt);
 
   if (shouldLogApiMetrics()) {
@@ -41,7 +40,7 @@ export function jsonWithApiMetrics(
       route: options.route,
       status,
       durationMs,
-      responseBytes: byteSize,
+      responseBytes: getJsonByteSize(payload),
       userId: options.userId ?? undefined,
       itemCount: options.itemCount ?? undefined,
     });
@@ -49,7 +48,11 @@ export function jsonWithApiMetrics(
 
   return NextResponse.json(payload, {
     status,
-    headers: options.headers,
+    headers: (() => {
+      const headers = new Headers(options.headers);
+      headers.set("Server-Timing", `api;dur=${durationMs}`);
+      return headers;
+    })(),
   });
 }
 

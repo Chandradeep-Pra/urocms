@@ -191,7 +191,8 @@ export default function DriveVideoPanel() {
   useEffect(() => {
     if (activeFolderId) {
       loadFolderContents(activeFolderId);
-      loadPermissions(activeFolderId);
+      setPermissions([]);
+      setPermissionsError(null);
     }
   }, [activeFolderId]);
 

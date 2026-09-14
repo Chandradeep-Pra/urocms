@@ -9,7 +9,6 @@ import {
   getDriveFileDebugInfo,
   getDriveFileMetadata,
   getDriveServiceAccountDebugInfo,
-  grantDriveAccessToEmail,
 } from "@/lib/server/googleDrive";
 import {
   deleteCloudStorageObject,
@@ -365,15 +364,12 @@ export async function playVideoFromFirestore(input: PlayVideoFromFirestoreInput)
     playback = {
       provider: "storage",
       url: signedUrl.url,
+      expiresAt: signedUrl.expiresAt,
       mimeType: data.mimeType || "video/mp4",
       storagePath: data.storagePath,
       storageBucket: signedUrl.bucket,
     };
   } else if (provider === "drive" && data.driveFileId) {
-    if (effectiveAccessTier === "paid" && accessEmail) {
-      await grantDriveAccessToEmail(accessEmail, [data.driveFileId]);
-    }
-
     playback = {
       provider: "drive",
       driveFileId: data.driveFileId,

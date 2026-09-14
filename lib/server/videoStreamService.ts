@@ -6,9 +6,7 @@ import { type AppUserSession } from "@/lib/server/appSession";
 import { getCloudStorageReadStream } from "@/lib/server/googleCloudStorage";
 import {
   fetchDriveFileStream,
-  getDriveFileDebugInfo,
   getDriveFileMetadata,
-  grantDriveAccessToEmail,
 } from "@/lib/server/googleDrive";
 
 function normalizeEffectiveVideoTier(video: Record<string, unknown>) {
@@ -65,7 +63,7 @@ export async function buildDriveVideoStreamResponse(params: {
     headers.set("cache-control", "private, max-age=0, must-revalidate");
     headers.set("x-content-type-options", "nosniff");
 
-    return new NextResponse(Readable.toWeb(storageResponse.stream) as never, {
+    return new NextResponse(storageResponse.stream ? Readable.toWeb(storageResponse.stream) as never : null, {
       status: storageResponse.status,
       headers,
     });
@@ -94,17 +92,7 @@ export async function buildDriveVideoStreamResponse(params: {
     }
   }
 
-  const accessEmail = params.user?.googleAccessEmail || params.user?.email || null;
-  if (params.mode === "app" && accessTier === "paid" && accessEmail) {
-    await grantDriveAccessToEmail(accessEmail, [video.driveFileId]);
-  }
-
   const metadata = await getDriveFileMetadata(video.driveFileId);
-  if (params.mode === "admin") {
-    const debugInfo = await getDriveFileDebugInfo(video.driveFileId);
-    console.log("Admin Drive debug info:", debugInfo);
-  }
-
   const upstream = await fetchDriveFileStream(video.driveFileId, params.rangeHeader);
   const headers = new Headers();
   const passthroughHeaders = [

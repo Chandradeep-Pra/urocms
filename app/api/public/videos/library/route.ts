@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { CACHE_HEADERS, jsonWithApiMetrics, publicJsonResponse } from "@/lib/server/apiMetrics";
 import type { DocumentData, Query } from "firebase-admin/firestore";
+import { videoCatalogDto } from "@/lib/server/videoCatalogDto";
 
 type VideoDocument = Record<string, unknown> & {
   sectionId?: unknown;
@@ -61,8 +62,7 @@ export async function GET(req: NextRequest) {
           accessTier === "paid" || sectionAccessTier === "paid" ? "paid" : "free";
 
         return {
-          id: doc.id,
-          ...data,
+          ...videoCatalogDto(doc.id, data),
           accessTier,
           sectionAccessTier,
           effectiveAccessTier,
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
           isSyncedToCloudStorage: Boolean(data.storagePath),
         };
       })
-      .filter((video) => (video.provider === "drive" ? Boolean(video.storagePath) : true))
+      .filter((video) => (video.provider === "drive" ? video.isSyncedToCloudStorage : true))
       .sort((a, b) => {
         const sectionA = sectionMeta.get(String(a.sectionId || ""))?.sortOrder ?? Number.MAX_SAFE_INTEGER;
         const sectionB = sectionMeta.get(String(b.sectionId || ""))?.sortOrder ?? Number.MAX_SAFE_INTEGER;

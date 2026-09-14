@@ -195,3 +195,28 @@ and Drive settings; Firebase authentication credentials remain separate.
 The Cloud Build image destination now uses the existing
 `cloud-run-source-deploy/urologics-web` repository. Local key JSON and temporary
 verification/deployment files are excluded from Docker and Cloud Build sources.
+
+Validation: local `npm run build` passed, and 15 auth/Cloud Run/Hosting tests
+passed. Cloud Build `13673b7d-7d1d-4943-81d3-56abaa2c5787` succeeded in
+`asia-south1`. Revision `urologics-web-00009-9c2` is ready and receives 100% of
+traffic. Live `/api/health` and `/login` returned 200; unauthenticated admin
+stream access returned 401. A signed video range request using the deployed
+storage credentials returned 206 with `video/mp4`. Full browser playback and
+codec compatibility across the video library were not exhaustively tested.
+
+## Cloud Shell builds from .env.prod
+
+With the updated repository and `.env.prod` present in the project root, run:
+
+```sh
+node scripts/cloud-build.mjs --check
+node scripts/cloud-build.mjs
+```
+
+Requires Node.js 20.12+ and an authenticated gcloud CLI. The helper reads
+`.env.prod` locally, validates required public browser settings, and submits
+`cloudbuild.yaml` with only its seven approved public substitutions. The env
+file stays excluded from the uploaded source. Firebase browser values continue
+to identify `urologics`; the build target is `proud-woods-489814-s6`.
+This command builds and pushes an image; it does not change Cloud Run runtime
+secrets or deploy a new revision.

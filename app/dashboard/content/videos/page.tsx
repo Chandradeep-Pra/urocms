@@ -1,15 +1,25 @@
 "use client";
 
 import DeleteVideoDialog from "@/components/videos/DeleteDialog";
-import DriveVideoPanel from "@/components/videos/DriveVideoPanel";
+import dynamic from "next/dynamic";
+import { Cloud, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import SectionSidebar from "@/components/videos/SelectionSidebar";
 import VideoGrid from "@/components/videos/VideoGrid";
 import VideoHeader from "@/components/videos/VideoHeader";
-import VideoPlayerLayout from "@/components/videos/VideoPlayerLayout";
 import { adminFetch } from "@/lib/client/adminApi";
 import { syncVideoToStorage } from "@/lib/services/videoAdminClient";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
+
+const DriveVideoPanel = dynamic(() => import("@/components/videos/DriveVideoPanel"), {
+  loading: () => (
+    <aside aria-busy="true" aria-label="Loading Drive folders" className="w-[340px] shrink-0 space-y-4 border-l bg-white p-4 xl:w-[360px]">
+      {[1, 2, 3, 4].map(item => <div key={item} className="h-12 animate-pulse rounded bg-zinc-100 motion-reduce:animate-none" />)}
+    </aside>
+  ),
+});
+const VideoPlayerLayout = dynamic(() => import("@/components/videos/VideoPlayerLayout"));
 
 export interface Section {
   id: string;
@@ -45,6 +55,7 @@ interface BulkSyncProgress {
 }
 
 export default function AdminVideoPage() {
+  const [showDrive, setShowDrive] = useState(false);
   const [sections, setSections] = useState<Section[]>([]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [activeSection, setActiveSection] = useState("all");
@@ -177,6 +188,12 @@ export default function AdminVideoPage() {
         onSyncRemaining={syncRemainingVideos}
       />
 
+      <div className="flex justify-end border-b border-zinc-200 px-4 py-2">
+        <Button variant="outline" aria-expanded={showDrive} onClick={() => setShowDrive(value => !value)}>
+          {showDrive ? <X className="h-4 w-4" /> : <Cloud className="h-4 w-4" />}
+          {showDrive ? "Close Drive" : "Open Drive"}
+        </Button>
+      </div>
       <div className="flex min-h-[calc(100vh-160px)] w-full items-start">
         <SectionSidebar
           sections={sectionsWithCounts}
@@ -197,11 +214,11 @@ export default function AdminVideoPage() {
           />
         </div>
 
-        <DriveVideoPanel />
-        <VideoPlayerLayout
+        {showDrive && <DriveVideoPanel />}
+        {activeVideo && <VideoPlayerLayout
           video={activeVideo}
           onClose={() => setActiveVideo(null)}
-        />
+        />}
       </div>
 
       <DeleteVideoDialog

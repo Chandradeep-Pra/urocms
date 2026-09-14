@@ -3,6 +3,7 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { requireAppUser } from "@/lib/server/appSession";
 import { privateJsonResponse } from "@/lib/server/apiMetrics";
+import { videoCatalogDto } from "@/lib/server/videoCatalogDto";
 import type { DocumentData, Query } from "firebase-admin/firestore";
 
 type VideoDocument = Record<string, unknown> & {
@@ -59,8 +60,7 @@ export async function GET(req: NextRequest) {
       .map((doc, index) => {
         const data = doc.data() as VideoDocument;
         return ({
-        id: doc.id,
-        ...data,
+        ...videoCatalogDto(doc.id, data),
         accessTier: data.accessTier === "paid" ? "paid" : "free",
         effectiveAccessTier:
           data.effectiveAccessTier === "paid" ? "paid" : "free",
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
       });
 
     const videos = allVideos.filter((video) =>
-      video.provider === "drive" ? Boolean(video.storagePath) : true
+      video.provider === "drive" ? video.isSyncedToCloudStorage : true
     ).sort((a, b) => {
       const sectionA = sectionOrderMap.get(String(a.sectionId || "")) ?? Number.MAX_SAFE_INTEGER;
       const sectionB = sectionOrderMap.get(String(b.sectionId || "")) ?? Number.MAX_SAFE_INTEGER;

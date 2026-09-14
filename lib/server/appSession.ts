@@ -26,10 +26,6 @@ export interface AppUserSession {
   vivaMinutesUsed: number;
 }
 
-function getDefaultTier(): AppTier {
-  return "guest";
-}
-
 function normalizeTier(value: unknown): AppTier {
   return value === "paid" || value === "free" || value === "guest" ? value : "guest";
 }
@@ -78,33 +74,32 @@ export async function requireAppUser(req: NextRequest) {
     const isAnonymousWithoutEmail =
       decoded.firebase.sign_in_provider === "anonymous" && !normalizeEmail(decoded.email);
 
-    if (!userDoc.exists) {
-      if (isAnonymousWithoutEmail) {
-        return {
-          user: createTransientGuestSession(decoded),
-        };
-      }
-
-      const defaultTier = getDefaultTier();
-      const nextUser = {
-        email: decoded.email ?? null,
-        name: decoded.name ?? null,
-        tier: defaultTier,
-        googleAccessEmail: decoded.email ?? null,
-        source: decoded.firebase.sign_in_provider ?? null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await userRef.set(nextUser, { merge: true });
+    if (!userDoc.exists && isAnonymousWithoutEmail) {
+      return { user: createTransientGuestSession(decoded) };
     }
 
-    const resolved = await resolveCanonicalUserRecord({
+    // Migrated identities already have a canonical pointer. Normal reads must
+    // not run duplicate-account reconciliation or rewrite the profile.
+    const existing = userDoc.data();
+    const canonicalId = typeof existing?.canonicalUserId === "string" ? existing.canonicalUserId : "";
+    const sameEmail = normalizeEmail(existing?.email) === normalizeEmail(decoded.email);
+    let resolved: { uid: string; userData: FirebaseFirestore.DocumentData | undefined } | undefined;
+    if (userDoc.exists && canonicalId && sameEmail) {
+      const canonicalDoc = canonicalId === decoded.uid
+        ? userDoc
+        : await getAdminDb().collection("users").doc(canonicalId).get();
+      if (canonicalDoc.exists && normalizeEmail(canonicalDoc.data()?.email) === normalizeEmail(decoded.email)) {
+        resolved = { uid: canonicalId, userData: canonicalDoc.data() };
+      }
+    }
+    resolved ??= await resolveCanonicalUserRecord({
       authUid: decoded.uid,
       email: normalizeEmail(decoded.email),
       signInProvider: decoded.firebase.sign_in_provider ?? null,
       firebaseName: decoded.name ?? null,
       source: decoded.firebase.sign_in_provider ?? null,
+      currentSnapshot: userDoc,
+      readOnly: true,
     });
     const user = resolved.userData ?? {};
 

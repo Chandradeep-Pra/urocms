@@ -1,3 +1,4 @@
+import type { DocumentSnapshot } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import {
   getBookmarksCollection,
@@ -289,6 +290,8 @@ async function mergeUserScopedData(fromUid: string, toUid: string) {
 }
 
 export async function resolveCanonicalUserRecord(params: {
+  readOnly?: boolean;
+  currentSnapshot?: DocumentSnapshot;
   authUid: string;
   email: string | null;
   signInProvider?: string | null;
@@ -297,7 +300,7 @@ export async function resolveCanonicalUserRecord(params: {
 }) {
   const normalizedEmail = normalizeEmail(params.email);
   const currentRef = getAdminDb().collection("users").doc(params.authUid);
-  const currentSnap = await currentRef.get();
+  const currentSnap = params.currentSnapshot ?? await currentRef.get();
   const currentData = currentSnap.data() ?? {};
 
   if (!normalizedEmail || params.signInProvider === "anonymous") {
@@ -423,6 +426,18 @@ export async function resolveCanonicalUserRecord(params: {
     canonicalUserId: canonical.id,
     isShadowDuplicate: false,
   };
+
+  // Legacy identities keep their combined access until explicit reconciliation.
+  // Routine reads must not migrate subcollections or mutate either account.
+  if (params.readOnly) {
+    return {
+      uid: canonical.id,
+      userDocRef: canonicalRef,
+      userData: mergedPayload,
+      mergedUserCount: 0,
+      canonicalUserId: canonical.id,
+    };
+  }
 
   await canonicalRef.set(mergedPayload, { merge: true });
 

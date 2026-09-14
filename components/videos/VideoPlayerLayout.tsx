@@ -6,6 +6,7 @@ import { Play, Pause, X, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { adminFetch } from "@/lib/client/adminApi";
+import { attachSignedPlayback } from "@/lib/client/signedPlayback";
 
 interface Props {
   video: { id?: string; videoUrl: string } | null;
@@ -63,7 +64,7 @@ export default function VideoPlayerLayout({
   const [progress, setProgress] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [resolvedPlayback, setResolvedPlayback] = useState<{ playback?: { provider: string; url: string; streamUrl: string } } | null>(null);
+  const [resolvedPlayback, setResolvedPlayback] = useState<{ playback?: { provider: string; url: string; streamUrl: string; expiresAt?: number } } | null>(null);
   const [loadingPlayback, setLoadingPlayback] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
 
@@ -141,6 +142,21 @@ export default function VideoPlayerLayout({
     }
   }, [video]);
 
+  useEffect(() => {
+    const source = resolvedPlayback?.playback;
+    if (loadingPlayback || source?.provider !== "storage" || !videoRef.current || !video?.id) return;
+    return attachSignedPlayback(videoRef.current, source, async () => {
+      const response = await adminFetch(`/api/videos/videoItem/${video.id}/play`);
+      if (!response.ok) throw new Error("Playback renewal failed");
+      const result = await response.json();
+      if (result.playback?.provider !== "storage") throw new Error("Playback source changed");
+      return result.playback;
+    }, message => {
+      setPlaying(false);
+      if (!message.startsWith("Playback paused.")) setPlaybackError(message);
+    });
+  }, [loadingPlayback, resolvedPlayback, video?.id]);
+
   /* Autoplay */
   useEffect(() => {
     if (!video || loadingPlayback || !videoRef.current) return;
@@ -191,8 +207,12 @@ export default function VideoPlayerLayout({
     if (!videoRef.current) return;
 
     if (videoRef.current.paused) {
-      await videoRef.current.play();
-      setPlaying(true);
+      try {
+        await videoRef.current.play();
+        setPlaying(true);
+      } catch {
+        setPlaying(false);
+      }
     } else {
       videoRef.current.pause();
       setPlaying(false);
@@ -278,12 +298,14 @@ export default function VideoPlayerLayout({
                 />
               ) : (
                 <video
-                  key={parsed?.provider === "file" ? parsed.streamUrl : video.id}
+                  key={video.id}
                   ref={videoRef}
                   onPlay={() => setPlaying(true)}
                   onPause={() => setPlaying(false)}
                   onEnded={() => setPlaying(false)}
-                  onError={() => setPlaybackError("Unable to play this video. Check that the configured service account can read the file and that its format is supported by your browser.")}
+                  onError={() => {
+                    if (resolvedPlayback?.playback?.provider !== "storage") setPlaybackError("Unable to play this video. Close the player and open the lesson again to retry.");
+                  }}
                   src={parsed?.provider === "file" ? parsed.streamUrl : undefined}
                   className={`${
                     isFullscreen
@@ -292,7 +314,7 @@ export default function VideoPlayerLayout({
                   }`}
                   onTimeUpdate={handleTimeUpdate}
                   controls={false}
-                  preload="auto"
+                  preload="metadata"
                   playsInline
                   autoPlay
                 />

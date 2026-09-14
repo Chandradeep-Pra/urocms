@@ -1,3 +1,4 @@
+import { parseByteRange } from "@/lib/server/byteRange";
 import { Storage } from "@google-cloud/storage";
 import type { Bucket } from "@google-cloud/storage";
 import { normalizePrivateKey } from "@/lib/server/credentials";
@@ -97,15 +98,17 @@ export async function getCloudStorageSignedReadUrl(input: {
     ? getStorageClient().bucket(input.storageBucket)
     : await getResolvedGoogleCloudStorageBucket();
 
+  const expiresAt = Date.now() + 1000 * 60 * 15;
   const [url] = await bucket.file(input.storagePath).getSignedUrl({
     action: "read",
-    expires: Date.now() + 1000 * 60 * 15,
+    expires: expiresAt,
     responseDisposition: "inline",
     ...(input.mimeType ? { responseType: input.mimeType } : {}),
   });
 
   return {
     url,
+    expiresAt,
     bucket: bucket.name,
   };
 }
@@ -122,13 +125,18 @@ export async function getCloudStorageReadStream(input: {
   const [metadata] = await file.getMetadata();
   const size = Number(metadata.size || 0);
   const contentType = String(metadata.contentType || "video/mp4");
-  const range = input.rangeHeader?.match(/bytes=(\d*)-(\d*)/);
+  const range = parseByteRange(input.rangeHeader, size);
+  if (range === false) {
+    return {
+      stream: null,
+      status: 416,
+      headers: { "content-range": `bytes */${size}`, "accept-ranges": "bytes" },
+    };
+  }
 
-  if (range && size > 0) {
-    const start = range[1] ? Number(range[1]) : 0;
-    const end = range[2] ? Number(range[2]) : size - 1;
-    const safeStart = Number.isFinite(start) ? Math.max(0, start) : 0;
-    const safeEnd = Number.isFinite(end) ? Math.min(size - 1, end) : size - 1;
+  if (range) {
+    const safeStart = range.start;
+    const safeEnd = range.end;
 
     return {
       stream: file.createReadStream({ start: safeStart, end: safeEnd }),
