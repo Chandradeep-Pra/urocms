@@ -42,3 +42,5 @@ next-env.d.ts
 
 # Local Google service account key
 /proud-woods-489814-s6-e66cf26d56db.json
+/google-creds.json
+.deployment/

@@ -182,3 +182,16 @@ References: [Cloud Run container contract](https://docs.cloud.google.com/run/doc
   No cloud deployment was performed.
 
 For current migration verification and remaining auth limitations, see [firebase-hosting.md](firebase-hosting.md).
+
+## Video playback credential fix (2026-09-14)
+
+Stored videos use `GOOGLE_APPLICATION_CREDENTIALS_JSON` to sign Cloud Storage
+URLs, independently of the Drive email/key settings. The old storage signer
+returned HTTP 403 for `urology-premium` objects. The configured `new-ai-model`
+account in `proud-woods-489814-s6` successfully returns HTTP 206 for the same
+object. Keep that account's matching credentials in the runtime storage JSON
+and Drive settings; Firebase authentication credentials remain separate.
+
+The Cloud Build image destination now uses the existing
+`cloud-run-source-deploy/urologics-web` repository. Local key JSON and temporary
+verification/deployment files are excluded from Docker and Cloud Build sources.

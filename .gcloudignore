@@ -28,3 +28,6 @@ node_modules/
 *.tsbuildinfo
 .agents/
 .codex/
+proud-woods-489814-s6-e66cf26d56db.json
+.local-login-check.html
+.deployment/
