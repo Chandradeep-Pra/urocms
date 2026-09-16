@@ -67,6 +67,7 @@ export type PricingPlan = {
 };
 
 export type PricingPlanVersion = {
+  apple?: import("@/lib/apple-plans").ApplePlanPricing;
   id: string;
   months: number;
   price: number;
@@ -135,6 +136,9 @@ export type PlanFormValues = {
 };
 
 export type PlanVersionFormValues = {
+  appleEnabled: boolean;
+  applePrice: string;
+  appleProductId: string;
   id: string;
   months: number;
   price: string;

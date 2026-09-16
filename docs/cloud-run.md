@@ -104,6 +104,10 @@ Inject server secrets using Cloud Run Secret Manager environment references:
 - Integrations: `GEMINI_API_KEY`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`,
   `EMAIL_USER`, `EMAIL_PASS`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,
   `PAYPAL_MODE`, and `PAYMENT_QUERY_TASK_SECRET` for enabled features.
+- Gemini uses the server-only `@google/genai` client. A missing or blank
+  `GEMINI_API_KEY` fails validation before making a generation request.
+  Optional `GEMINI_MODEL` defaults to `gemini-2.5-flash`; keep both settings
+  in the server runtime environment, never under a `NEXT_PUBLIC_` name.
 - Preserve other applicable settings such as `ADMIN_ALLOWED_EMAILS`, `TAX`,
   `GOOGLE_CLOUD_PROJECT`, `PAYMENT_QUERY_TASK_LOCATION`,
   `PAYMENT_QUERY_TASK_QUEUE`, and `PAYMENT_QUERY_TASK_URL`.

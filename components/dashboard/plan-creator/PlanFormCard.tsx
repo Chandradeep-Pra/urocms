@@ -421,6 +421,29 @@ export function PlanFormCard({
                         </div>
                       </div>
 
+                      <fieldset className="mt-4 space-y-4 border-t border-slate-200 pt-4">
+                        <legend className="text-sm font-semibold">Apple / iOS</legend>
+                        <label className="flex items-center gap-2 text-sm">
+                          <input type="checkbox" checked={version.appleEnabled}
+                            onChange={event => updateVersion(version.id, { appleEnabled: event.target.checked })} />
+                          Available on Apple
+                        </label>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor={`${version.id}-apple-price`}>iOS price (GBP)</Label>
+                            <Input id={`${version.id}-apple-price`} type="number" min="0" step="0.01"
+                              value={version.applePrice}
+                              onChange={event => updateVersion(version.id, { applePrice: event.target.value })} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`${version.id}-apple-product`}>App Store product ID</Label>
+                            <Input id={`${version.id}-apple-product`} value={version.appleProductId}
+                              onChange={event => updateVersion(version.id, { appleProductId: event.target.value })}
+                              autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+                          </div>
+                        </div>
+                      </fieldset>
+
                       <div className="mt-4">
                         <div className="space-y-2">
                           <Label>Embedded link (optional)</Label>

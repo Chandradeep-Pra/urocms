@@ -1,33 +1,19 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import "server-only";
+import { GoogleGenAI, type GenerateContentConfig } from "@google/genai";
 
-export function getGeminiModel() {
+export function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
-
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured");
+    throw new Error("GEMINI_API_KEY is missing or blank. Configure it in the server runtime environment.");
   }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-
-  return genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-  });
+  return new GoogleGenAI({ apiKey });
 }
 
-export function getGeminiJsonModel() {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-
-  return genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    generationConfig: {
-      responseMimeType: "application/json",
-      temperature: 0,
-    },
-  });
+export function getGeminiModelName() {
+  return process.env.GEMINI_MODEL?.trim() || "gemini-3.6-flash";
 }
+
+export const GEMINI_JSON_CONFIG = {
+  responseMimeType: "application/json",
+  temperature: 0,
+} satisfies GenerateContentConfig;

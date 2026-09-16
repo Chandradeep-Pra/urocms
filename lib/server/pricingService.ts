@@ -1,6 +1,7 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { frcsPricingPresets } from "@/lib/pricingPresets";
+import { parseApplePlanPricing, validateApplePlanPricing, type ApplePlanPricing } from "@/lib/apple-plans";
 
 export type PlanSelection = {
   chapterIds: string[];
@@ -18,6 +19,7 @@ export type PlanAccessScopes = {
 };
 
 export type PricingPlanVersionInput = {
+  apple?: ApplePlanPricing;
   id: string;
   months: number;
   price: number;
@@ -115,6 +117,7 @@ function parsePricingPlanVersions(body: any): PricingPlanVersionInput[] {
   const rawVersions = Array.isArray(body?.versions) ? body.versions : [];
 
   return rawVersions.map((version: any, index: number) => ({
+    apple: parseApplePlanPricing(version?.apple),
     id: String(version?.id ?? `version-${index + 1}`).trim() || `version-${index + 1}`,
     months: Number(version?.months ?? 0),
     price: Number(version?.price ?? 0),
@@ -213,6 +216,7 @@ async function resolvePlanVersionPricing(
 
   return {
     id: version.id,
+    apple: parseApplePlanPricing(version.apple),
     months: version.months,
     price: originalPrice,
     ...discount,
@@ -273,6 +277,8 @@ export function validatePricingPlanInput(input: PricingPlanInput) {
   }
 
   for (const version of input.versions) {
+    const appleError = validateApplePlanPricing(parseApplePlanPricing(version.apple));
+    if (appleError) return appleError;
     if (!Number.isFinite(version.price) || version.price < 0) {
       return "Each version must have a valid price";
     }
@@ -281,6 +287,9 @@ export function validatePricingPlanInput(input: PricingPlanInput) {
       return "Each version must have a valid duration in months";
     }
   }
+
+  const productIds = input.versions.map(version => version.apple?.productId).filter(Boolean);
+  if (new Set(productIds).size !== productIds.length) return "Each iOS duration must have a distinct App Store product ID";
 
   return null;
 }
@@ -423,6 +432,7 @@ export async function loadPricingAdminData() {
       discountedPrice: Number(data.discountedPrice ?? data.price ?? 0),
       versions: Array.isArray(data.versions)
         ? data.versions.map((version: any, index: number) => ({
+            apple: parseApplePlanPricing(version?.apple),
             id: String(version?.id ?? `version-${index + 1}`),
             months: Number(version?.months ?? 0),
             price: Number(version?.price ?? version?.originalPrice ?? 0),

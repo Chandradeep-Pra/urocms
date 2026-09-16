@@ -167,6 +167,7 @@ export default function PlanCreatorPage() {
         : [
             {
               id: "legacy-default",
+              apple: undefined,
               months: Number(plan.expiryMonths || 3),
               price: Number(plan.originalPrice ?? plan.price ?? 0),
               couponId: plan.couponId || "",
@@ -185,6 +186,9 @@ export default function PlanCreatorPage() {
         createEmptyPlanVersion(Number(version.months || 3), {
           id: String(version.id || `version-${index + 1}`),
           price: String(version.price ?? version.originalPrice ?? ""),
+          appleEnabled: version.apple?.enabled ?? false,
+          applePrice: version.apple?.price == null ? "" : String(version.apple.price),
+          appleProductId: version.apple?.productId ?? "",
           couponId: "",
           embeddedLink: version.embeddedLink || "",
           durationLabel: version.durationLabel || "",
@@ -229,6 +233,12 @@ export default function PlanCreatorPage() {
         id: version.id,
         months: Number(version.months),
         price: Number(version.price),
+        apple: {
+          enabled: version.appleEnabled,
+          price: version.applePrice.trim() === "" ? null : Number(version.applePrice),
+          productId: version.appleProductId.trim(),
+          currency: "GBP",
+        },
         couponId: version.couponId,
         embeddedLink: version.embeddedLink.trim(),
         durationLabel: version.durationLabel.trim(),

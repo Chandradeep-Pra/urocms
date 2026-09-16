@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SortableQuestionList } from "@/components/viva/SortableQuestionList";
-import { Loader2, Sparkles } from "lucide-react";
+import { Import, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/client/adminApi";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,9 @@ export function VivaQuestionSetupDialog({
     Math.max(0, modeConfig.questions.length - 1)
   );
   const isCalm = mode === "calmAndComposed";
+  const sourceMode = isCalm ? "fastAndFurious" : "calmAndComposed";
+  const sourceLabel = isCalm ? "Fast and Furious" : "Calm and Composed";
+  const sourceQuestions = form.modes[sourceMode]?.questions.filter(question => question.question.trim()) ?? [];
   const questionCount = modeConfig.questionCount;
   const totalExhibits = form.exhibits.length;
   const configuredQuestions = modeConfig.questions.filter((question) =>
@@ -92,8 +95,42 @@ export function VivaQuestionSetupDialog({
     toast.success("Question deleted", { description: "Save or apply changes when you are finished." });
   };
 
+  const importQuestions = () => {
+    if (generating || saving) return;
+    const seen = new Set(modeConfig.questions.map(question => question.question.trim().toLowerCase()).filter(Boolean));
+    const imported = sourceQuestions.filter(question => {
+      const key = question.question.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (!imported.length) {
+      toast.error("These questions are already in this mode");
+      return;
+    }
+    const questions = [...modeConfig.questions];
+    let slot = 0;
+    for (const question of imported) {
+      while (slot < questions.length && questions[slot].question.trim()) slot++;
+      const copy = {
+        ...question,
+        id: questions[slot]?.id ?? createFastQuestion().id,
+        answerKeywords: [...question.answerKeywords],
+        linkedExhibitIds: [...question.linkedExhibitIds],
+      };
+      questions[slot++] = copy;
+    }
+    onQuestionsChange(questions);
+    setLeftPanelTab("questions");
+    toast.success(`Imported ${imported.length} questions from ${sourceLabel}. Save or apply changes when ready.`);
+  };
+
   const generateSampleQuestions = async () => {
-    if (generating || remainingCount === 0) return;
+    if (generating || saving) return;
+    if (remainingCount === 0) {
+      toast.error("All question slots are filled. Increase Question Count to generate more questions without replacing existing ones.");
+      return;
+    }
     if (!form.case.stem.trim()) {
       toast.error("Add a case stem before generating questions");
       return;
@@ -213,6 +250,19 @@ export function VivaQuestionSetupDialog({
                   </button>
                 </div>
 
+                {sourceQuestions.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={generating || saving}
+                    onClick={importQuestions}
+                    className="mb-4 h-auto w-full gap-2 whitespace-normal py-2 text-left text-xs"
+                  >
+                    <Import className="h-4 w-4 shrink-0" />
+                    <span>Import from {sourceLabel} questions</span>
+                  </Button>
+                )}
+
                 {leftPanelTab === "config" ? (
                   <div>
                     <div className="space-y-1">
@@ -237,12 +287,12 @@ export function VivaQuestionSetupDialog({
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={generating || remainingCount === 0 || !form.case.stem.trim()}
+                      disabled={generating || saving}
                       onClick={generateSampleQuestions}
                       className="mt-3 w-full gap-2 text-xs"
                     >
                       {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                      {generating ? "Generating..." : `Generate Remaining AI Questions (${remainingCount})`}
+                      {generating ? "Generating..." : remainingCount > 0 ? `Generate with AI (${remainingCount})` : "Generate with AI"}
                     </Button>
                   </div>
                 ) : (

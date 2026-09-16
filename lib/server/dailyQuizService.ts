@@ -1,6 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { getGeminiModel } from "@/lib/gemini";
+import { getGeminiClient, getGeminiModelName } from "@/lib/gemini";
 import { publishNotification } from "@/lib/server/notificationService";
 
 type DailyQuizInput = {
@@ -195,9 +195,12 @@ Return:
 }
 `;
 
-  const geminiModel = getGeminiModel();
-  const result = await geminiModel.generateContent(prompt);
-  const raw = result.response.text().replace(/```json|```/g, "").trim();
+  const ai = getGeminiClient();
+  const result = await ai.models.generateContent({
+    model: getGeminiModelName(),
+    contents: prompt,
+  });
+  const raw = (result.text ?? "").replace(/```json|```/g, "").trim();
 
   let parsed: any;
   try {
@@ -267,9 +270,12 @@ Return STRICT JSON only (no markdown, no commentary):
 }
 `;
 
-  const geminiModel = getGeminiModel();
-  const result = await geminiModel.generateContent(prompt);
-  const raw = result.response.text();
+  const ai = getGeminiClient();
+  const result = await ai.models.generateContent({
+    model: getGeminiModelName(),
+    contents: prompt,
+  });
+  const raw = result.text ?? "";
   const cleaned = raw.replace(/```json|```/g, "").trim();
 
   let parsed: any;

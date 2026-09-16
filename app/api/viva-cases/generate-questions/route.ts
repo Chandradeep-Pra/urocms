@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
-import { getGeminiJsonModel } from "@/lib/gemini";
+import { getGeminiClient, getGeminiModelName, GEMINI_JSON_CONFIG } from "@/lib/gemini";
 
 type GeneratedQuestion = {
   question: string;
@@ -46,8 +46,11 @@ export async function POST(req: NextRequest) {
     const pace = mode === "calmAndComposed"
       ? "calm, progressive and conversational; allow deeper clinical reasoning and follow-up"
       : "brief, direct and rapid-fire; each question should have a focused answer";
-    const model = getGeminiJsonModel();
-    const result = await model.generateContent(`
+    const ai = getGeminiClient();
+    const result = await ai.models.generateContent({
+      model: getGeminiModelName(),
+      config: GEMINI_JSON_CONFIG,
+      contents: `
 You are an expert medical viva examiner. Create exactly ${questionCount} clinically accurate viva questions for the supplied case.
 
 Use as much clinically relevant context from the title, level, stem, objectives, marking criteria and exhibits as possible across the complete sequence. Do not ignore supplied facts, but distribute context naturally between questions instead of repeating the whole stem. The sequence must feel like a real examiner-candidate conversation. Each prompt should be concise, usually one sentence and ideally under 18 words after any necessary case update. Give only the minimum context needed for that turn. Do not list multiple clues, expected answer components, differential diagnoses, management steps or teaching hints in the prompt. Never turn the marking keywords into hints. Ask exactly one primary clinical task at a time, with a focused follow-up only when needed.
@@ -79,9 +82,10 @@ Return only this JSON shape:
     }
   ]
 }
-`);
+`,
+    });
 
-    const parsed = JSON.parse(result.response.text()) as { questions?: unknown };
+    const parsed = JSON.parse(result.text ?? "") as { questions?: unknown };
     if (!Array.isArray(parsed.questions)) throw new Error("AI returned an invalid question list");
 
     const validExhibitIds = new Set(
