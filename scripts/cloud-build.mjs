@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
+import { validatePublicFirebaseEnv } from "./validate-public-build-env.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const requiredKeys = [
@@ -15,6 +16,7 @@ const requiredKeys = [
 ];
 
 export function cloudBuildFlags(values) {
+  validatePublicFirebaseEnv(values);
   for (const key of requiredKeys) {
     if (!values[key]?.trim()) throw new Error(`Missing public build setting in .env.prod: ${key}`);
   }
@@ -27,24 +29,56 @@ export function cloudBuildFlags(values) {
   };
 }
 
+export function parseBuildOptions(args) {
+  const options = { check: false, envFile: resolve(root, ".env.prod"), imageFile: null };
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--check") options.check = true;
+    else if (arg === "--env-file" || arg === "--image-file") {
+      const value = args[++i];
+      if (!value || value.startsWith("--")) throw new Error(`Missing path after ${arg}`);
+      options[arg === "--env-file" ? "envFile" : "imageFile"] = resolve(value);
+    } else throw new Error(`Unknown option: ${arg}`);
+  }
+  if (options.envFile === options.imageFile) throw new Error("Image output must not overwrite the environment file");
+  return options;
+}
+
+export function builtImageReference(build) {
+  const image = build?.results?.images?.[0];
+  if (build?.status !== "SUCCESS" || !image?.name || !/^sha256:[a-f0-9]{64}$/.test(image.digest || "")) {
+    throw new Error("Cloud Build did not return a successful image digest; deployment must not proceed");
+  }
+  return `${image.name}@${image.digest}`;
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   let tempDirectory;
   try {
-    const values = parseEnv(readFileSync(resolve(root, ".env.prod"), "utf8"));
+    const options = parseBuildOptions(process.argv.slice(2));
+    const values = parseEnv(readFileSync(options.envFile, "utf8"));
     const flags = cloudBuildFlags(values);
-    if (process.argv.includes("--check")) {
-      console.log(".env.prod contains all required public Cloud Build settings. No build submitted.");
+    if (options.check) {
+      console.log("Environment file contains all required public Cloud Build settings. No build submitted.");
     } else {
       // Keep the flags outside the uploaded source. This file contains only
       // explicitly approved browser settings, never runtime credentials.
       tempDirectory = mkdtempSync(join(tmpdir(), "urocms-cloud-build-"));
       const flagsFile = join(tempDirectory, "flags.json");
       writeFileSync(flagsFile, JSON.stringify(flags), { mode: 0o600 });
-      const result = spawnSync("gcloud", ["builds", "submit", root, `--flags-file=${flagsFile}`], {
-        cwd: root, stdio: "inherit", shell: false,
+      const args = ["builds", "submit", root, `--flags-file=${flagsFile}`];
+      if (options.imageFile) args.push("--suppress-logs", "--format=json");
+      const result = spawnSync("gcloud", args, {
+        cwd: root, stdio: options.imageFile ? ["inherit", "pipe", "inherit"] : "inherit", shell: false,
+        encoding: "utf8", maxBuffer: 10 * 1024 * 1024,
       });
       if (result.error) throw new Error("Could not run gcloud. Run this command in Google Cloud Shell with Node.js 20.12+.");
       process.exitCode = result.status ?? 1;
+      if (options.imageFile && result.status === 0) {
+        const image = builtImageReference(JSON.parse(result.stdout));
+        writeFileSync(options.imageFile, `${image}\n`, { mode: 0o600 });
+        console.log("Cloud Build succeeded. Exact image digest written to the requested image file.");
+      }
     }
   } catch (error) {
     console.error(error instanceof Error ? error.message : "Cloud Build failed");

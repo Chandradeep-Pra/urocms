@@ -210,6 +210,48 @@ codec compatibility across the video library were not exhaustively tested.
 
 ## Cloud Shell builds from .env.prod
 
+For the existing Cloud Shell workflow with `$HOME/.env.prod`, run:
+
+```sh
+git pull --ff-only origin main
+bash scripts/deploy-cloud-shell.sh
+```
+
+The script **builds and deploys**. It prepares a mode-0600 temporary
+runtime JSON outside the source tree, submits a configured Cloud Build, and
+deploys the successful image by digest using `--image` (not `--source`). It
+retains the existing service, region, CPU, memory, scaling and runtime-env-file
+settings. A failed build stops the script before deployment; temporary runtime
+and image files are removed on exit. Node.js 20.12+ is required. No local npm
+install/build or generated `.env.production` file is needed.
+
+For build-only validation/submission with a custom environment file:
+
+```sh
+node scripts/cloud-build.mjs --env-file "$HOME/.env.prod" --check
+node scripts/cloud-build.mjs --env-file "$HOME/.env.prod" --image-file /tmp/urologics-image.txt
+```
+
+The image file contains only an immutable image reference, not credentials.
+
+### Fix `auth/invalid-api-key` while prerendering `/checkout`
+
+The Firebase browser client initializes when Next.js imports checkout during
+the production build. The image therefore needs `NEXT_PUBLIC_FIREBASE_API_KEY`,
+`NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, and `NEXT_PUBLIC_FIREBASE_PROJECT_ID` at
+**build time**. Configuring them only on the Cloud Run service is insufficient.
+The Docker build now validates these arguments before invoking Next.js, without
+logging their values. This validates presence/format, not Google's acceptance
+of the key. Use the Firebase web app's key, not a Gemini key or service-account
+credential.
+
+Do not use `gcloud builds submit --tag ...` for this repository: that builds the
+Dockerfile without the required public arguments and bypasses `cloudbuild.yaml`.
+Use the helper below instead. With a repository trigger, set the seven public
+substitutions referenced in `cloudbuild.yaml` on the trigger; do not assume the
+Cloud Run environment is inherited. Never upload `.env.prod` or server secrets.
+The Browserslist age warning is unrelated to this Firebase error.
+
 With the updated repository and `.env.prod` present in the project root, run:
 
 ```sh

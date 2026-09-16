@@ -25,7 +25,7 @@ ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_APP_URL
 ARG NEXT_PUBLIC_USER_APP_URL
 ARG NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-RUN npm run build
+RUN node scripts/validate-public-build-env.mjs && npm run build
 
 FROM node:24.11.0-bookworm-slim AS runner
 WORKDIR /app

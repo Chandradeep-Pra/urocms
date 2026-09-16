@@ -3,6 +3,7 @@ import { parseEnv } from "node:util";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { validatePublicFirebaseEnv } from "./validate-public-build-env.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const defaultImage = "urologics-web:local";
@@ -22,6 +23,7 @@ export function dockerInvocation(mode, values, image = defaultImage, inherited =
   for (const key of Object.keys(values)) delete env[key];
 
   if (mode === "build") {
+    validatePublicFirebaseEnv(values);
     for (const key of [
       "NEXT_PUBLIC_FIREBASE_API_KEY",
       "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
