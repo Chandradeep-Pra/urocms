@@ -210,6 +210,27 @@ codec compatibility across the video library were not exhaustively tested.
 
 ## Cloud Shell builds from .env.prod
 
+### Prevent the Storage signer regression
+
+The September 16 deployment restored an older Storage signer from Cloud Shell's
+environment file. Its signed request for the known video returned 403; the
+previously working signer returned 206. Only `GOOGLE_APPLICATION_CREDENTIALS_JSON`
+was restored in Cloud Run, keeping the same app image and all other settings.
+The repaired revision `urologics-web-00014-8l7` returned 206 with `video/mp4`.
+
+Before the next deployment, synchronize that repaired setting into Cloud Shell's
+source file (requires the `python-dotenv` package already used by the original
+deployment script):
+
+```sh
+python3 scripts/sync-storage-env.py "$HOME/.env.prod"
+```
+
+This reads Cloud Run and updates only the Storage credential entry in the local
+env file. It does not change Cloud Run, print credentials, or modify other env
+entries. Never commit the env file. Refresh the player after credential recovery
+because already-issued signed URLs still use the old signer.
+
 For the existing Cloud Shell workflow with `$HOME/.env.prod`, run:
 
 ```sh
