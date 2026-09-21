@@ -70,12 +70,15 @@ export async function getResolvedGoogleCloudStorageBucket() {
 
       if (!exists) {
         throw new Error(
-          `Configured Cloud Storage bucket does not exist or is not accessible: ${bucketName}`
+          `Configured Cloud Storage bucket does not exist: ${bucketName}. Set GOOGLE_CLOUD_STORAGE_BUCKET to an existing video bucket in the server environment.`
         );
       }
 
       return bucket;
-    })();
+    })().catch((error) => {
+      resolvedBucketPromise = null;
+      throw error;
+    });
   }
 
   return resolvedBucketPromise;
