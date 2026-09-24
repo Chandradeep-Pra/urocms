@@ -253,7 +253,14 @@ export function SavedPlansPanel({
                           className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
                         >
                           <div>
-                            <p className="font-semibold text-slate-900">{version.months} months</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-semibold text-slate-900">{version.months} months</p>
+                              {version.apple?.enabled && version.apple?.productId ? (
+                                <Badge variant="outline" className="border-sky-300 bg-sky-50 text-[11px] font-normal text-sky-800">
+                                  iOS: {version.apple.productId} ({formatGbp(Number(version.apple.price ?? 0))})
+                                </Badge>
+                              ) : null}
+                            </div>
                             <p className="mt-1 text-xs text-slate-500">
                               {version.durationLabel ||
                                 `${version.months} month${version.months > 1 ? "s" : ""}`}

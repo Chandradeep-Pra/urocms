@@ -1,4 +1,5 @@
 import "server-only";
+import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { parseApplePlanPricing, validateApplePlanPricing } from "@/lib/apple-plans";
 
@@ -51,4 +52,178 @@ export async function listApplePlans() {
 export async function getApplePlan(id: string) {
   const doc = await getAdminDb().collection("pricingPlans").doc(id).get();
   return doc.exists ? toApplePlan(doc.id, doc.data() ?? {}) : null;
+}
+
+export type ResolvedApplePlanVersion = {
+  planId: string;
+  planName: string;
+  versionId: string;
+  months: number;
+  price: number;
+  currency: "GBP";
+  productId: string;
+  courseIds: string[];
+  vivaMinutes: number;
+};
+
+export async function findPlanByAppleProductId(productId: string): Promise<ResolvedApplePlanVersion | null> {
+  const cleanId = String(productId || "").trim();
+  if (!cleanId) return null;
+  const snapshot = await getAdminDb().collection("pricingPlans").get();
+  for (const doc of snapshot.docs) {
+    const data = doc.data() || {};
+    if (data.isActive === false) continue;
+    const versions = Array.isArray(data.versions) ? data.versions : [];
+    for (const v of versions) {
+      if (!v || typeof v !== "object") continue;
+      const apple = parseApplePlanPricing(v.apple);
+      if (apple.enabled && apple.productId === cleanId && !validateApplePlanPricing(apple)) {
+        const courseIds = Array.isArray(data.accessScopes?.courseIds)
+          ? data.accessScopes.courseIds.map(String).filter(Boolean)
+          : [];
+        return {
+          planId: doc.id,
+          planName: String(data.name || "Untitled plan"),
+          versionId: String(v.id || ""),
+          months: number(v.months),
+          price: apple.price ?? 0,
+          currency: apple.currency,
+          productId: cleanId,
+          courseIds,
+          vivaMinutes: Math.max(0, number(data.vivaMinutes)),
+        };
+      }
+    }
+  }
+  return null;
+}
+
+export type ApplePurchaseFulfillmentInput = {
+  userId: string;
+  userEmail?: string | null;
+  userName?: string | null;
+  productId: string;
+  transactionId: string;
+  transactionDate?: string | number | null;
+  purchaseToken?: string | null;
+};
+
+export async function verifyAndFulfillApplePurchase(input: ApplePurchaseFulfillmentInput) {
+  const productId = String(input.productId || "").trim();
+  const transactionId = String(input.transactionId || "").trim();
+  if (!productId) throw new Error("Apple product ID is required");
+  if (!transactionId) throw new Error("Apple transaction ID is required");
+
+  const resolved = await findPlanByAppleProductId(productId);
+  if (!resolved) {
+    throw new Error(`No active Apple plan found matching product ID '${productId}'`);
+  }
+
+  const db = getAdminDb();
+  const txRef = db.collection("appleTransactions").doc(transactionId);
+  const userRef = db.collection("users").doc(input.userId);
+
+  return db.runTransaction(async (tx) => {
+    const [txSnap, userSnap] = await Promise.all([
+      tx.get(txRef),
+      tx.get(userRef),
+    ]);
+
+    if (txSnap.exists) {
+      const existing = txSnap.data() || {};
+      if (existing.userId !== input.userId) {
+        throw new Error("This Apple transaction is already linked to another account");
+      }
+      return {
+        alreadyCompleted: true,
+        planId: resolved.planId,
+        accessEndsAt: existing.accessEndsAt ? String(existing.accessEndsAt) : null,
+      };
+    }
+
+    const now = new Date();
+    const userData = userSnap.data() || {};
+    const existingExpiryRaw = userData.planExpiresAt;
+    const existingExpiry = existingExpiryRaw ? new Date(String(existingExpiryRaw)) : null;
+    const baseDate = existingExpiry && !Number.isNaN(existingExpiry.getTime()) && existingExpiry > now
+      ? existingExpiry
+      : now;
+
+    const accessStartsAt = now;
+    const accessEndsAt = new Date(baseDate);
+    accessEndsAt.setUTCMonth(accessEndsAt.getUTCMonth() + resolved.months);
+
+    const purchaseRef = db.collection("purchases").doc();
+
+    tx.set(txRef, {
+      transactionId,
+      productId,
+      planId: resolved.planId,
+      versionId: resolved.versionId,
+      userId: input.userId,
+      purchaseToken: input.purchaseToken || null,
+      accessStartsAt: accessStartsAt.toISOString(),
+      accessEndsAt: accessEndsAt.toISOString(),
+      createdAt: now.toISOString(),
+    });
+
+    tx.set(purchaseRef, {
+      userId: input.userId,
+      userEmail: input.userEmail || null,
+      userName: input.userName || null,
+      planId: resolved.planId,
+      versionId: resolved.versionId,
+      planNameSnapshot: resolved.planName,
+      durationMonths: resolved.months,
+      paidAmount: resolved.price,
+      currency: resolved.currency,
+      provider: "app-store",
+      appleProductId: productId,
+      appleTransactionId: transactionId,
+      status: "COMPLETED",
+      accessStartsAt,
+      accessEndsAt,
+      purchasedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    for (const courseId of resolved.courseIds) {
+      const entitlementRef = db.collection("courseEntitlements").doc(`${input.userId}_${courseId}`);
+      tx.set(entitlementRef, {
+        userId: input.userId,
+        courseId,
+        planId: resolved.planId,
+        purchaseId: purchaseRef.id,
+        status: "ACTIVE",
+        accessStartsAt,
+        accessEndsAt,
+        updatedAt: now,
+        createdAt: now,
+      }, { merge: true });
+    }
+
+    const userUpdate: Record<string, unknown> = {
+      tier: "paid",
+      activePlanId: resolved.planId,
+      activePlanStatus: "active",
+      planActivatedAt: accessStartsAt.toISOString(),
+      planExpiresAt: accessEndsAt.toISOString(),
+      updatedAt: now.toISOString(),
+      upgradedAt: now.toISOString(),
+    };
+
+    if (resolved.courseIds.length > 0) {
+      userUpdate.activeCourseIds = FieldValue.arrayUnion(...resolved.courseIds);
+    }
+
+    tx.set(userRef, userUpdate, { merge: true });
+
+    return {
+      alreadyCompleted: false,
+      planId: resolved.planId,
+      accessEndsAt: accessEndsAt.toISOString(),
+      purchaseId: purchaseRef.id,
+    };
+  });
 }

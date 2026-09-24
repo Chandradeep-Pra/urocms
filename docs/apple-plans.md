@@ -30,7 +30,7 @@ Each version includes `id`, `months`, `durationLabel`, `productId`, `price`,
 Web checkout links, coupon data, private records and content delivery URLs are
 not returned.
 
-## Native purchase integration boundary
+## Native purchase integration and verification
 
 Fetch StoreKit products using the returned product IDs. Display StoreKit's
 localized `displayPrice` and actual subscription terms at purchase time, not
@@ -38,15 +38,32 @@ the CMS reference price or web billing label. Products missing from StoreKit
 must not have an enabled purchase button. Use StoreKit for purchase and restore,
 including pending, cancelled, failed and verified outcomes.
 
-These routes only distribute catalog metadata. They do not validate purchases
-or grant entitlements. The native app's existing verified transaction flow must
-map the product ID to the plan/version, bind it to the authenticated user, and
-handle renewals, expiration and revocations before unlocking server content.
-Do not route an Apple purchase to the web checkout API or grant access from a
-client-supplied product ID alone.
+### Purchase verification endpoint: `POST /api/plans/apple/verify`
+- Authentication: Required (`requireAppUser`, bearer token)
+- Body:
+  ```json
+  {
+    "productId": "com.urologics.app.membership.3m",
+    "transactionId": "2000000123456789",
+    "transactionDate": 1727179200000,
+    "purchaseToken": "optional-jws-or-receipt"
+  }
+  ```
+- Response:
+  ```json
+  {
+    "success": true,
+    "alreadyCompleted": false,
+    "planId": "frcs-plan",
+    "accessEndsAt": "2026-12-24T12:00:00.000Z"
+  }
+  ```
 
-Native screen implementation requires the iOS source project and its purchase
-integration; this Next.js repository does not contain them.
+The server resolves the plan and duration by the verified `productId`, ensures
+the transaction is not claimed by another user account, updates the user's tier
+to `paid`, attaches the active plan and course entitlements, and records the purchase
+in Firestore. After receiving `success: true`, the native client calls `finishTransaction`
+to finalize the transaction with Apple.
 
 References:
 - https://developer.apple.com/documentation/storekit/product/displayprice
