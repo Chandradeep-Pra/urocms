@@ -189,17 +189,21 @@ export default function PlanCreatorPage() {
           appleEnabled: version.apple?.enabled ?? false,
           applePrice: version.apple?.price == null ? "" : String(version.apple.price),
           appleProductId: version.apple?.productId ?? "",
+          appleOfferId: version.apple?.offerId ?? "",
           couponId: "",
           embeddedLink: version.embeddedLink || "",
           durationLabel: version.durationLabel || "",
           billingLabel: version.billingLabel || "",
         })
       ),
-      eligibleCouponIds: Array.isArray(plan.eligibleCouponIds)
+      eligibleCouponIds: (Array.isArray(plan.eligibleCouponIds)
         ? [...plan.eligibleCouponIds]
-        : Array.from(new Set(fallbackVersions.map((version) => version.couponId || "").filter(Boolean))),
+        : Array.from(new Set(fallbackVersions.map((version) => version.couponId || "").filter(Boolean)))
+      ).filter((id) => coupons.some((c) => c.id === id)),
       marketingCouponId:
-        plan.marketingCouponId || plan.couponId || fallbackVersions[0]?.couponId || "",
+        coupons.some((c) => c.id === (plan.marketingCouponId || plan.couponId) && c.isActive)
+          ? (plan.marketingCouponId || plan.couponId || "")
+          : "",
       availabilityNote: plan.availabilityNote || "",
       sortOrder: Number(plan.sortOrder || 0),
       vivaMinutes: Number(plan.vivaMinutes || 0),
@@ -235,8 +239,9 @@ export default function PlanCreatorPage() {
         price: Number(version.price),
         apple: {
           enabled: version.appleEnabled,
-          price: version.applePrice.trim() === "" ? null : Number(version.applePrice),
-          productId: version.appleProductId.trim(),
+          price: (version.applePrice || "").trim() === "" ? null : Number(version.applePrice),
+          productId: (version.appleProductId || "").trim(),
+          ...(version.appleOfferId?.trim() ? { offerId: version.appleOfferId.trim() } : {}),
           currency: "GBP",
         },
         couponId: version.couponId,
@@ -293,6 +298,35 @@ export default function PlanCreatorPage() {
       )
     ) {
       toast.error("Each version needs a valid month count and price");
+      return;
+    }
+
+    for (const version of payload.versions) {
+      if (version.apple.enabled) {
+        if (version.apple.price === null || !Number.isFinite(version.apple.price) || version.apple.price < 0) {
+          toast.error("An iOS price is required to enable an Apple plan version");
+          return;
+        }
+        if (!version.apple.productId) {
+          toast.error("An App Store product ID is required to enable an Apple plan version");
+          return;
+        }
+        if (!/^[A-Za-z0-9._-]{1,255}$/.test(version.apple.productId)) {
+          toast.error("App Store product ID must contain only letters, numbers, dots, hyphens or underscores");
+          return;
+        }
+        if (version.apple.offerId && !/^[A-Za-z0-9._-]{1,255}$/.test(version.apple.offerId)) {
+          toast.error("App Store offer code must contain only letters, numbers, dots, hyphens or underscores");
+          return;
+        }
+      }
+    }
+
+    const appleProductIds = payload.versions
+      .filter((v) => v.apple.enabled && v.apple.productId)
+      .map((v) => v.apple.productId);
+    if (new Set(appleProductIds).size !== appleProductIds.length) {
+      toast.error("Each iOS duration must have a distinct App Store product ID");
       return;
     }
 

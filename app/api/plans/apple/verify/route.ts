@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const productId = String(body.productId || "").trim();
     const transactionId = String(body.transactionId || "").trim();
+    const offerId = typeof body.offerId === "string" ? body.offerId.trim() : null;
     const transactionDate = body.transactionDate ?? null;
     const purchaseToken = typeof body.purchaseToken === "string" ? body.purchaseToken.trim() : null;
 
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
       userName: auth.user.name,
       productId,
       transactionId,
+      offerId,
       transactionDate,
       purchaseToken,
     });

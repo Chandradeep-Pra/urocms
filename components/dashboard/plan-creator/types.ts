@@ -139,6 +139,7 @@ export type PlanVersionFormValues = {
   appleEnabled: boolean;
   applePrice: string;
   appleProductId: string;
+  appleOfferId: string;
   id: string;
   months: number;
   price: string;

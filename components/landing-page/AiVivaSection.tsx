@@ -7,7 +7,7 @@ import { ArrowUpRight, Youtube } from "lucide-react";
 
 const youtubeChannelUrl = "https://www.youtube.com/@ankitgoel2863";
 const publicVivaUrl =
-  "https://urologics.co.uk/web/public-viva/Z7WYvsCNVLRSpWr19PTY?mode=calm&source=ai-viva-cases";
+  "https://urologics.co.uk/web/public-viva/Gkkr8wdMjKaON0S3fM6f?mode=calm&source=ai-viva-cases";
 
 const aiVivaPoints = [
   "AI Urology Mentor",

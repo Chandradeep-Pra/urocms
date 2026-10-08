@@ -3,14 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Award } from "lucide-react";
 
 const doctorProfileUrl = "https://www.artemishospitals.com/doctor/profile/dr-ankit-goyal";
 
 const mentorHighlights = [
   {
-    text: "Trained 200+ Candidates Worldwide",
-    title: "200+",
+    text: "Candidates Trained Worldwide for FRCS and Post Graduate Urology exam.",
+    title: "150",
   },
   {
     text: "The most trusted FRCS Urology mentor for evidence based teaching",
@@ -26,9 +27,71 @@ const mentorHighlights = [
   },
 ];
 
+function AnimatedCandidateCount({ count }: { count: number }) {
+  const formattedCount = count.toLocaleString("en-US");
+  const prefersReducedMotion = useReducedMotion();
+
+  return (
+    <span aria-label={formattedCount} className="inline-flex tabular-nums">
+      {formattedCount.split("").map((character, index) => (
+        <span
+          key={`digit-${index}`}
+          aria-hidden="true"
+          className="relative inline-block overflow-hidden"
+        >
+          {/* Invisible copy gives the cell its width and height. */}
+          <span className="invisible">{character}</span>
+          <AnimatePresence initial={false}>
+            <motion.span
+              key={character}
+              initial={{ y: "-100%" }}
+              animate={{ y: "0%" }}
+              exit={{ y: "100%" }}
+              transition={{
+                duration: prefersReducedMotion ? 0 : 0.25,
+                ease: "easeOut",
+              }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              {character}
+            </motion.span>
+          </AnimatePresence>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+const BASE_CANDIDATE_COUNT = 150;
+const COUNT_UP_HEAD_START = 7;
+
 export function MentorSection() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const [isInView, setIsInView] = useState(false);
+  const [targetCount, setTargetCount] = useState<number | null>(null);
+  const [displayedCandidateCount, setDisplayedCandidateCount] = useState(
+    BASE_CANDIDATE_COUNT,
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("/api/public/user-count", { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { count?: number } | null) => {
+        if (typeof data?.count === "number") {
+          const total = BASE_CANDIDATE_COUNT + data.count;
+          setTargetCount(total);
+          setDisplayedCandidateCount(
+            Math.max(BASE_CANDIDATE_COUNT, total - COUNT_UP_HEAD_START),
+          );
+        }
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, []);
+
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -51,6 +114,22 @@ export function MentorSection() {
 
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (
+      !isInView ||
+      targetCount === null ||
+      displayedCandidateCount >= targetCount
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setDisplayedCandidateCount((current) => Math.min(current + 1, targetCount));
+    }, 800);
+
+    return () => window.clearTimeout(timer);
+  }, [targetCount, displayedCandidateCount, isInView]);
 
   return (
     <section ref={sectionRef} id="mentor" className="bg-white px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
@@ -93,7 +172,7 @@ export function MentorSection() {
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#d6a735]/30 bg-gradient-to-br from-[#fff8dc] via-white to-[#f4d46a]/30 shadow-[0_12px_28px_rgba(214,167,53,0.16)]">
                 <Award className="h-6 w-6 text-[#b98516]" />
               </div>
-              <p className="text-xl font-black tracking-[-0.04em] text-[#071014] sm:text-2xl">
+              <p className="text-xl font-black tracking-[-0.04em] text-[#b98516] sm:text-2xl">
                 Gold Medalist
               </p>
             </div>
@@ -119,13 +198,17 @@ export function MentorSection() {
         />
 
         <p
-          className="text-2xl font-extrabold tracking-tight sm:text-3xl"
+          className="text-2xl font-extrabold tracking-tight text-center sm:text-3xl"
           style={{ color: accent }}
         >
-          {item.title}
+          {index === 0 ? (
+            <AnimatedCandidateCount count={displayedCandidateCount} />
+          ) : (
+            item.title
+          )}
         </p>
 
-        <p className="mt-3 text-sm font-medium leading-6 text-slate-600 sm:mt-4 sm:text-lg sm:leading-relaxed">
+        <p className="mt-3 text-sm font-medium text-center leading-6 text-slate-600 sm:mt-4 sm:text-lg sm:leading-relaxed">
           {item.text}
         </p>
       </div>

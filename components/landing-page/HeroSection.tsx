@@ -5,7 +5,7 @@ import { LazyLaunchSoonDialog } from "./LazyLaunchSoonDialog";
 import { LazyWaitlistDialog } from "./LazyWaitlistDialog";
 import Image from "next/image";
 
-export function HeroSection() {
+export function  HeroSection() {
   return (
     <section className="relative px-4 pb-16 pt-32 sm:px-6 sm:pb-24 sm:pt-40 lg:pt-36">
       <div className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-[64fr_36fr] lg:gap-10">
@@ -61,12 +61,27 @@ export function HeroSection() {
         <div className="relative animate-slide-up self-start pt-2 lg:pt-8">
           <div className="relative mx-auto flex w-full justify-center sm:min-h-[440px]">
             <div className="relative z-10 w-full max-w-[220px] sm:absolute sm:left-1/2 sm:top-0 sm:max-w-[273px] sm:-translate-x-1/2 lg:-top-10 xl:max-w-[294px]">
+              <div
+                className="absolute left-[5.5%] top-[2.4%] h-[95.2%] w-[89%] rounded-[15%/6.8%] bg-[#0b1115]"
+                aria-hidden="true"
+              />
+              <video
+                className="absolute left-[5.9%] top-[4.8%] h-[92.4%] w-[88.2%] rounded-[15%/6.8%] bg-[#0b1115] object-contain"
+                src="/phone-demo/phone-video-demo.mp4"
+                poster="/phone-demo/phone-video-poster.webp"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                aria-hidden="true"
+              />
               <Image
-                src="/ai-screen-phone.webp"
-                alt="Urologics AI viva phone screen"
-                width={450}
-                height={920}
-                className="h-auto w-full"
+                src="/phone-demo/phone-frame.webp"
+                alt="Urologics app demo on a phone"
+                width={720}
+                height={1472}
+                className="relative h-auto w-full"
                 sizes="(min-width: 1280px) 294px, (min-width: 640px) 273px, 220px"
                 priority
               />

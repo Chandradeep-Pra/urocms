@@ -268,3 +268,140 @@ test('Apple purchase verification API route validates inputs and handles outcome
   });
   assert.equal(notFoundReq.status, 404);
 });
+
+test('plan updates succeed and persist Apple pricing even when attached coupons are deleted or inactive', async () => {
+  const writes = [];
+  const couponStore = new Map([
+    ['active-coupon', { exists: true, id: 'active-coupon', data: () => ({ code: 'ACTIVE', discountType: 'amount', discountValue: 10, isActive: true }) }],
+    ['inactive-coupon', { exists: true, id: 'inactive-coupon', data: () => ({ code: 'INACTIVE', discountType: 'percent', discountValue: 20, isActive: false }) }],
+  ]);
+
+  const db = {
+    collection: name => {
+      if (name === 'pricingCoupons') {
+        return {
+          doc: id => ({
+            get: async () => couponStore.get(id) || { exists: false, id, data: () => null },
+          }),
+        };
+      }
+      return {
+        add: async value => { writes.push(value); return { id: 'new-plan' }; },
+        doc: () => ({ update: async value => writes.push(value) }),
+        get: async () => ({ docs: [] }),
+      };
+    },
+    batch: () => ({
+      update: () => {},
+      commit: async () => {},
+    }),
+  };
+
+  const api = load('lib/server/pricingService.ts', {
+    '@/lib/apple-plans': apple,
+    '@/lib/firebaseAdmin': { getAdminDb: () => db },
+    'firebase-admin/firestore': { FieldValue: { serverTimestamp: () => 'timestamp' } },
+    '@/lib/pricingPresets': { frcsPricingPresets: [] },
+  });
+
+  const planWithDeadCoupon = {
+    ...plan,
+    eligibleCouponIds: ['deleted-coupon', 'active-coupon'],
+    marketingCouponId: 'deleted-coupon',
+    versions: [
+      {
+        id: 'v1',
+        months: 3,
+        price: 99,
+        couponId: 'deleted-coupon',
+        apple: { enabled: true, price: 129, currency: 'GBP', productId: 'com.example.updated.3m' },
+      },
+    ],
+  };
+
+  const input = api.parsePricingPlanInput(planWithDeadCoupon);
+  assert.equal(api.validatePricingPlanInput(input), null);
+
+  // Previously, this threw: "Error: An attached coupon no longer exists"
+  // Now it must succeed and update the plan including Apple pricing!
+  await api.updatePricingPlan('plan-123', input);
+
+  assert.equal(writes.length, 1);
+  const updated = writes[0];
+  // Verify Apple pricing was successfully persisted!
+  assert.equal(updated.versions[0].apple.enabled, true);
+  assert.equal(updated.versions[0].apple.price, 129);
+  assert.equal(updated.versions[0].apple.productId, 'com.example.updated.3m');
+  // Verify dead coupon was purged from eligibleCouponIds and marketingCouponId
+  assert.deepEqual(plain(updated.eligibleCouponIds), ['active-coupon']);
+  assert.equal(updated.marketingCouponId, '');
+  assert.equal(updated.versions[0].couponId, '');
+});
+
+test('deletePricingCoupon cleans up orphaned coupon references across pricing plans', async () => {
+  const updates = [];
+  const couponId = 'coupon-to-delete';
+  const planDoc = {
+    id: 'affected-plan',
+    ref: 'affected-plan-ref',
+    data: () => ({
+      eligibleCouponIds: [couponId, 'keep-coupon'],
+      marketingCouponId: couponId,
+      couponId,
+      versions: [
+        { id: 'v1', couponId, price: 100, originalPrice: 100, discountedPrice: 80 },
+        { id: 'v2', couponId: 'other', price: 200, originalPrice: 200, discountedPrice: 180 },
+      ],
+    }),
+  };
+
+  let deletedCouponId = null;
+  const db = {
+    collection: name => {
+      if (name === 'pricingCoupons') {
+        return {
+          doc: id => ({
+            delete: async () => { deletedCouponId = id; },
+          }),
+        };
+      }
+      if (name === 'pricingPlans') {
+        return {
+          where: (field, op, val) => ({
+            get: async () => {
+              if (field === 'eligibleCouponIds' && op === 'array-contains' && val === couponId) {
+                return { docs: [planDoc] };
+              }
+              if (field === 'marketingCouponId' && op === '==' && val === couponId) {
+                return { docs: [planDoc] };
+              }
+              return { docs: [] };
+            },
+          }),
+        };
+      }
+      return {};
+    },
+    batch: () => ({
+      update: (ref, patch) => updates.push({ ref, patch }),
+      commit: async () => {},
+    }),
+  };
+
+  const api = load('lib/server/pricingService.ts', {
+    '@/lib/apple-plans': apple,
+    '@/lib/firebaseAdmin': { getAdminDb: () => db },
+    'firebase-admin/firestore': { FieldValue: { serverTimestamp: () => 'timestamp' } },
+    '@/lib/pricingPresets': { frcsPricingPresets: [] },
+  });
+
+  await api.deletePricingCoupon(couponId);
+  assert.equal(deletedCouponId, couponId);
+  assert.equal(updates.length, 1);
+  assert.deepEqual(plain(updates[0].patch.eligibleCouponIds), ['keep-coupon']);
+  assert.equal(updates[0].patch.marketingCouponId, '');
+  assert.equal(updates[0].patch.couponId, '');
+  assert.equal(updates[0].patch.versions[0].couponId, '');
+  assert.equal(updates[0].patch.versions[0].discountedPrice, 100);
+  assert.equal(updates[0].patch.versions[1].couponId, 'other');
+});

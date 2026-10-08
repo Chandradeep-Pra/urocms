@@ -259,6 +259,10 @@ export function SavedPlansPanel({
                                 <Badge variant="outline" className="border-sky-300 bg-sky-50 text-[11px] font-normal text-sky-800">
                                   iOS: {version.apple.productId} ({formatGbp(Number(version.apple.price ?? 0))})
                                 </Badge>
+                              ) : version.apple?.productId ? (
+                                <Badge variant="outline" className="border-amber-300 bg-amber-50 text-[11px] font-normal text-amber-800">
+                                  iOS (Draft / Off): {version.apple.productId}
+                                </Badge>
                               ) : null}
                             </div>
                             <p className="mt-1 text-xs text-slate-500">

@@ -423,11 +423,16 @@ export function PlanFormCard({
 
                       <fieldset className="mt-4 space-y-4 border-t border-slate-200 pt-4">
                         <legend className="text-sm font-semibold">Apple / iOS</legend>
-                        <label className="flex items-center gap-2 text-sm">
+                        <label className="flex items-center gap-2 text-sm font-medium text-slate-800 cursor-pointer">
                           <input type="checkbox" checked={version.appleEnabled}
                             onChange={event => updateVersion(version.id, { appleEnabled: event.target.checked })} />
                           Available on Apple
                         </label>
+                        {!version.appleEnabled && (version.applePrice || version.appleProductId) ? (
+                          <p className="text-xs font-medium text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                            Note: Check &quot;Available on Apple&quot; above to activate and publish this iOS price and product ID to the mobile app catalog.
+                          </p>
+                        ) : null}
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
                             <Label htmlFor={`${version.id}-apple-price`}>iOS price (GBP)</Label>
@@ -441,6 +446,13 @@ export function PlanFormCard({
                               onChange={event => updateVersion(version.id, { appleProductId: event.target.value })}
                               autoCapitalize="none" autoCorrect="off" spellCheck={false} />
                           </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`${version.id}-apple-offer`}>App Store offer code / coupon ID (optional)</Label>
+                          <Input id={`${version.id}-apple-offer`} value={version.appleOfferId || ""}
+                            onChange={event => updateVersion(version.id, { appleOfferId: event.target.value })}
+                            placeholder="e.g. EARLYBIRD_2026 or PROMO50 (from App Store Connect)"
+                            autoCapitalize="none" autoCorrect="off" spellCheck={false} />
                         </div>
                       </fieldset>
 

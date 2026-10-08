@@ -229,33 +229,41 @@ async function resolvePlanVersionPricing(
 async function resolvePlanPricing(input: PricingPlanInput) {
   const legacyCouponIds = input.versions.map((version) => version.couponId).filter(Boolean);
   const eligibleCouponIds = Array.from(new Set([...input.eligibleCouponIds, ...legacyCouponIds]));
-  const marketingCouponId = input.marketingCouponId || legacyCouponIds[0] || "";
-
-  if (marketingCouponId && !eligibleCouponIds.includes(marketingCouponId)) {
-    throw new Error("Marketing coupon must be attached to the plan");
-  }
 
   const couponDocs = await Promise.all(
     eligibleCouponIds.map((id) => getAdminDb().collection("pricingCoupons").doc(id).get()),
   );
-  const missingCoupon = couponDocs.find((doc) => !doc.exists);
-  if (missingCoupon) throw new Error("An attached coupon no longer exists");
+  const existingDocs = couponDocs.filter((doc) => doc.exists);
+  const existingDocMap = new Map(existingDocs.map((doc) => [doc.id, doc]));
+  const validEligibleCouponIds = eligibleCouponIds.filter((id) => existingDocMap.has(id));
 
-  const marketingDoc = couponDocs.find((doc) => doc.id === marketingCouponId) ?? null;
-  if (marketingDoc && marketingDoc.data()?.isActive === false) {
-    throw new Error("Marketing coupon must be active");
+  let marketingCouponId = input.marketingCouponId || legacyCouponIds[0] || "";
+  if (!validEligibleCouponIds.includes(marketingCouponId)) {
+    marketingCouponId = "";
   }
-  const marketingCoupon = marketingDoc
-    ? { id: marketingDoc.id, data: marketingDoc.data() ?? {} }
+
+  const marketingDoc = marketingCouponId ? existingDocMap.get(marketingCouponId) ?? null : null;
+  const isMarketingActive = marketingDoc?.data()?.isActive !== false;
+  const activeMarketingDoc = isMarketingActive ? marketingDoc : null;
+  const effectiveMarketingCouponId = activeMarketingDoc ? marketingCouponId : "";
+
+  const marketingCoupon = activeMarketingDoc
+    ? { id: activeMarketingDoc.id, data: activeMarketingDoc.data() ?? {} }
     : null;
   const versions = await Promise.all(
-    input.versions.map((version) => resolvePlanVersionPricing(version, marketingCoupon)),
+    input.versions.map((version) => {
+      const cleanedVersion = {
+        ...version,
+        couponId: version.couponId && existingDocMap.has(version.couponId) ? version.couponId : "",
+      };
+      return resolvePlanVersionPricing(cleanedVersion, marketingCoupon);
+    }),
   );
   return {
     versions,
     primaryVersion: versions[0],
-    eligibleCouponIds,
-    marketingCouponId,
+    eligibleCouponIds: validEligibleCouponIds,
+    marketingCouponId: effectiveMarketingCouponId,
   };
 }
 
@@ -390,32 +398,42 @@ export async function loadPricingAdminData() {
     getAdminDb().collection("vivaFolders").get(),
   ]);
 
+  const coupons = couponsSnap.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+  const existingCouponIdSet = new Set(couponsSnap.docs.map((doc) => doc.id));
+
   const plans = plansSnap.docs.map((doc) => {
     const data = doc.data();
     const selectedContent = normalizePlanSelection(data.selectedContent);
     const accessScopes = normalizePlanAccessScopes(data.accessScopes);
+    const rawEligible = Array.isArray(data.eligibleCouponIds)
+      ? data.eligibleCouponIds.map((id: unknown) => String(id || "")).filter(Boolean)
+      : Array.from(
+          new Set(
+            (Array.isArray(data.versions) ? data.versions : [])
+              .map((rawVersion: unknown) => {
+                const version =
+                  rawVersion && typeof rawVersion === "object"
+                    ? (rawVersion as Record<string, unknown>)
+                    : {};
+                return String(version.couponId || "");
+              })
+              .filter(Boolean),
+          ),
+        );
+    const eligibleCouponIds = rawEligible.filter((id) => existingCouponIdSet.has(id));
+    const rawMarketingCouponId = String(data.marketingCouponId ?? data.couponId ?? "");
+    const marketingCouponId = existingCouponIdSet.has(rawMarketingCouponId) ? rawMarketingCouponId : "";
 
     return {
       id: doc.id,
       ...data,
       selectedContent,
       accessScopes,
-      eligibleCouponIds: Array.isArray(data.eligibleCouponIds)
-        ? data.eligibleCouponIds.map((id: unknown) => String(id || "")).filter(Boolean)
-        : Array.from(
-            new Set(
-              (Array.isArray(data.versions) ? data.versions : [])
-                .map((rawVersion: unknown) => {
-                  const version =
-                    rawVersion && typeof rawVersion === "object"
-                      ? (rawVersion as Record<string, unknown>)
-                      : {};
-                  return String(version.couponId || "");
-                })
-                .filter(Boolean),
-            ),
-          ),
-      marketingCouponId: String(data.marketingCouponId ?? data.couponId ?? ""),
+      eligibleCouponIds,
+      marketingCouponId,
       contentCounts: data.contentCounts ?? countPlanSelection(selectedContent),
       category: data.category ?? "",
       categorySortOrder: Number(data.categorySortOrder ?? 0),
@@ -464,11 +482,6 @@ export async function loadPricingAdminData() {
           ],
     };
   });
-
-  const coupons = couponsSnap.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
 
   const waitlistResponses = waitlistSnap.docs.map((doc) => {
     const data = doc.data();
@@ -841,5 +854,68 @@ export async function updatePricingCouponStatus(id: string, isActive: boolean) {
 }
 
 export async function deletePricingCoupon(id: string) {
-  await getAdminDb().collection("pricingCoupons").doc(id).delete();
+  const db = getAdminDb();
+  await db.collection("pricingCoupons").doc(id).delete();
+
+  try {
+    const plansWithCoupon = await db
+      .collection("pricingPlans")
+      .where("eligibleCouponIds", "array-contains", id)
+      .get();
+
+    const batch = db.batch();
+    for (const doc of plansWithCoupon.docs) {
+      const data = doc.data() ?? {};
+      const updatedEligible = (
+        Array.isArray(data.eligibleCouponIds) ? data.eligibleCouponIds : []
+      ).filter((cId: unknown) => cId !== id);
+
+      const updates: Record<string, unknown> = {
+        eligibleCouponIds: updatedEligible,
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      if (data.marketingCouponId === id) {
+        updates.marketingCouponId = "";
+      }
+      if (data.couponId === id) {
+        updates.couponId = "";
+        updates.couponCode = "";
+        updates.couponDiscountType = null;
+        updates.couponDiscountValue = null;
+      }
+      if (Array.isArray(data.versions)) {
+        updates.versions = data.versions.map((v: any) => {
+          if (v && v.couponId === id) {
+            return {
+              ...v,
+              couponId: "",
+              couponCode: "",
+              couponDiscountType: null,
+              couponDiscountValue: null,
+              discountedPrice: v.originalPrice ?? v.price,
+            };
+          }
+          return v;
+        });
+      }
+      batch.update(doc.ref, updates);
+    }
+
+    const plansWithMarketing = await db
+      .collection("pricingPlans")
+      .where("marketingCouponId", "==", id)
+      .get();
+    for (const doc of plansWithMarketing.docs) {
+      if (!plansWithCoupon.docs.some((d) => d.id === doc.id)) {
+        batch.update(doc.ref, {
+          marketingCouponId: "",
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
+    await batch.commit();
+  } catch (error) {
+    console.error("Failed to clean up pricingPlans references on coupon deletion:", error);
+  }
 }

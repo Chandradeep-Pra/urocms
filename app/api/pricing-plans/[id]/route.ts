@@ -29,7 +29,8 @@ export async function PATCH(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Pricing plan update error:", error);
-    return NextResponse.json({ error: "Failed to update pricing plan" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to update pricing plan";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 

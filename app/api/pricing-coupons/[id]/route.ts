@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/server/adminAccess";
 import { deletePricingCoupon, updatePricingCouponStatus } from "@/lib/server/pricingService";
 
@@ -14,10 +15,12 @@ export async function PATCH(
     const body = await req.json();
 
     await updatePricingCouponStatus(id, body.isActive !== false);
+    revalidatePath("/pricing");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Pricing coupon update error:", error);
-    return NextResponse.json({ error: "Failed to update coupon" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to update coupon";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -31,9 +34,11 @@ export async function DELETE(
   try {
     const { id } = await params;
     await deletePricingCoupon(id);
+    revalidatePath("/pricing");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Pricing coupon delete error:", error);
-    return NextResponse.json({ error: "Failed to delete coupon" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to delete coupon";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

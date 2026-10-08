@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, id });
   } catch (error) {
     console.error("Pricing plan create error:", error);
-    return NextResponse.json({ error: "Failed to create pricing plan" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to create pricing plan";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

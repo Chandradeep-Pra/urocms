@@ -3,6 +3,7 @@ export type ApplePlanPricing = {
   price: number | null;
   currency: "GBP";
   productId: string;
+  offerId?: string;
 };
 
 export function parseApplePlanPricing(value: unknown): ApplePlanPricing {
@@ -12,6 +13,7 @@ export function parseApplePlanPricing(value: unknown): ApplePlanPricing {
     price: data.price === null || data.price === undefined || String(data.price).trim() === "" ? null : Number(data.price),
     currency: "GBP",
     productId: String(data.productId ?? "").trim(),
+    ...(data.offerId ? { offerId: String(data.offerId).trim() } : {}),
   };
 }
 
@@ -21,6 +23,9 @@ export function validateApplePlanPricing(apple: ApplePlanPricing): string | null
   }
   if (apple.productId && !/^[A-Za-z0-9._-]{1,255}$/.test(apple.productId)) {
     return "App Store product ID must contain only letters, numbers, dots, hyphens or underscores";
+  }
+  if (apple.offerId && !/^[A-Za-z0-9._-]{1,255}$/.test(apple.offerId)) {
+    return "App Store offer code / coupon ID must contain only letters, numbers, dots, hyphens or underscores";
   }
   if (apple.enabled && (apple.price === null || !apple.productId)) {
     return "An iOS price and App Store product ID are required to enable an Apple plan version";

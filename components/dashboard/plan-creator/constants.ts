@@ -54,6 +54,7 @@ export function createEmptyPlanVersion(
     appleEnabled: overrides.appleEnabled ?? false,
     applePrice: overrides.applePrice ?? "",
     appleProductId: overrides.appleProductId ?? "",
+    appleOfferId: overrides.appleOfferId ?? "",
     couponId: overrides.couponId ?? "",
     embeddedLink: overrides.embeddedLink ?? "",
     durationLabel: overrides.durationLabel ?? "",

@@ -20,6 +20,7 @@ export function toApplePlan(id: string, data: Record<string, any>) {
       months: number(version.months),
       durationLabel: String(version.durationLabel || `${version.months} months`),
       productId: apple.productId,
+      ...(apple.offerId ? { offerId: apple.offerId } : {}),
       price: apple.price!,
       currency: apple.currency,
       priceSource: "cms-reference" as const,
@@ -104,6 +105,7 @@ export type ApplePurchaseFulfillmentInput = {
   userName?: string | null;
   productId: string;
   transactionId: string;
+  offerId?: string | null;
   transactionDate?: string | number | null;
   purchaseToken?: string | null;
 };
@@ -180,6 +182,7 @@ export async function verifyAndFulfillApplePurchase(input: ApplePurchaseFulfillm
       provider: "app-store",
       appleProductId: productId,
       appleTransactionId: transactionId,
+      appleOfferId: input.offerId || null,
       status: "COMPLETED",
       accessStartsAt,
       accessEndsAt,
