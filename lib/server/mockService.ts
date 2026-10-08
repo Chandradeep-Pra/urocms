@@ -325,6 +325,41 @@ async function addMockAttempt(id: string, input: MockAttemptInput) {
   };
 }
 
+export async function getPublicMockResults(id: string) {
+  const mockDoc = await getAdminDb().collection("mocks").doc(id).get();
+
+  if (!mockDoc.exists) {
+    throw new Error("Mock not found");
+  }
+
+  const mockData = mockDoc.data() ?? {};
+  if (normalizeAccessType(mockData.accessType) !== "public") {
+    throw new Error("Mock is not publicly available");
+  }
+
+  const results = normalizeAttempts(mockData.attempts)
+    .sort((a, b) => b.marks - a.marks)
+    .map((attempt, index) => ({
+      rank: index + 1,
+      name: attempt.candidate.name,
+      email: attempt.candidate.email,
+      marks: attempt.marks,
+      submittedAt: attempt.createdAt ?? null,
+    }));
+
+  return {
+    mock: {
+      id: mockDoc.id,
+      title: String(mockData.title || "Untitled Mock"),
+      type: String(mockData.type || "mock"),
+      startTime: toIsoString(mockData.startTime),
+      endTime: toIsoString(mockData.endTime),
+    },
+    attemptsCount: results.length,
+    results,
+  };
+}
+
 export async function addPublicMockAttempt(id: string, input: MockAttemptInput) {
   const mockDoc = await getAdminDb().collection("mocks").doc(id).get();
 
