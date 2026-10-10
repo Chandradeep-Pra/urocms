@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPublicMockResults } from "@/lib/server/mockService";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(
   _req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await context.params;
-    return NextResponse.json(await getPublicMockResults(id));
+    const results = await getPublicMockResults(id);
+    return NextResponse.json(results, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to fetch mock results";
@@ -16,6 +26,16 @@ export async function GET(
         ? 404
         : 500;
     if (status === 500) console.error("Public mock results error:", error);
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json(
+      { error: message },
+      {
+        status,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   }
 }

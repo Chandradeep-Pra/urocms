@@ -262,9 +262,11 @@ export default function DailyQuizManager() {
       });
 
       const data = await res.json().catch(() => null);
+      console.log("Quiz data",data)
       if (!res.ok) {
         throw new Error(data?.error || "AI generation failed");
       }
+
 
       setQuiz(data.quiz);
       if (data?.topic) {

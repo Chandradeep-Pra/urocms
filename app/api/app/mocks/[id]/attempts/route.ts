@@ -68,6 +68,26 @@ export async function POST(
       });
     }
 
+    let resolvedTotalQuestions = totalQuestions;
+    if (!resolvedTotalQuestions && mockData?.quizId) {
+      try {
+        const quizDoc = await getAdminDb().collection("quizzes").doc(String(mockData.quizId)).get();
+        if (quizDoc.exists) {
+          const qData = quizDoc.data() ?? {};
+          if (Array.isArray(qData.questionIds) && qData.questionIds.length > 0) {
+            resolvedTotalQuestions = qData.questionIds.length;
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const clampedMarks = resolvedTotalQuestions > 0
+      ? Math.max(0, Math.min(Math.round(normalizedMarks), resolvedTotalQuestions))
+      : Math.max(0, Math.round(normalizedMarks));
+    const clampedCorrect = correctCount ? Math.min(correctCount, resolvedTotalQuestions || correctCount) : clampedMarks;
+
     const attemptType =
       mockData?.type === "grand-mock" ? "grand-mock" : "mock";
     const mockTitle =
@@ -75,16 +95,19 @@ export async function POST(
     const mockDescription =
       String(mockData?.description || mockData?.quiz?.description || "").trim() || null;
     const percent =
-      totalQuestions > 0 ? toPercent(correctCount || normalizedMarks, totalQuestions) : null;
+      resolvedTotalQuestions > 0 ? toPercent(clampedCorrect, resolvedTotalQuestions) : null;
     const createdAt = new Date().toISOString();
 
+    const userImage = auth.user.profileImageUrl || null;
     const nextAttempt = {
       candidate: {
         uid: auth.user.uid,
         name: auth.user.name || "Paid User",
         email: auth.user.email || "",
+        image: userImage,
       },
-      marks: normalizedMarks,
+      marks: clampedMarks,
+      maxMarks: resolvedTotalQuestions > 0 ? resolvedTotalQuestions : undefined,
       createdAt,
     };
 
@@ -114,8 +137,14 @@ export async function POST(
         ),
         nextAttempt,
       ];
+      const latestHistory = Array.isArray(latestMockData.history) ? latestMockData.history : [];
+      const history = latestEmailAttempt
+        ? [...latestHistory, { ...latestEmailAttempt, archivedAt: createdAt }]
+        : latestHistory;
+
       transaction.update(mockRef, {
         attempts,
+        history,
         attemptsCount: attempts.length,
         updatedAt: FieldValue.serverTimestamp(),
       });
@@ -125,9 +154,9 @@ export async function POST(
         mockDescription,
         quizId: mockData?.quizId ?? null,
         type: attemptType,
-        score: normalizedMarks,
-        correctCount: correctCount || null,
-        totalQuestions: totalQuestions || null,
+        score: clampedMarks,
+        correctCount: clampedCorrect,
+        totalQuestions: resolvedTotalQuestions || null,
         percent,
         timeTakenSeconds: timeTakenSeconds || null,
         submittedAt: createdAt,
@@ -142,7 +171,7 @@ export async function POST(
 
     if (transactionResult.replacedExisting) {
       await updateUserStats(auth.user.uid, (current) => ({
-        bestMockScore: Math.max(current.bestMockScore, normalizedMarks),
+        bestMockScore: Math.max(current.bestMockScore, clampedMarks),
         lastActivityAt: createdAt,
       }));
     } else {
@@ -156,9 +185,9 @@ export async function POST(
           averageMockScore: averageWithNext(
             current.averageMockScore,
             attemptCountBase,
-            normalizedMarks
+            clampedMarks
           ),
-          bestMockScore: Math.max(current.bestMockScore, normalizedMarks),
+          bestMockScore: Math.max(current.bestMockScore, clampedMarks),
           lastActivityAt: createdAt,
         };
       });

@@ -2,6 +2,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { getGeminiClient, getGeminiModelName } from "@/lib/gemini";
 import { publishNotification } from "@/lib/server/notificationService";
+import { uploadBase64ToCloudinary } from "@/lib/server/cloudinaryService";
 
 type DailyQuizInput = {
   question?: unknown;
@@ -121,9 +122,17 @@ async function createAndActivateDailyQuiz(params: {
 
   await markPreviousLiveQuizInactive(previousLive?.id);
 
+  let finalImageUrl = params.quiz.image;
+  if (finalImageUrl && finalImageUrl.startsWith("data:image/")) {
+    const uploaded = await uploadBase64ToCloudinary(finalImageUrl, "daily-quiz");
+    if (uploaded?.url) {
+      finalImageUrl = uploaded.url;
+    }
+  }
+
   await docRef.set({
     question: params.quiz.question,
-    image: params.quiz.image,
+    image: finalImageUrl,
     options: params.quiz.options,
     correctIndex: params.quiz.correctIndex,
     explanation: params.quiz.explanation,
@@ -240,15 +249,78 @@ export async function saveTodayDailyQuiz(input: DailyQuizInput) {
   return { success: true };
 }
 
+// export async function generateDailyQuizFromTopic(topic: unknown) {
+//   const normalizedTopic = String(topic || "").trim();
+//   if (!normalizedTopic) {
+//     throw new Error("Topic required");
+//   }
+
+//   const prompt = `
+// You are a senior FRCS Urology examiner.
+
+// Generate ONE high-quality multiple choice question for "Quiz of the Day".
+
+// Topic: ${normalizedTopic}
+
+// Requirements:
+//  - Clinical scenario based
+//  - 5 options only
+//  - One correct answer
+//  - Clear educational explanation
+//  - High-yield learning value
+
+// Return STRICT JSON only (no markdown, no commentary):
+
+// {
+//   "question": "string",
+//   "options": ["string", "string", "string", "string", "string"],
+//   "correctIndex": number,
+//   "explanation": "string"
+// }
+// `;
+
+//   const ai = getGeminiClient();
+//   const result = await ai.models.generateContent({
+//     model: getGeminiModelName(),
+//     contents: prompt,
+//   });
+//   const raw = result.text ?? "";
+//   const cleaned = raw.replace(/```json|```/g, "").trim();
+
+//   let parsed: any;
+//   try {
+//     parsed = JSON.parse(cleaned);
+//   } catch {
+//     throw new Error("AI returned invalid format");
+//   }
+
+//   if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length !== 5) {
+//     throw new Error("Invalid AI structure");
+//   }
+
+//   return {
+//     question: parsed.question,
+//     image: "",
+//     options: parsed.options,
+//     correctIndex: parsed.correctIndex ?? 0,
+//     explanation: parsed.explanation ?? "",
+//   };
+// }
+
+import { GoogleGenAI } from '@google/genai';
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_PAID_API_KEY 
+});
+
 export async function generateDailyQuizFromTopic(topic: unknown) {
   const normalizedTopic = String(topic || "").trim();
   if (!normalizedTopic) {
     throw new Error("Topic required");
   }
 
-  const prompt = `
+  const textPrompt = `
 You are a senior FRCS Urology examiner.
-
 Generate ONE high-quality multiple choice question for "Quiz of the Day".
 
 Topic: ${normalizedTopic}
@@ -258,40 +330,74 @@ Requirements:
  - 5 options only
  - One correct answer
  - Clear educational explanation
- - High-yield learning value
+ - Include a "medicalImagePrompt": Provide a highly specific, realistic prompt to generate a medical image relevant to this case (e.g., "An axial CT urogram showing...", "A clear cystoscopy view of the bladder wall demonstrating..."). Focus strictly on visual elements without any embedded text or labels.
 
 Return STRICT JSON only (no markdown, no commentary):
-
 {
   "question": "string",
   "options": ["string", "string", "string", "string", "string"],
   "correctIndex": number,
-  "explanation": "string"
+  "explanation": "string",
+  "medicalImagePrompt": "string"
 }
 `;
 
-  const ai = getGeminiClient();
-  const result = await ai.models.generateContent({
-    model: getGeminiModelName(),
-    contents: prompt,
+  // Fetch the Text/JSON content
+  const textResult = await ai.models.generateContent({
+    model: 'gemini-3.8-flash', 
+    contents: textPrompt,
+    config: {
+      responseMimeType: 'application/json',
+    }
   });
-  const raw = result.text ?? "";
-  const cleaned = raw.replace(/```json|```/g, "").trim();
 
+  const rawText = textResult.text ?? "";
   let parsed: any;
   try {
-    parsed = JSON.parse(cleaned);
+    parsed = JSON.parse(rawText);
   } catch {
-    throw new Error("AI returned invalid format");
+    throw new Error("AI returned invalid JSON format");
   }
 
   if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length !== 5) {
     throw new Error("Invalid AI structure");
   }
 
+  let imageUrl = "";
+  if (parsed.medicalImagePrompt) {
+    try {
+      // FIX: Use active Nano Banana image generation model and structure config
+      const imageResult = await ai.models.generateContent({
+        model: 'gemini-3-pro-image', // Native premium image generation model
+        contents: `Clinical medical illustration, highly detailed, photorealistic. ${parsed.medicalImagePrompt}`,
+        config: {
+          // Instructs the multimodal model to yield an IMAGE asset rather than text
+          responseModalities: ["IMAGE"] 
+        }
+      });
+
+      // Extract the generated image from inline candidate parts
+      const imagePart = imageResult.candidates?.[0]?.content?.parts?.find(
+        (part: any) => part.inlineData && part.inlineData.mimeType?.startsWith('image/')
+      );
+
+      if (imagePart?.inlineData?.data) {
+        const mimeType = imagePart.inlineData.mimeType || "image/png";
+        const base64DataUri = `data:${mimeType};base64,${imagePart.inlineData.data}`;
+
+        // Upload AI-generated image to existing Cloudinary and use that permanent link
+        const uploaded = await uploadBase64ToCloudinary(base64DataUri, "daily-quiz");
+        imageUrl = uploaded?.url || base64DataUri;
+      }
+    } catch (imageError) {
+      console.error("Failed to generate clinical image via AI:", imageError);
+      imageUrl = ""; // Graceful fallback
+    }
+  }
+
   return {
     question: parsed.question,
-    image: "",
+    image: imageUrl,
     options: parsed.options,
     correctIndex: parsed.correctIndex ?? 0,
     explanation: parsed.explanation ?? "",
