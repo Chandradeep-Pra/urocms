@@ -208,8 +208,49 @@ export async function listMocks() {
     .orderBy("createdAt", "desc")
     .get();
 
+  // Batch-fetch linked quiz docs to get description + questionCount cheaply
+  const uniqueQuizIds = [
+    ...new Set(
+      snapshot.docs
+        .map((doc) => String(doc.data().quizId || "").trim())
+        .filter(Boolean),
+    ),
+  ];
+
+  const quizDataByQuizId = new Map<string, Record<string, unknown>>();
+  if (uniqueQuizIds.length > 0) {
+    const quizSnapshots = await Promise.all(
+      uniqueQuizIds.map((quizId) =>
+        getAdminDb().collection("quizzes").doc(quizId).get(),
+      ),
+    );
+    quizSnapshots.forEach((snap) => {
+      if (snap.exists) quizDataByQuizId.set(snap.id, snap.data() ?? {});
+    });
+  }
+
   return snapshot.docs.map((doc) => {
     const data = doc.data();
+    const quizId = String(data.quizId || "").trim();
+    const quizData = quizDataByQuizId.get(quizId);
+
+    // Derive question count: prefer the quiz's questionIds array length
+    const questionCount =
+      quizData && Array.isArray(quizData.questionIds)
+        ? quizData.questionIds.length
+        : typeof data.questionCount === "number"
+          ? data.questionCount
+          : typeof data.totalQuestions === "number"
+            ? data.totalQuestions
+            : undefined;
+
+    // Derive description from quiz or mock doc
+    const description =
+      typeof quizData?.description === "string" && quizData.description.trim()
+        ? quizData.description.trim()
+        : typeof data.description === "string" && data.description.trim()
+          ? data.description.trim()
+          : undefined;
 
     return {
       id: doc.id,
@@ -218,6 +259,8 @@ export async function listMocks() {
       attemptsCount: Array.isArray(data.attempts)
         ? data.attempts.length
         : data.attemptsCount ?? 0,
+      ...(questionCount !== undefined ? { questionCount } : {}),
+      ...(description !== undefined ? { description } : {}),
     };
   });
 }
