@@ -4,6 +4,7 @@ import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { getMockAttemptsCollection } from "@/lib/server/candidateProgress";
 import { requireAppUser } from "@/lib/server/appSession";
 import { privateJsonResponse } from "@/lib/server/apiMetrics";
+import { firstMockAttempts } from "@/lib/server/mockAttempts";
 
 export async function GET(req: NextRequest) {
   const startedAt = performance.now();
@@ -51,22 +52,19 @@ export async function GET(req: NextRequest) {
       const quizId = String(data.quizId || "").trim();
       const quizData = quizDataByQuizId.get(quizId);
 
-      const legacyAttempt = Array.isArray(data.attempts)
-        ? data.attempts.find(
+      const legacyAttempt = firstMockAttempts(Array.isArray(data.attempts) ? data.attempts : [], Array.isArray(data.history) ? data.history : []).find(
             (attempt: any) =>
               String(attempt?.candidate?.email || "").trim().toLowerCase() ===
               String(auth.user.email || "").trim().toLowerCase()
-          )
-        : null;
+          );
       const userAttempt =
-        attemptByMockId.get(doc.id) ??
         (legacyAttempt
           ? {
               score: Number(legacyAttempt.marks ?? 0),
               marks: Number(legacyAttempt.marks ?? 0),
               submittedAt: legacyAttempt.createdAt ?? null,
             }
-          : null);
+          : attemptByMockId.get(doc.id) ?? null);
       const access = accessContext.getMockAccess({
         id: doc.id,
         type: String(data.type || "mock"),

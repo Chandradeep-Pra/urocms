@@ -4,6 +4,7 @@ import { buildAppContentAccessContext } from "@/lib/server/appContentAccess";
 import { getMockAttemptsCollection } from "@/lib/server/candidateProgress";
 import { requireAppUser } from "@/lib/server/appSession";
 import { privateJsonResponse } from "@/lib/server/apiMetrics";
+import { firstMockAttempts } from "@/lib/server/mockAttempts";
 
 export async function GET(
   req: NextRequest,
@@ -155,31 +156,27 @@ export async function GET(
       .where("mockId", "==", id)
       .limit(1)
       .get();
-    const legacyAttempt = Array.isArray(attempts)
-      ? attempts.find(
+    const legacyAttempt = firstMockAttempts(Array.isArray(attempts) ? attempts : [], Array.isArray(mockData.history) ? mockData.history : []).find(
           (attempt: any) =>
             String(attempt?.candidate?.email || "").trim().toLowerCase() ===
             String(authUser.email || "").trim().toLowerCase()
-        )
-      : null;
-    const userAttempt = !userAttemptSnapshot.empty
-      ? {
-          id: userAttemptSnapshot.docs[0].id,
-          ...userAttemptSnapshot.docs[0].data(),
-        }
-      : legacyAttempt
+        );
+    const storedAttempt = userAttemptSnapshot.docs[0]?.data();
+    const userAttempt = legacyAttempt
         ? {
             score: Number(legacyAttempt.marks ?? 0),
             marks: Number(legacyAttempt.marks ?? 0),
             submittedAt: legacyAttempt.createdAt ?? null,
+            answers: storedAttempt?.submittedAt === legacyAttempt.createdAt ? storedAttempt?.answers ?? null : null,
           }
-        : null;
+        : storedAttempt ?? null;
 
     return privateJsonResponse(
       {
         mock: {
           id: mockDoc.id,
           ...safeMockData,
+          description: String(quizData?.description || mockData.description || "").trim(),
           accessType: isPublic ? "public" : String(mockData.accessType || "restricted"),
           startTime: mockData?.startTime?.toDate?.()?.toISOString?.() ?? mockData?.startTime ?? null,
           endTime: mockData?.endTime?.toDate?.()?.toISOString?.() ?? mockData?.endTime ?? null,

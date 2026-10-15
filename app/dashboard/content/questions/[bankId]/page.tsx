@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import QuestionImageField from "@/components/questions/QuestionImageField";
 
 interface Question {
   id: string;
@@ -67,6 +68,7 @@ export default function BankQuestionsPage() {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [editForm, setEditForm] = useState<EditableQuestionForm | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (!bankId) return;
@@ -131,6 +133,7 @@ export default function BankQuestionsPage() {
   }
 
   function closeEditDialog() {
+    if (uploadingImage) return;
     setEditingQuestion(null);
     setEditForm(null);
     setSavingEdit(false);
@@ -151,7 +154,7 @@ export default function BankQuestionsPage() {
   }
 
   async function saveQuestionEdit() {
-    if (!editingQuestion || !editForm) return;
+    if (!editingQuestion || !editForm || uploadingImage) return;
 
     const questionText = editForm.questionText.trim();
     const options = editForm.options.map((option) => option.trim());
@@ -270,19 +273,9 @@ export default function BankQuestionsPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Question Image URL</Label>
-                <Input
-                  value={editForm.questionImage}
-                  onChange={(e) =>
-                    setEditForm((current) =>
-                      current
-                        ? { ...current, questionImage: e.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
+              <QuestionImageField label="Question Image" value={editForm.questionImage}
+                disabled={savingEdit || uploadingImage} onUploadingChange={setUploadingImage}
+                onChange={(url) => setEditForm((current) => current ? { ...current, questionImage: url } : current)} />
 
               <div className="grid gap-4 md:grid-cols-2">
                 {editForm.options.map((option, index) => (
@@ -344,29 +337,19 @@ export default function BankQuestionsPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Explanation Image URL</Label>
-                <Input
-                  value={editForm.explanationImage}
-                  onChange={(e) =>
-                    setEditForm((current) =>
-                      current
-                        ? { ...current, explanationImage: e.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
+              <QuestionImageField label="Explanation Image" value={editForm.explanationImage}
+                disabled={savingEdit || uploadingImage} onUploadingChange={setUploadingImage}
+                onChange={(url) => setEditForm((current) => current ? { ...current, explanationImage: url } : current)} />
 
               <div className="flex justify-end gap-3">
                 <Button
                   variant="outline"
                   onClick={closeEditDialog}
-                  disabled={savingEdit}
+                  disabled={savingEdit || uploadingImage}
                 >
                   Cancel
                 </Button>
-                <Button onClick={saveQuestionEdit} disabled={savingEdit}>
+                <Button onClick={saveQuestionEdit} disabled={savingEdit || uploadingImage}>
                   {savingEdit ? "Saving..." : "Save Question"}
                 </Button>
               </div>

@@ -10,6 +10,7 @@ import {
   updateUserStats,
 } from "@/lib/server/candidateProgress";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
+import { firstMockAttempts, normalizeMockAnswers } from "@/lib/server/mockAttempts";
 
 export async function POST(
   req: NextRequest,
@@ -53,7 +54,7 @@ export async function POST(
           accessType: String(mockData?.accessType || "restricted"),
         });
 
-    if (Number.isNaN(normalizedMarks)) {
+    if (!Number.isFinite(normalizedMarks)) {
       return NextResponse.json({ error: "Invalid marks" }, { status: 400 });
     }
 
@@ -100,6 +101,7 @@ export async function POST(
 
     const userImage = auth.user.profileImageUrl || null;
     const nextAttempt = {
+      attemptNumber: 1,
       candidate: {
         uid: auth.user.uid,
         name: auth.user.name || "Paid User",
@@ -118,33 +120,24 @@ export async function POST(
         transaction.get(userAttemptRef),
       ]);
       const latestMockData = latestMockDoc.data() ?? {};
-      const latestAttempts = Array.isArray(latestMockData.attempts)
-        ? latestMockData.attempts
-        : [];
+      if (!latestMockDoc.exists) throw new Error("Mock not found");
+      const latestAttempts = firstMockAttempts(
+        Array.isArray(latestMockData.attempts) ? latestMockData.attempts : [],
+        Array.isArray(latestMockData.history) ? latestMockData.history : [],
+      );
       const latestEmailAttempt = latestAttempts.find(
         (attempt: any) =>
           String(attempt?.candidate?.uid || "").trim() === auth.user.uid ||
-          String(attempt?.candidate?.email || "").trim().toLowerCase() ===
+          Boolean(auth.user.email) && String(attempt?.candidate?.email || "").trim().toLowerCase() ===
           String(auth.user.email || "").trim().toLowerCase()
       );
-      const replacedExisting = deterministicAttemptDoc.exists || Boolean(latestEmailAttempt);
-      const attempts = [
-        ...latestAttempts.filter(
-          (attempt: any) =>
-            String(attempt?.candidate?.uid || "").trim() !== auth.user.uid &&
-            String(attempt?.candidate?.email || "").trim().toLowerCase() !==
-              String(auth.user.email || "").trim().toLowerCase()
-        ),
-        nextAttempt,
-      ];
-      const latestHistory = Array.isArray(latestMockData.history) ? latestMockData.history : [];
-      const history = latestEmailAttempt
-        ? [...latestHistory, { ...latestEmailAttempt, archivedAt: createdAt }]
-        : latestHistory;
+      if (deterministicAttemptDoc.exists || latestEmailAttempt) {
+        return { alreadyRecorded: true, attemptsCount: latestAttempts.length, attempt: latestEmailAttempt || deterministicAttemptDoc.data() };
+      }
+      const attempts = [...latestAttempts, nextAttempt];
 
       transaction.update(mockRef, {
         attempts,
-        history,
         attemptsCount: attempts.length,
         updatedAt: FieldValue.serverTimestamp(),
       });
@@ -160,21 +153,17 @@ export async function POST(
         percent,
         timeTakenSeconds: timeTakenSeconds || null,
         submittedAt: createdAt,
+        answers: normalizeMockAnswers(body?.answers),
       });
 
       return {
-        replacedExisting,
+        alreadyRecorded: false,
         attemptsCount: attempts.length,
         attempt: nextAttempt,
       };
     });
 
-    if (transactionResult.replacedExisting) {
-      await updateUserStats(auth.user.uid, (current) => ({
-        bestMockScore: Math.max(current.bestMockScore, clampedMarks),
-        lastActivityAt: createdAt,
-      }));
-    } else {
+    if (!transactionResult.alreadyRecorded) {
       await updateUserStats(auth.user.uid, (current) => {
         const attemptCountBase = current.mocksAttempted + current.grandMocksAttempted;
         return {
@@ -196,8 +185,9 @@ export async function POST(
     return NextResponse.json({
       success: true,
       attemptsCount: transactionResult.attemptsCount,
-      attempt: nextAttempt,
-      replacedExisting: transactionResult.replacedExisting,
+      attempt: transactionResult.attempt,
+      replacedExisting: false,
+      alreadyRecorded: transactionResult.alreadyRecorded,
     });
   } catch (error) {
     console.error("App mock attempt submit error:", error);

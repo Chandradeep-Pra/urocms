@@ -1,5 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { firstMockAttempts } from "@/lib/server/mockAttempts";
 
 type MockAttemptInput = {
   name?: unknown;
@@ -284,6 +285,7 @@ export async function createMockSchedule(input: MockScheduleInput) {
   const docRef = await getAdminDb().collection("mocks").add({
     quizId,
     title: quiz.data.title || "Untitled Mock",
+    description: String(quiz.data.description || "").trim(),
     type: quiz.data.type,
     accessType: normalizeAccessType(input.accessType),
     startTime: schedule.startTime,
@@ -316,6 +318,7 @@ export async function getMockDetails(id: string) {
   return {
     id: mockDoc.id,
     ...mockData,
+    description: String(quiz.data.description || mockData.description || "").trim(),
     accessType: normalizeAccessType(mockData.accessType),
     startTime: toIsoString(mockData.startTime),
     endTime: toIsoString(mockData.endTime),
@@ -362,6 +365,7 @@ export async function updateMockSchedule(id: string, input: MockScheduleInput) {
   await mockRef.update({
     quizId: nextQuizId,
     title: quiz.data.title || existingMock.title || "Untitled Mock",
+    description: String(quiz.data.description || "").trim(),
     type: quiz.data.type || existingMock.type || "mock",
     accessType: nextAccessType,
     startTime: schedule.startTime,
@@ -425,31 +429,6 @@ async function addMockAttempt(id: string, input: MockAttemptInput) {
     ? Math.max(0, Math.min(Math.round(rawMarks), maxMarks))
     : Math.max(0, Math.round(rawMarks));
 
-  const existingAttempts = Array.isArray(mockData.attempts) ? mockData.attempts : [];
-  const existingHistory = Array.isArray(mockData.history) ? mockData.history : [];
-
-  // Find candidate's previous attempt if any
-  const oldAttemptIndex = existingAttempts.findIndex((attempt: any) =>
-    String(attempt?.candidate?.email || attempt?.email || "").trim().toLowerCase() === email
-  );
-
-  let attemptNumber = 1;
-  let nextHistory = existingHistory;
-  let nextAttempts = existingAttempts;
-
-  if (oldAttemptIndex !== -1) {
-    const oldAttempt = existingAttempts[oldAttemptIndex];
-    attemptNumber = (typeof oldAttempt?.attemptNumber === "number" ? oldAttempt.attemptNumber : 1) + 1;
-    nextHistory = [
-      ...existingHistory,
-      {
-        ...oldAttempt,
-        archivedAt: new Date().toISOString(),
-      },
-    ];
-    nextAttempts = existingAttempts.filter((_, idx) => idx !== oldAttemptIndex);
-  }
-
   const userImage =
     typeof input.userImage === "string" && input.userImage.trim()
       ? input.userImage.trim()
@@ -458,7 +437,7 @@ async function addMockAttempt(id: string, input: MockAttemptInput) {
         : null;
 
   const nextAttempt = {
-    attemptNumber,
+    attemptNumber: 1,
     candidate: {
       name,
       email,
@@ -469,23 +448,23 @@ async function addMockAttempt(id: string, input: MockAttemptInput) {
     createdAt: new Date().toISOString(),
   };
 
-  const attempts = [...nextAttempts, nextAttempt];
-
-  await mockRef.update({
-    attempts,
-    history: nextHistory,
-    attemptsCount: attempts.length,
-    updatedAt: FieldValue.serverTimestamp(),
+  return getAdminDb().runTransaction(async (transaction) => {
+    const latest = await transaction.get(mockRef);
+    if (!latest.exists) throw new Error("Mock not found");
+    const data = latest.data() ?? {};
+    const attempts = firstMockAttempts(
+      Array.isArray(data.attempts) ? data.attempts : [],
+      Array.isArray(data.history) ? data.history : [],
+    );
+    const existing = attempts.find((attempt) => String(attempt?.candidate?.email || attempt?.email || "").trim().toLowerCase() === email);
+    if (existing) return { attemptsCount: attempts.length, attempt: existing, replacedExisting: false, alreadyRecorded: true };
+    attempts.push(nextAttempt);
+    transaction.update(mockRef, { attempts, attemptsCount: attempts.length, updatedAt: FieldValue.serverTimestamp() });
+    return { attemptsCount: attempts.length, attempt: nextAttempt, replacedExisting: false, alreadyRecorded: false };
   });
-
-  return {
-    attemptsCount: attempts.length,
-    attempt: nextAttempt,
-    replacedExisting: oldAttemptIndex !== -1,
-  };
 }
 
-export async function getPublicMockResults(id: string) {
+export async function getPublicMockResults(id: string, allowRestricted = false) {
   const mockDoc = await getAdminDb().collection("mocks").doc(id).get();
 
   if (!mockDoc.exists) {
@@ -493,7 +472,7 @@ export async function getPublicMockResults(id: string) {
   }
 
   const mockData = mockDoc.data() ?? {};
-  if (normalizeAccessType(mockData.accessType) !== "public") {
+  if (!allowRestricted && normalizeAccessType(mockData.accessType) !== "public") {
     throw new Error("Mock is not publicly available");
   }
 
@@ -510,32 +489,13 @@ export async function getPublicMockResults(id: string) {
     // ignore
   }
 
-  const rawAttempts = normalizeAttempts(mockData.attempts);
-
-  // Group by candidate email/name so only the latest attempt per student is counted
-  const candidateMap = new Map<string, (typeof rawAttempts)[0]>();
-
-  for (const attempt of rawAttempts) {
-    const key = attempt.candidate.email || attempt.candidate.name.toLowerCase();
-    const existing = candidateMap.get(key);
-
-    if (!existing) {
-      candidateMap.set(key, attempt);
-    } else {
-      const existingTime = Date.parse(existing.createdAt || "") || 0;
-      const currentTime = Date.parse(attempt.createdAt || "") || 0;
-      if (currentTime >= existingTime) {
-        candidateMap.set(key, attempt);
-      }
-    }
-  }
-
-  const deduplicated = Array.from(candidateMap.values());
+  const deduplicated = firstMockAttempts(normalizeAttempts(mockData.attempts), normalizeAttempts(mockData.history))
+    .map((attempt) => ({ ...attempt, marks: maxMarks && maxMarks > 0 ? Math.max(0, Math.min(Math.round(attempt.marks), maxMarks)) : Math.max(0, Math.round(attempt.marks)) }));
   deduplicated.sort((a, b) => {
     if (b.marks !== a.marks) return b.marks - a.marks;
     const timeA = Date.parse(a.createdAt || "") || 0;
     const timeB = Date.parse(b.createdAt || "") || 0;
-    return timeB - timeA;
+    return timeA - timeB || a.candidate.email.localeCompare(b.candidate.email);
   });
 
   const results = deduplicated.map((attempt, index) => {
