@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
       medicalInstitution: auth.user.medicalInstitution,
       googleAccessEmail: auth.user.googleAccessEmail,
       activeCourseIds: auth.user.activeCourseIds,
+      activeCourses: accessContext.courses
+        .filter(course => accessContext.fullCourseIds.has(course.id))
+        .map(course => ({ id: course.id, title: course.title })),
       activePlanId: planAccess.activePlanId,
       activePlanStatus: planAccess.activePlanStatus,
       planActivatedAt: planAccess.planActivatedAt,

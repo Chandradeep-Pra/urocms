@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -12,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import DescriptionBulletsEditor from "@/components/dashboard/DescriptionBulletsEditor";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/client/adminApi";
 import { QuestionBank } from "../questions/QuestionBankManager";
@@ -223,16 +223,7 @@ export default function QuizBuilderPage({
             onChange={(e) => setQuiz((prev) => ({ ...prev, title: e.target.value }))}
           />
 
-          <Textarea
-            placeholder="Description"
-            value={quiz.description}
-            onChange={(e) =>
-              setQuiz((prev) => ({
-                ...prev,
-                description: e.target.value,
-              }))
-            }
-          />
+          <DescriptionBulletsEditor value={quiz.description || ""} onChange={(description) => setQuiz(prev => ({ ...prev, description }))} />
 
           <Select
             value={quiz.type}

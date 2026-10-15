@@ -242,9 +242,13 @@ export default function ExamsPage() {
                   {form.examDate ? formatDisplayDate(form.examDate) : "Pick a date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto overflow-hidden rounded-2xl border-primary/15 p-0 shadow-xl" align="start">
                 <Calendar
                   mode="single"
+                  captionLayout="dropdown"
+                  startMonth={new Date(2020, 0)}
+                  endMonth={new Date(new Date().getFullYear() + 10, 11)}
+                  defaultMonth={isoToDate(form.examDate)}
                   selected={isoToDate(form.examDate)}
                   onSelect={(date) => {
                     setForm((f) => ({ ...f, examDate: dateToISO(date) }));
@@ -387,9 +391,13 @@ export default function ExamsPage() {
                       : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto overflow-hidden rounded-2xl border-primary/15 p-0 shadow-xl" align="start">
                   <Calendar
                     mode="single"
+                  captionLayout="dropdown"
+                  startMonth={new Date(2020, 0)}
+                  endMonth={new Date(new Date().getFullYear() + 10, 11)}
+                    defaultMonth={isoToDate(editForm.examDate)}
                     selected={isoToDate(editForm.examDate)}
                     onSelect={(date) => {
                       setEditForm((f) => ({ ...f, examDate: dateToISO(date) }));

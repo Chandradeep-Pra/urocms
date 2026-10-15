@@ -67,6 +67,28 @@ test('public results cannot read a restricted mock', async () => {
   await assert.rejects(f.service.getPublicMockResults('test'), /not publicly available/);
 });
 
+test('mock details use the current linked quiz description', async () => {
+  const f = fixture({ quizId: 'quiz', description: 'Old description' });
+  f.records['quizzes/quiz'] = { type: 'grand-mock', description: 'Updated CMS description' };
+  const result = await f.service.getMockDetails('test');
+  assert.equal(result.description, 'Updated CMS description');
+});
+
+test('restricted rankings check course access before reading results', async () => {
+  const f = fixture({ accessType: 'restricted' });
+  let reads = 0;
+  const route = load('app/api/app/mocks/[id]/results/route.ts', {
+    ...f.modules,
+    'next/server': { NextResponse: { json: (data, init) => ({ data, ...init }) } },
+    '@/lib/server/appSession': { requireAppUser: async () => ({ user: { uid: 'u1' } }) },
+    '@/lib/server/appContentAccess': { buildAppContentAccessContext: async () => ({ getMockAccess: () => ({ allowed: false, mode: 'locked' }) }) },
+    '@/lib/server/mockService': { getPublicMockResults: async () => { reads++; return {}; } },
+  });
+  const response = await route.GET({}, { params: Promise.resolve({ id: 'test' }) });
+  assert.equal(response.status, 403);
+  assert.equal(reads, 0);
+});
+
 test('authenticated retakes preserve the first private answers and do not update aggregate statistics', async () => {
   const f = fixture();
   const stats = [];
