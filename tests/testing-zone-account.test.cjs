@@ -11,6 +11,7 @@ function load(relative, modules = {}) {
   vm.runInNewContext(code,{exports,Date,console,require:name=>modules[name] || (name === 'react' || name === 'react/jsx-runtime' ? require(name) : {})});
   return exports;
 }
+if (fs.existsSync(path.resolve('../testing-zone/lib/overview-tests.ts'))) {
 const {latestLiveTests}=load('lib/overview-tests.ts');
 const now=Date.parse('2026-10-15T12:00:00Z');
 const mock=(id,minutesAgo,hasAttempted=false)=>({id,startTime:new Date(now-minutesAgo*60000).toISOString(),durationMinutes:120,hasAttempted,accessType:'public'});
@@ -51,3 +52,5 @@ test('profile upload proxy forwards the authenticated user to the learner upload
   assert.equal(calls[0].options.headers.Authorization,'Bearer candidate');
   assert.equal(calls[0].options.body,body);
 });
+
+} else { test('connected Testing Zone account regressions', { skip: 'Testing Zone repository is not present' }, () => {}); }

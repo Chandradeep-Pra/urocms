@@ -12,7 +12,6 @@ import {
   syncTestingZoneAuth,
 } from "@/lib/testingZoneAuthHandoff";
 import { LogoutButton } from "@/components/LogoutButton";
-import { LazySignUpDialog } from "./LazySignUpDialog";
 
 const navItems = [
   { label: "Mentor", href: "#mentor" },
@@ -214,7 +213,7 @@ const continueToPortal = async (student = false) => {
               >
                 Login
               </Link>
-              <LazySignUpDialog className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-7 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,120,150,0.35)]" />
+              <Link href="/login?mode=signup" className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-7 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,120,150,0.35)]">Sign up</Link>
             </>
           )}
         </div>
@@ -284,7 +283,7 @@ const continueToPortal = async (student = false) => {
                 >
                   Login
                 </Link>
-                <LazySignUpDialog className="w-full rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-6 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25" />
+                <Link href="/login?mode=signup" onClick={() => setIsOpen(false)} className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-3 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25">Sign up</Link>
               </>
             )}
           </div>

@@ -44,3 +44,6 @@ next-env.d.ts
 /proud-woods-489814-s6-e66cf26d56db.json
 /google-creds.json
 .deployment/
+
+# Local UI verification screenshots
+.test-artifacts/

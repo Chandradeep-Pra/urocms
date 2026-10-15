@@ -8,4 +8,5 @@ export { AiVivaSection } from "./AiVivaSection";
 export { SuccessStoriesSection } from "./SuccessStoriesSection";
 export { MentorSection } from "./MentorSection";
 export { PricingSection } from "./PricingSection";
+export { FaqSection } from "./FaqSection";
 export { LandingFooter } from "./Footer";

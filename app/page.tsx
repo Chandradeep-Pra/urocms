@@ -3,6 +3,7 @@ import { Outfit } from "next/font/google";
 import {
   AiVivaSection,
   FaceToFaceSection,
+  FaqSection,
   HeroSection,
   LandingFooter,
   LandingHeader,
@@ -104,6 +105,7 @@ export default function Page() {
       <AppScreensSection />
       <SuccessStoriesSection />
       <PricingSection />
+      <FaqSection />
       <LandingFooter />
     </main>
   );

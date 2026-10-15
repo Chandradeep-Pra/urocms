@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const puppeteer = require('../../testing-zone/node_modules/puppeteer-core');
+const puppeteer = require('../../../testing-zone/node_modules/puppeteer-core');
 const cms = process.env.CMS_TEST_ORIGIN || 'http://127.0.0.1:3025';
 const testing = process.env.TESTING_TEST_ORIGIN || 'http://127.0.0.1:3022';
 for (const origin of [cms, testing]) if (!['localhost', '127.0.0.1'].includes(new URL(origin).hostname)) throw new Error('Local test origins only');
@@ -11,11 +11,10 @@ const fixtureContent = `"use client";
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import DescriptionBulletsEditor from "@/components/dashboard/DescriptionBulletsEditor";
-import { SignUpDialog } from "@/components/landing-page/SignUpDialog";
 export default function Fixture() {
   const [date,setDate] = useState<Date | undefined>(new Date(2026,9,15));
   const [description,setDescription] = useState("Timed mock\\nFull explanations");
-  return <main className="mx-auto max-w-md space-y-6 p-6"><Calendar mode="single" captionLayout="dropdown" startMonth={new Date(2020,0)} endMonth={new Date(2036,11)} selected={date} onSelect={setDate} /><p data-testid="selected-date">{date?.toLocaleDateString("en-US")}</p><DescriptionBulletsEditor value={description} onChange={setDescription} /><pre data-testid="description">{description}</pre><SignUpDialog><button>Open signup</button></SignUpDialog></main>;
+  return <main className="mx-auto max-w-md space-y-6 p-6"><Calendar mode="single" captionLayout="dropdown" startMonth={new Date(2020,0)} endMonth={new Date(2036,11)} selected={date} onSelect={setDate} /><p data-testid="selected-date">{date?.toLocaleDateString("en-US")}</p><DescriptionBulletsEditor value={description} onChange={setDescription} /><pre data-testid="description">{description}</pre></main>;
 }`;
 
 (async () => {
@@ -91,10 +90,6 @@ export default function Fixture() {
     await page.type('[aria-label="Description point 3"]','Ranked first attempt');
     assert.match(await page.$eval('[data-testid="description"]', node => node.innerText), /Ranked first attempt/);
     await page.screenshot({ path: path.join(artifacts,'calendar-and-bullets.png'), fullPage: true });
-    await page.$$eval('button', buttons => buttons.find(button => button.textContent === 'Open signup').click());
-    await page.click('[role="dialog"] button[type="submit"]');
-    assert.match(await page.$eval('[role="dialog"]', node => node.innerText), /Select your country/);
-    assert.equal(await page.$$eval('[role="dialog"] [aria-invalid="true"]', nodes => nodes.length), 7);
     await page.close();
 
     console.log('Checking Testing Zone account, overview, courses and AI cards');
@@ -171,5 +166,7 @@ export default function Fixture() {
   } finally {
     await browser.close();
     if (fs.existsSync(fixturePath) && fs.readFileSync(fixturePath,'utf8')===fixtureContent) fs.unlinkSync(fixturePath);
+    const generatedFixtureType = path.resolve('.next/dev/types/app/ui-check-local/page.ts');
+    if (fs.existsSync(generatedFixtureType)) fs.unlinkSync(generatedFixtureType);
   }
 })().catch(error=>{console.error(error);process.exitCode=1;});
