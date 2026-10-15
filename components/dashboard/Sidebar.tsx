@@ -21,6 +21,7 @@ import {
   Video,
   Bell,
   Link2,
+  CalendarCheck2,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -52,6 +53,7 @@ export const nav = [
       { name: "Testimonials", href: "/dashboard/content/testimonials", icon: Sparkles },
       { name: "Announcements", href: "/dashboard/content/announcement", icon: Megaphone },
       { name: "Notifications", href: "/dashboard/content/notifications", icon: Bell },
+      { name: "Exam Schedules", href: "/dashboard/content/exams", icon: CalendarCheck2 },
       // { name: "Resources", href: "/dashboard/content/resources", icon: FileText },
     ],
   },
