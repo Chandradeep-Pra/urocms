@@ -87,8 +87,7 @@ export default function LoginPanel({ initialMode = "login" }: { initialMode?: "l
   function setMode(next: "login" | "signup") {
     setModeState(next)
     const url = new URL(window.location.href)
-    if (next === "signup") url.searchParams.set("mode", "signup")
-    else url.searchParams.delete("mode")
+    url.searchParams.set("mode", next)
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`)
   }
   const [name, setName] = useState("")
@@ -311,7 +310,7 @@ export default function LoginPanel({ initialMode = "login" }: { initialMode?: "l
         </section>
         <section className="min-w-0 overflow-y-auto px-5 py-6 sm:px-9 md:flex md:flex-col md:py-8">
           <div className="mx-auto my-auto w-full max-w-md space-y-5">
-            <header><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a7a26]">Welcome to Urologics</p><h1 className="mt-2 text-2xl font-semibold tracking-tight">{authUser ? "Welcome back" : mode === "login" ? "Sign in to your account" : "Create your account"}</h1></header>
+            <header className="text-center"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a7a26]">Welcome to Urologics</p><h1 className="mt-2 text-2xl font-semibold tracking-tight">{authUser ? "Welcome back" : mode === "login" ? "Sign in to your account" : "Create your account"}</h1></header>
             {!authUser ? <>
               <div className="grid grid-cols-2 rounded-xl bg-slate-100 p-1" aria-label="Account options">
                 {(["login", "signup"] as const).map(option => <button key={option} type="button" onClick={() => { setMode(option); setError(""); setSuccess(""); setFieldErrors({}) }} className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${mode === option ? "bg-[#0b2948] text-white shadow-sm" : "text-slate-500 hover:text-[#0b2948]"}`}>{option === "login" ? "Sign in" : "Sign up"}</button>)}

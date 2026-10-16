@@ -207,13 +207,13 @@ const continueToPortal = async (student = false) => {
             </div>
           ) : (
             <>
-              <Link
-                href="/login"
+              <a
+                href="/login?mode=login"
                 className="rounded-full px-5 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-300 hover:bg-slate-100/80 hover:text-[#0f7896]"
               >
                 Login
-              </Link>
-              <Link href="/login?mode=signup" className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-7 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,120,150,0.35)]">Sign up</Link>
+              </a>
+              <a href="/login?mode=signup" className="rounded-full bg-gradient-to-r from-[#0f7896] to-[#1294ba] px-7 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(15,120,150,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,120,150,0.35)]">Sign up</a>
             </>
           )}
         </div>
@@ -276,14 +276,14 @@ const continueToPortal = async (student = false) => {
               </div>
             ) : (
               <>
-                <Link
-                  href="/login"
+                <a
+                  href="/login?mode=login"
                   onClick={() => setIsOpen(false)}
                   className="flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   Login
-                </Link>
-                <Link href="/login?mode=signup" onClick={() => setIsOpen(false)} className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-3 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25">Sign up</Link>
+                </a>
+                <a href="/login?mode=signup" onClick={() => setIsOpen(false)} className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0f7896] to-[#1294ba] py-3 text-sm font-bold text-white shadow-lg shadow-[#0f7896]/25">Sign up</a>
               </>
             )}
           </div>
