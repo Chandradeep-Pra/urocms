@@ -7,6 +7,17 @@ type Attempt = {
   attemptNumber?: number;
 };
 
+// Keep in sync with testing-zone/lib/mock-ranking.ts for legacy/fallback payloads.
+const HIDDEN_RANK_EMAILS = new Set([
+  "urologoics.org@gmail.com",
+  "chandradeepp611@gmail.com",
+  "ankitgoel042@gmail.com",
+]);
+
+export function isHiddenMockRankEmail(email: string): boolean {
+  return HIDDEN_RANK_EMAILS.has(email.trim().toLowerCase());
+}
+
 // Older versions archived the first score and replaced it with each retake.
 // Include that history so existing candidates retain their original rank.
 export function firstMockAttempts<T extends Attempt>(attempts: T[], history: T[] = []): T[] {

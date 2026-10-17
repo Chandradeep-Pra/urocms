@@ -22,6 +22,7 @@ import {
   Bell,
   Link2,
   CalendarCheck2,
+  MessageSquareText,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -92,6 +93,7 @@ export const nav = [
       { name: "Plan Creator", href: "/dashboard/system/plan-creator", icon: Crown },
       { name: "Settings", href: "/dashboard/settings", icon: Settings },
       { name: "Access Simulator", href: "/dashboard/system/access-simulator", icon: Smartphone },
+      { name: "Feedbacks", href: "/dashboard/system/feedbacks", icon: MessageSquareText },
       // { name: "Roles & Access", href: "/dashboard/roles", icon: ShieldCheck },
     ],
   },

@@ -113,7 +113,9 @@ export async function requireAppUser(req: NextRequest) {
         profileImageUrl:
           typeof user.profileImageUrl === "string" && user.profileImageUrl.trim()
             ? user.profileImageUrl.trim()
-            : null,
+            : typeof decoded.picture === "string" && decoded.picture.trim()
+              ? decoded.picture.trim()
+              : null,
         phone: typeof user.phone === "string" && user.phone.trim() ? user.phone.trim() : null,
         country: typeof user.country === "string" && user.country.trim() ? user.country.trim() : null,
         medicalInstitution:

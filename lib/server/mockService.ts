@@ -1,6 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
-import { getAdminDb } from "@/lib/firebaseAdmin";
-import { firstMockAttempts } from "@/lib/server/mockAttempts";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
+import { firstMockAttempts, isHiddenMockRankEmail } from "@/lib/server/mockAttempts";
 
 type MockAttemptInput = {
   name?: unknown;
@@ -84,6 +84,13 @@ function normalizeAccessType(value: unknown): MockAccessType {
   return value === "public" ? "public" : "restricted";
 }
 
+function firstImage(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return null;
+}
+
 function normalizeAttempts(value: unknown) {
   if (!Array.isArray(value)) {
     return [];
@@ -95,10 +102,15 @@ function normalizeAttempts(value: unknown) {
       candidate: {
         name: String(attempt?.candidate?.name || attempt?.name || "").trim(),
         email: String(attempt?.candidate?.email || attempt?.email || "").trim().toLowerCase(),
-        image:
-          typeof (attempt?.candidate?.image || attempt?.candidate?.userImage || attempt?.userImage || attempt?.image) === "string"
-            ? String(attempt?.candidate?.image || attempt?.candidate?.userImage || attempt?.userImage || attempt?.image).trim()
-            : null,
+        image: firstImage(
+          attempt?.candidate?.image,
+          attempt?.candidate?.userImage,
+          attempt?.candidate?.profileImageUrl,
+          attempt?.userImage,
+          attempt?.image,
+          attempt?.profileImageUrl,
+          attempt?.photoURL,
+        ),
       },
       marks:
         typeof attempt?.marks === "number"
@@ -113,6 +125,52 @@ function normalizeAttempts(value: unknown) {
         attempt.candidate.email &&
         Number.isFinite(attempt.marks)
     );
+}
+
+async function loadRankingProfileImages(attempts: ReturnType<typeof normalizeAttempts>) {
+  const images = new Map<string, string>();
+  const emails = [...new Set(attempts.map((attempt) => attempt.candidate.email))];
+  for (const attempt of attempts) {
+    if (attempt.candidate.image) images.set(attempt.candidate.email, attempt.candidate.image);
+  }
+
+  // Resolve current photos for old attempts without rewriting scores or history.
+  for (let index = 0; index < emails.length; index += 30) {
+    try {
+      const snapshot = await getAdminDb().collection("users")
+        .where("email", "in", emails.slice(index, index + 30))
+        .select("email", "profileImageUrl", "isShadowDuplicate", "canonicalUserId")
+        .get();
+      for (const doc of snapshot.docs) {
+        const profile = doc.data();
+        if (profile.isShadowDuplicate === true ||
+            profile.canonicalUserId && profile.canonicalUserId !== doc.id) continue;
+        const email = String(profile.email || "").trim().toLowerCase();
+        const image = firstImage(profile.profileImageUrl);
+        if (image) images.set(email, image);
+      }
+    } catch {
+      // A profile service failure must not hide otherwise valid rankings.
+      console.warn("Could not load ranking profile photos; using saved photos where available.");
+    }
+  }
+
+  const missingEmails = emails.filter((email) => !images.has(email));
+  for (let index = 0; index < missingEmails.length; index += 100) {
+    try {
+      const result = await getAdminAuth().getUsers(
+        missingEmails.slice(index, index + 100).map((email) => ({ email })),
+      );
+      for (const user of result.users) {
+        const email = String(user.email || "").trim().toLowerCase();
+        const image = firstImage(user.photoURL, ...user.providerData.map((provider) => provider.photoURL));
+        if (image) images.set(email, image);
+      }
+    } catch {
+      console.warn("Could not load Firebase Auth ranking photos; using initials where unavailable.");
+    }
+  }
+  return images;
 }
 
 async function getMockQuizOrThrow(quizId: string) {
@@ -490,6 +548,7 @@ export async function getPublicMockResults(id: string, allowRestricted = false) 
   }
 
   const deduplicated = firstMockAttempts(normalizeAttempts(mockData.attempts), normalizeAttempts(mockData.history))
+    .filter((attempt) => !isHiddenMockRankEmail(attempt.candidate.email))
     .map((attempt) => ({ ...attempt, marks: maxMarks && maxMarks > 0 ? Math.max(0, Math.min(Math.round(attempt.marks), maxMarks)) : Math.max(0, Math.round(attempt.marks)) }));
   deduplicated.sort((a, b) => {
     if (b.marks !== a.marks) return b.marks - a.marks;
@@ -498,6 +557,7 @@ export async function getPublicMockResults(id: string, allowRestricted = false) 
     return timeA - timeB || a.candidate.email.localeCompare(b.candidate.email);
   });
 
+  const profileImages = await loadRankingProfileImages(deduplicated);
   const results = deduplicated.map((attempt, index) => {
     const rawMarks = attempt.marks;
     const clampedMarks = maxMarks && maxMarks > 0
@@ -508,7 +568,7 @@ export async function getPublicMockResults(id: string, allowRestricted = false) 
       rank: index + 1,
       name: attempt.candidate.name,
       email: attempt.candidate.email,
-      userImage: attempt.candidate.image || null,
+      userImage: profileImages.get(attempt.candidate.email) || null,
       marks: clampedMarks,
       maxMarks: attempt.maxMarks ?? maxMarks,
       attended: formatRelativeAttended(attempt.createdAt),
