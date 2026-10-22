@@ -14,6 +14,7 @@ function load(file, modules = {}) {
   return exports;
 }
 const helpers = load('lib/server/mockAttempts.ts');
+const tracking = load('lib/server/mockAttemptTracking.ts', { 'node:crypto': require('node:crypto'), '@/lib/server/mockAttempts': helpers });
 const candidate = (email, marks, createdAt, extra = {}) => ({ candidate: { email, name: email }, marks, createdAt, ...extra });
 
 function fixture(mock = {}) {
@@ -21,7 +22,7 @@ function fixture(mock = {}) {
   const writes = [];
   const profileReads = [];
   const authReads = [];
-  const ref = key => ({ key, get: async () => snapshot(key) });
+  const ref = key => ({ key, get: async () => snapshot(key), collection: name => ({ doc: id => ref(`${key}/${name}/${id}`) }) });
   const snapshot = key => ({ exists: key in records, data: () => records[key] });
   const db = {
     collection: name => ({
@@ -47,7 +48,7 @@ function fixture(mock = {}) {
     authReads.push(identifiers);
     return { users: authUsers.filter(user => identifiers.some(identifier => identifier.email === user.email)) };
   } };
-  const modules = { '@/lib/firebaseAdmin': { getAdminDb: () => db, getAdminAuth: () => auth }, 'firebase-admin/firestore': { FieldValue: { serverTimestamp: () => 'timestamp' } }, '@/lib/server/mockAttempts': helpers };
+  const modules = { '@/lib/firebaseAdmin': { getAdminDb: () => db, getAdminAuth: () => auth }, 'firebase-admin/firestore': { FieldValue: { serverTimestamp: () => 'timestamp' } }, '@/lib/server/mockAttempts': helpers, '@/lib/server/mockAttemptTracking': tracking };
   return { records, writes, modules, db, auth, authUsers, profileReads, authReads, service: load('lib/server/mockService.ts', modules) };
 }
 
@@ -61,13 +62,20 @@ test('first attempts recover archived original scores and normalize candidate em
 
 test('public retakes and duplicate requests preserve the first score and timestamp', async () => {
   const f = fixture();
-  const first = await f.service.addPublicMockAttempt('test', { name: 'One', email: 'one@example.test', marks: 2, totalQuestions: 10 });
-  const second = await f.service.addPublicMockAttempt('test', { name: 'One', email: 'ONE@example.test', marks: 9, totalQuestions: 10 });
+  const first = await f.service.addPublicMockAttempt('test', { name: 'One', email: 'one@example.test', marks: 2, totalQuestions: 10, timeTakenSeconds: 60 });
+  const repeat = { name: 'One', email: 'ONE@example.test', marks: 9, totalQuestions: 10, timeTakenSeconds: 120 };
+  const second = await f.service.addPublicMockAttempt('test', repeat);
+  await f.service.addPublicMockAttempt('test', repeat);
   assert.equal(second.attempt.marks, 2);
   assert.equal(second.attempt.createdAt, first.attempt.createdAt);
   assert.equal(second.alreadyRecorded, true);
   assert.equal(f.records['mocks/test'].attempts.length, 1);
-  assert.equal(f.writes.length, 1);
+  assert.equal(f.writes.filter(key => key === 'mocks/test').length, 1);
+  assert.equal(Object.keys(f.records).filter(key => key.startsWith('mocks/test/submissions/')).length, 2);
+  const logs = Object.entries(f.records).filter(([key]) => key.startsWith('mocks/test/submissions/')).map(([, value]) => value);
+  assert.deepEqual(logs.map(row => row.timeTakenSeconds), [60, 120]);
+  assert.deepEqual(logs.map(row => row.isFirstAttempt), [true, false]);
+  assert.equal(f.records['mocks/test'].attempts[0].timeTakenSeconds, 60);
 });
 
 test('results rank original scores in descending order with earlier submission winning ties', async () => {
@@ -211,14 +219,20 @@ test('authenticated retakes preserve the first private answers and do not update
     },
   });
   const submit = body => route.POST({ json: async () => body }, { params: Promise.resolve({ id: 'test' }) });
-  await submit({ marks: 2, totalQuestions: 10, answers: { q1: 1, q2: 2 } });
+  await submit({ marks: 2, totalQuestions: 10, answers: { q1: 1, q2: 2 }, timeTakenSeconds: 65 });
   const saved = JSON.stringify(f.records['private/test']);
-  const retake = await submit({ marks: 9, totalQuestions: 10, answers: { q1: 3 } });
+  const repeat = { marks: 9, totalQuestions: 10, answers: { q1: 3 }, timeTakenSeconds: 120 };
+  const retake = await submit(repeat);
+  await submit(repeat);
   assert.equal(retake.alreadyRecorded, true);
   assert.equal(retake.attempt.marks, 2);
   assert.equal(JSON.stringify(f.records['private/test']), saved);
   assert.equal(f.records['mocks/test'].attempts[0].answers, undefined);
   assert.equal(stats.length, 1);
+  const logs = Object.entries(f.records).filter(([key]) => key.startsWith('mocks/test/submissions/')).map(([, value]) => value);
+  assert.equal(logs.length, 2);
+  assert.deepEqual(logs.map(row => row.timeTakenSeconds), [65, 120]);
+  assert.ok(logs.every(row => !('answers' in row)));
 });
 
 test('saved answers accept only valid option indices', () => {

@@ -4,7 +4,29 @@
 
 Target project: `proud-woods-489814-s6`; service: `urologics-web`;
 region: `asia-south1`; container port: `8080`.
-These commands only build and run locally. They do not create Google Cloud
+
+To build a fresh image and deploy it in one command, run in an authenticated
+Google Cloud Shell with Node.js 20.12+:
+
+```sh
+# Validate public build settings without changing anything in Google Cloud.
+node scripts/cloud-run.mjs deploy --env-file "$HOME/.env.prod" --check
+
+# Build, push, deploy the exact image digest, and send 100% of traffic to it.
+node scripts/cloud-run.mjs deploy --env-file "$HOME/.env.prod"
+```
+
+With `.env.prod` in the repository root, omit `--env-file`. The `deploy` command
+calls the existing `cloud-build.mjs` helper, waits for a successful build, then
+deploys its immutable image reference. It stops on any failed step and removes
+its temporary image file. Existing Cloud Run runtime variables, secret references,
+IAM, resource limits, scaling and networking are preserved; the env file supplies
+only approved public build settings. This command updates the existing service;
+use the Cloud Shell bootstrap workflow below when runtime configuration also
+needs to be applied. No local Docker installation is needed for `deploy`.
+`cloud-build.mjs` remains build-only.
+
+The following `build` and `run` commands only build and run locally. They do not create Google Cloud
 resources, push an image, or deploy a service.
 
 From the repository root, with Docker Desktop running Linux containers:

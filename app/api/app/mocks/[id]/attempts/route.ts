@@ -11,6 +11,7 @@ import {
 } from "@/lib/server/candidateProgress";
 import { requireAppUser, tierLockedResponse } from "@/lib/server/appSession";
 import { firstMockAttempts, normalizeMockAnswers } from "@/lib/server/mockAttempts";
+import { createMockCompletion, withOriginalMockCompletion, recordedMockSeconds } from "@/lib/server/mockAttemptTracking";
 
 export async function POST(
   req: NextRequest,
@@ -25,7 +26,7 @@ export async function POST(
     const marks = body?.marks;
     const correctCount = toPositiveNumber(body?.correctCount);
     const totalQuestions = toPositiveNumber(body?.totalQuestions);
-    const timeTakenSeconds = toPositiveNumber(body?.timeTakenSeconds);
+    const timeTakenSeconds = recordedMockSeconds(body?.timeTakenSeconds);
 
     if (marks === undefined || marks === null) {
       return NextResponse.json({ error: "Marks are required" }, { status: 400 });
@@ -100,6 +101,11 @@ export async function POST(
     const createdAt = new Date().toISOString();
 
     const userImage = auth.user.profileImageUrl || null;
+    const completion = createMockCompletion(auth.user, {
+      marks: clampedMarks, totalQuestions: resolvedTotalQuestions,
+      timeTakenSeconds, answers: body?.answers, submissionId: body?.submissionId,
+    }, createdAt);
+    const completionRef = mockRef.collection("submissions").doc(completion.id);
     const nextAttempt = {
       attemptNumber: 1,
       candidate: {
@@ -111,13 +117,16 @@ export async function POST(
       marks: clampedMarks,
       maxMarks: resolvedTotalQuestions > 0 ? resolvedTotalQuestions : undefined,
       createdAt,
+      timeTakenSeconds,
+      completionKey: completion.id,
     };
 
     const userAttemptRef = getMockAttemptsCollection(auth.user.uid).doc(id);
     const transactionResult = await getAdminDb().runTransaction(async (transaction) => {
-      const [latestMockDoc, deterministicAttemptDoc] = await Promise.all([
+      const [latestMockDoc, deterministicAttemptDoc, savedCompletion] = await Promise.all([
         transaction.get(mockRef),
         transaction.get(userAttemptRef),
+        transaction.get(completionRef),
       ]);
       const latestMockData = latestMockDoc.data() ?? {};
       if (!latestMockDoc.exists) throw new Error("Mock not found");
@@ -126,11 +135,14 @@ export async function POST(
         Array.isArray(latestMockData.history) ? latestMockData.history : [],
       );
       const latestEmailAttempt = latestAttempts.find(
-        (attempt: any) =>
+        (attempt) =>
           String(attempt?.candidate?.uid || "").trim() === auth.user.uid ||
           Boolean(auth.user.email) && String(attempt?.candidate?.email || "").trim().toLowerCase() ===
           String(auth.user.email || "").trim().toLowerCase()
       );
+      const original = deterministicAttemptDoc.exists ? deterministicAttemptDoc.data() : latestEmailAttempt;
+      if (!savedCompletion.exists) transaction.set(completionRef,
+        withOriginalMockCompletion(completion.id, completion.record, original));
       if (deterministicAttemptDoc.exists || latestEmailAttempt) {
         return { alreadyRecorded: true, attemptsCount: latestAttempts.length, attempt: latestEmailAttempt || deterministicAttemptDoc.data() };
       }
@@ -151,7 +163,8 @@ export async function POST(
         correctCount: clampedCorrect,
         totalQuestions: resolvedTotalQuestions || null,
         percent,
-        timeTakenSeconds: timeTakenSeconds || null,
+        timeTakenSeconds,
+        completionKey: completion.id,
         submittedAt: createdAt,
         answers: normalizeMockAnswers(body?.answers),
       });

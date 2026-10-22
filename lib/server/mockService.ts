@@ -1,6 +1,7 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { firstMockAttempts, isHiddenMockRankEmail } from "@/lib/server/mockAttempts";
+import { createMockCompletion, withOriginalMockCompletion, recordedMockSeconds } from "@/lib/server/mockAttemptTracking";
 
 type MockAttemptInput = {
   name?: unknown;
@@ -9,6 +10,9 @@ type MockAttemptInput = {
   userImage?: unknown;
   image?: unknown;
   totalQuestions?: unknown;
+  timeTakenSeconds?: unknown;
+  answers?: unknown;
+  submissionId?: unknown;
 };
 
 type MockScheduleInput = {
@@ -100,6 +104,7 @@ function normalizeAttempts(value: unknown) {
     .map((attempt) => ({
       attemptNumber: typeof attempt?.attemptNumber === "number" ? attempt.attemptNumber : 1,
       candidate: {
+        ...(typeof attempt?.candidate?.uid === "string" ? { uid: attempt.candidate.uid } : {}),
         name: String(attempt?.candidate?.name || attempt?.name || "").trim(),
         email: String(attempt?.candidate?.email || attempt?.email || "").trim().toLowerCase(),
         image: firstImage(
@@ -118,6 +123,8 @@ function normalizeAttempts(value: unknown) {
           : Number(attempt?.marks || 0),
       maxMarks: typeof attempt?.maxMarks === "number" ? attempt.maxMarks : undefined,
       createdAt: typeof attempt?.createdAt === "string" ? attempt.createdAt : undefined,
+      timeTakenSeconds: recordedMockSeconds(attempt?.timeTakenSeconds),
+      ...(typeof attempt?.completionKey === "string" ? { completionKey: attempt.completionKey } : {}),
     }))
     .filter(
       (attempt) =>
@@ -191,7 +198,7 @@ async function getMockQuizOrThrow(quizId: string) {
   };
 }
 
-async function loadMockQuestions(quizData: Record<string, any>) {
+async function loadMockQuestions(quizData: Record<string, unknown>) {
   if (Array.isArray(quizData.questionIds) && quizData.questionIds.length > 0) {
     const snapshots = await Promise.all(
       quizData.questionIds.map((questionId: string) =>
@@ -494,6 +501,12 @@ async function addMockAttempt(id: string, input: MockAttemptInput) {
         ? input.image.trim()
         : null;
 
+  const createdAt = new Date().toISOString();
+  const completion = createMockCompletion({ name, email }, {
+    marks, totalQuestions: maxMarks || 0, timeTakenSeconds: input.timeTakenSeconds,
+    answers: input.answers, submissionId: input.submissionId,
+  }, createdAt);
+  const completionRef = mockRef.collection("submissions").doc(completion.id);
   const nextAttempt = {
     attemptNumber: 1,
     candidate: {
@@ -503,11 +516,15 @@ async function addMockAttempt(id: string, input: MockAttemptInput) {
     },
     marks,
     maxMarks: maxMarks > 0 ? maxMarks : undefined,
-    createdAt: new Date().toISOString(),
+    createdAt,
+    timeTakenSeconds: completion.record.timeTakenSeconds,
+    completionKey: completion.id,
   };
 
   return getAdminDb().runTransaction(async (transaction) => {
-    const latest = await transaction.get(mockRef);
+    const [latest, savedCompletion] = await Promise.all([
+      transaction.get(mockRef), transaction.get(completionRef),
+    ]);
     if (!latest.exists) throw new Error("Mock not found");
     const data = latest.data() ?? {};
     const attempts = firstMockAttempts(
@@ -515,6 +532,8 @@ async function addMockAttempt(id: string, input: MockAttemptInput) {
       Array.isArray(data.history) ? data.history : [],
     );
     const existing = attempts.find((attempt) => String(attempt?.candidate?.email || attempt?.email || "").trim().toLowerCase() === email);
+    if (!savedCompletion.exists) transaction.set(completionRef,
+      withOriginalMockCompletion(completion.id, completion.record, existing));
     if (existing) return { attemptsCount: attempts.length, attempt: existing, replacedExisting: false, alreadyRecorded: true };
     attempts.push(nextAttempt);
     transaction.update(mockRef, { attempts, attemptsCount: attempts.length, updatedAt: FieldValue.serverTimestamp() });

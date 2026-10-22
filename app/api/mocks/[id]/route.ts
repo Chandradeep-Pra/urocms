@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/adminAccess";
+import { getAdminMockAttemptRows } from "@/lib/server/adminMockAttempts";
 import {
   deleteMockSchedule,
   getMockDetails,
@@ -15,9 +16,10 @@ export async function GET(
 
   try {
     const { id } = await context.params;
+    const mock = await getMockDetails(id);
     return NextResponse.json({
-      mock: await getMockDetails(id),
-    });
+      mock: { ...mock, attemptRows: await getAdminMockAttemptRows(id, mock) },
+    }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to load mock";
     const status = message === "Mock not found" || message === "Quiz not found" ? 404 : 500;

@@ -27,9 +27,13 @@ function loadTs(file, modules = {}) {
 
 function services(db, auth) {
   const helpers = loadTs('lib/server/mockAttempts.ts');
+  const tracking = loadTs('lib/server/mockAttemptTracking.ts', {
+    'node:crypto': require('node:crypto'), '@/lib/server/mockAttempts': helpers,
+  });
   const service = loadTs('lib/server/mockService.ts', {
     '@/lib/firebaseAdmin': { getAdminDb: () => db, getAdminAuth: () => auth },
     '@/lib/server/mockAttempts': helpers,
+    '@/lib/server/mockAttemptTracking': tracking,
     // getPublicMockResults never uses FieldValue or writes data.
     'firebase-admin/firestore': {},
   });

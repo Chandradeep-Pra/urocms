@@ -1,9 +1,11 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/client/adminApi";
+import MockAttemptsTable from "@/components/dashboard/MockAttemptsTable";
+import type { AdminMockAttemptRow } from "@/lib/server/mockAttemptTracking";
 import {
   ArrowLeft,
   CalendarDays,
@@ -39,7 +41,7 @@ interface Question {
   questionText: string;
   options: string[];
   correctAnswer: string;
-  explanation?: any;
+  explanation?: string | { text?: string } | null;
 }
 
 interface QuizOption {
@@ -66,6 +68,7 @@ interface MockDetails {
   endTime?: string;
   durationMinutes: number;
   attempts: MockAttempt[];
+  attemptRows: AdminMockAttemptRow[];
   attemptsCount?: number;
   quiz: {
     id: string;
@@ -103,15 +106,11 @@ export default function GrandMockDetailsPage() {
     durationMinutes: "",
   });
 
-  useEffect(() => {
-    fetchMock();
-    fetchQuizzes();
-  }, []);
-
-  const fetchMock = async () => {
+  const fetchMock = useCallback(async () => {
     try {
       const res = await adminFetch(`/api/mocks/${id}`);
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load mock");
       const nextMock = data.mock;
       setMock(nextMock);
       setForm({
@@ -126,9 +125,9 @@ export default function GrandMockDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const fetchQuizzes = async () => {
+  const fetchQuizzes = useCallback(async () => {
     try {
       const res = await adminFetch("/api/quizzes");
       const data = await res.json();
@@ -139,7 +138,12 @@ export default function GrandMockDetailsPage() {
     } catch {
       toast.error("Failed to load linked quizzes");
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchMock();
+    void fetchQuizzes();
+  }, [fetchMock, fetchQuizzes]);
 
   const deriveStatus = () => {
     if (!mock) return "";
@@ -237,7 +241,7 @@ export default function GrandMockDetailsPage() {
                 </span>
                 <span className="flex items-center gap-2">
                   <Users className="h-3 w-3" />
-                  {mock.attempts.length} attempted
+                  {mock.attemptRows.length} students attempted
                 </span>
               </div>
             </div>
@@ -299,7 +303,7 @@ export default function GrandMockDetailsPage() {
       </div>
 
       <div className="mx-auto max-w-7xl space-y-8 px-8 py-10">
-        <div className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
+        <div className="min-w-0 space-y-6">
           <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-zinc-900">Mock Settings</h2>
@@ -388,9 +392,9 @@ export default function GrandMockDetailsPage() {
               />
               <SummaryCard
                 icon={Users}
-                title="Attempts"
-                value={String(mock.attempts.length)}
-                meta="candidate records"
+                title="Total attempts"
+                value={String(mock.attemptRows.reduce((sum, row) => sum + row.totalAttempts, 0))}
+                meta={`${mock.attemptRows.length} students`}
               />
               <SummaryCard
                 icon={Trophy}
@@ -401,39 +405,12 @@ export default function GrandMockDetailsPage() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="min-w-0 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-zinc-900">Attempts</h2>
               
             </div>
-
-            <div className="mt-6 space-y-3">
-              {mock.attempts.length > 0 ? (
-                mock.attempts.map((attempt, index) => (
-                  <div
-                    key={`${attempt.candidate.email}-${index}`}
-                    className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-zinc-900">
-                        {attempt.candidate.name || "Unnamed candidate"}
-                      </p>
-                      <p className="text-sm text-zinc-500">{attempt.candidate.email}</p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-900">
-                        {attempt.marks} marks
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-sm text-zinc-500">
-                  No attempts added yet.
-                </div>
-              )}
-            </div>
+            <MockAttemptsTable rows={mock.attemptRows} />
           </section>
         </div>
 
