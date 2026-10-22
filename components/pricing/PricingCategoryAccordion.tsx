@@ -523,16 +523,12 @@ function PlanCard({
           </>
         ) : (
           <Button
-            asChild={Boolean(activeVersion.embeddedLink || plan.embeddedLink)}
+            asChild
             className="mt-4 w-full rounded-full bg-[#0f7896] text-white hover:bg-[#0b647d]"
           >
-            {activeVersion.embeddedLink || plan.embeddedLink ? (
             <a href={`/checkout?planId=${encodeURIComponent(plan.id)}&versionId=${encodeURIComponent(activeVersion.id)}${appliedCoupon ? `&couponCode=${encodeURIComponent(appliedCoupon.code)}` : ""}`}>
               Enrol Now
             </a>
-          ) : (
-            <span>Enrol Now</span>
-          )}
           </Button>
         )}
       </div>
