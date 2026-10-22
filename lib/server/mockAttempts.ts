@@ -40,3 +40,24 @@ export function normalizeMockAnswers(value: unknown): Record<string, number> | n
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return Object.fromEntries(Object.entries(value).filter(([, answer]) => typeof answer === "number" && Number.isInteger(answer) && answer >= 0 && answer < 5));
 }
+
+// First-attempt score wins; only equal scores are compared by completion time.
+// A missing/invalid duration must never become a zero-second advantage.
+export function compareMockRankedAttempts(
+  a: Attempt & { marks: number; timeTakenSeconds?: number | null },
+  b: Attempt & { marks: number; timeTakenSeconds?: number | null },
+): number {
+  if (a.marks !== b.marks) return b.marks - a.marks;
+  const duration = (value: unknown) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : Infinity;
+  const durationA = duration(a.timeTakenSeconds);
+  const durationB = duration(b.timeTakenSeconds);
+  if (durationA !== durationB) return durationA - durationB;
+  const submitted = (attempt: Attempt) => {
+    const value = Date.parse(attempt.createdAt || attempt.submittedAt || "");
+    return Number.isFinite(value) ? value : Infinity;
+  };
+  const submittedA = submitted(a);
+  const submittedB = submitted(b);
+  if (submittedA !== submittedB) return submittedA - submittedB;
+  return String(a.candidate?.email || a.email || "").localeCompare(String(b.candidate?.email || b.email || ""));
+}

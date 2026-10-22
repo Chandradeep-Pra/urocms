@@ -1,7 +1,8 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
-import { firstMockAttempts, isHiddenMockRankEmail } from "@/lib/server/mockAttempts";
-import { createMockCompletion, withOriginalMockCompletion, recordedMockSeconds } from "@/lib/server/mockAttemptTracking";
+import { firstMockAttempts, isHiddenMockRankEmail, compareMockRankedAttempts } from "@/lib/server/mockAttempts";
+import { createMockCompletion, withOriginalMockCompletion, recordedMockSeconds, mockAttemptSubmittedAt } from "@/lib/server/mockAttemptTracking";
+import { loadMockPrivateAttempts } from "@/lib/server/adminMockAttempts";
 
 type MockAttemptInput = {
   name?: unknown;
@@ -122,7 +123,8 @@ function normalizeAttempts(value: unknown) {
           ? attempt.marks
           : Number(attempt?.marks || 0),
       maxMarks: typeof attempt?.maxMarks === "number" ? attempt.maxMarks : undefined,
-      createdAt: typeof attempt?.createdAt === "string" ? attempt.createdAt : undefined,
+      createdAt: typeof attempt?.createdAt === "string" ? attempt.createdAt
+        : typeof attempt?.submittedAt === "string" ? attempt.submittedAt : mockAttemptSubmittedAt(attempt) ?? undefined,
       timeTakenSeconds: recordedMockSeconds(attempt?.timeTakenSeconds),
       ...(typeof attempt?.completionKey === "string" ? { completionKey: attempt.completionKey } : {}),
     }))
@@ -569,12 +571,26 @@ export async function getPublicMockResults(id: string, allowRestricted = false) 
   const deduplicated = firstMockAttempts(normalizeAttempts(mockData.attempts), normalizeAttempts(mockData.history))
     .filter((attempt) => !isHiddenMockRankEmail(attempt.candidate.email))
     .map((attempt) => ({ ...attempt, marks: maxMarks && maxMarks > 0 ? Math.max(0, Math.min(Math.round(attempt.marks), maxMarks)) : Math.max(0, Math.round(attempt.marks)) }));
-  deduplicated.sort((a, b) => {
-    if (b.marks !== a.marks) return b.marks - a.marks;
-    const timeA = Date.parse(a.createdAt || "") || 0;
-    const timeB = Date.parse(b.createdAt || "") || 0;
-    return timeA - timeB || a.candidate.email.localeCompare(b.candidate.email);
-  });
+  const untimed = deduplicated.filter(attempt => attempt.timeTakenSeconds === null);
+  if (untimed.length) {
+    const privateAttempts = await loadMockPrivateAttempts(id, untimed);
+    const savedTimes = new Map<string, number>();
+    for (const record of privateAttempts) {
+      const candidate = record.candidate as { email?: string } | undefined;
+      const submittedAt = mockAttemptSubmittedAt(record);
+      const seconds = recordedMockSeconds(record.timeTakenSeconds);
+      if (submittedAt && seconds !== null) {
+        savedTimes.set(`${String(candidate?.email || "").trim().toLowerCase()}|${submittedAt}`, seconds);
+      }
+    }
+    for (const attempt of untimed) {
+      // Use only the matching first submission's duration, never a faster retake
+      // or the admin report's cumulative time across multiple attempts.
+      const seconds = savedTimes.get(`${attempt.candidate.email}|${mockAttemptSubmittedAt(attempt)}`);
+      if (seconds !== undefined) attempt.timeTakenSeconds = seconds;
+    }
+  }
+  deduplicated.sort(compareMockRankedAttempts);
 
   const profileImages = await loadRankingProfileImages(deduplicated);
   const results = deduplicated.map((attempt, index) => {
@@ -590,6 +606,7 @@ export async function getPublicMockResults(id: string, allowRestricted = false) 
       userImage: profileImages.get(attempt.candidate.email) || null,
       marks: clampedMarks,
       maxMarks: attempt.maxMarks ?? maxMarks,
+      timeTakenSeconds: attempt.timeTakenSeconds,
       attended: formatRelativeAttended(attempt.createdAt),
       submittedAt: attempt.createdAt ?? null,
     };

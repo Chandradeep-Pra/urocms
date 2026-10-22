@@ -11,8 +11,14 @@ export async function getAdminMockAttemptRows(mockId: string, mock: Data) {
   ];
   const submissions = await db.collection("mocks").doc(mockId).collection("submissions").get();
   const completions: Data[] = submissions.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+  const privateAttempts = await loadMockPrivateAttempts(mockId, [...originals, ...completions]);
+  return summarizeMockCompletions([...originals, ...privateAttempts], completions);
+}
+
+export async function loadMockPrivateAttempts(mockId: string, candidatesFrom: Data[]): Promise<Data[]> {
+  const db = getAdminDb();
   const candidates = new Map<string, MockCandidate>();
-  for (const input of [...originals, ...completions]) {
+  for (const input of candidatesFrom) {
     const value = input.candidate as MockCandidate | undefined;
     const email = String(value?.email || input.email || "").trim().toLowerCase();
     const uid = String(value?.uid || "").trim();
@@ -42,6 +48,7 @@ export async function getAdminMockAttemptRows(mockId: string, mock: Data) {
     }
   }
   const known = [...candidates.values()].filter(candidate => candidate.uid);
+  const privateAttempts: Data[] = [];
   // Direct per-student queries reuse existing indexes and avoid scanning other
   // students' activity or requiring a new collection-group index.
   for (let offset = 0; offset < known.length; offset += 20) {
@@ -50,7 +57,7 @@ export async function getAdminMockAttemptRows(mockId: string, mock: Data) {
         .where("mockId", "==", mockId).get();
       return attempts.docs.map(doc => ({ ...doc.data(), candidate }));
     }));
-    originals.push(...records.flat());
+    privateAttempts.push(...records.flat());
   }
-  return summarizeMockCompletions(originals, completions);
+  return privateAttempts;
 }

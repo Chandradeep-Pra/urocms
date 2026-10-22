@@ -5,6 +5,7 @@ import { getMockAttemptsCollection } from "@/lib/server/candidateProgress";
 import { requireAppUser } from "@/lib/server/appSession";
 import { privateJsonResponse } from "@/lib/server/apiMetrics";
 import { firstMockAttempts } from "@/lib/server/mockAttempts";
+import { recordedMockSeconds } from "@/lib/server/mockAttemptTracking";
 
 export async function GET(
   req: NextRequest,
@@ -90,7 +91,7 @@ export async function GET(
     }
 
     const quizData = quizDoc.data();
-    let questions: any[] = [];
+    let questions: Array<Record<string, unknown>> = [];
 
     if (quizData?.questionIds?.length) {
       const snapshots = await Promise.all(
@@ -151,13 +152,13 @@ export async function GET(
       };
     }
 
-    const { attempts, ...safeMockData } = mockData as Record<string, any>;
+    const { attempts, ...safeMockData } = mockData;
     const userAttemptSnapshot = await getMockAttemptsCollection(authUser.uid)
       .where("mockId", "==", id)
       .limit(1)
       .get();
     const legacyAttempt = firstMockAttempts(Array.isArray(attempts) ? attempts : [], Array.isArray(mockData.history) ? mockData.history : []).find(
-          (attempt: any) =>
+          (attempt) =>
             String(attempt?.candidate?.email || "").trim().toLowerCase() ===
             String(authUser.email || "").trim().toLowerCase()
         );
@@ -167,6 +168,8 @@ export async function GET(
             score: Number(legacyAttempt.marks ?? 0),
             marks: Number(legacyAttempt.marks ?? 0),
             submittedAt: legacyAttempt.createdAt ?? null,
+            timeTakenSeconds: recordedMockSeconds(legacyAttempt.timeTakenSeconds) ??
+              (storedAttempt?.submittedAt === legacyAttempt.createdAt ? recordedMockSeconds(storedAttempt.timeTakenSeconds) : null),
             answers: storedAttempt?.submittedAt === legacyAttempt.createdAt ? storedAttempt?.answers ?? null : null,
           }
         : storedAttempt ?? null;

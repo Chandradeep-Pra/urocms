@@ -21,6 +21,7 @@ function fixture(mock = {}) {
   const records = { 'mocks/test': { accessType: 'public', title: 'Test', attempts: [], ...mock } };
   const writes = [];
   const profileReads = [];
+  const privateAttempts = [];
   const authReads = [];
   const ref = key => ({ key, get: async () => snapshot(key), collection: name => ({ doc: id => ref(`${key}/${name}/${id}`) }) });
   const snapshot = key => ({ exists: key in records, data: () => records[key] });
@@ -48,8 +49,8 @@ function fixture(mock = {}) {
     authReads.push(identifiers);
     return { users: authUsers.filter(user => identifiers.some(identifier => identifier.email === user.email)) };
   } };
-  const modules = { '@/lib/firebaseAdmin': { getAdminDb: () => db, getAdminAuth: () => auth }, 'firebase-admin/firestore': { FieldValue: { serverTimestamp: () => 'timestamp' } }, '@/lib/server/mockAttempts': helpers, '@/lib/server/mockAttemptTracking': tracking };
-  return { records, writes, modules, db, auth, authUsers, profileReads, authReads, service: load('lib/server/mockService.ts', modules) };
+  const modules = { '@/lib/firebaseAdmin': { getAdminDb: () => db, getAdminAuth: () => auth }, 'firebase-admin/firestore': { FieldValue: { serverTimestamp: () => 'timestamp' } }, '@/lib/server/mockAttempts': helpers, '@/lib/server/mockAttemptTracking': tracking, '@/lib/server/adminMockAttempts': { loadMockPrivateAttempts: async () => privateAttempts } };
+  return { records, writes, modules, db, auth, authUsers, profileReads, authReads, privateAttempts, service: load('lib/server/mockService.ts', modules) };
 }
 
 test('first attempts recover archived original scores and normalize candidate emails', () => {
@@ -78,7 +79,7 @@ test('public retakes and duplicate requests preserve the first score and timesta
   assert.equal(f.records['mocks/test'].attempts[0].timeTakenSeconds, 60);
 });
 
-test('results rank original scores in descending order with earlier submission winning ties', async () => {
+test('results rank original scores in descending order with earlier submission as the final fallback', async () => {
   const f = fixture({
     attempts: [candidate('one@example.test', 10, '2026-01-03T10:00:00Z'), candidate('two@example.test', 7, '2026-01-02T10:00:00Z'), candidate('three@example.test', 7, '2026-01-01T10:00:00Z')],
     history: [candidate('one@example.test', 2, '2025-12-31T10:00:00Z')],
@@ -86,6 +87,46 @@ test('results rank original scores in descending order with earlier submission w
   const result = await f.service.getPublicMockResults('test');
   assert.deepEqual(Array.from(result.results, row => [row.rank, row.email, row.marks]), [[1, 'three@example.test', 7], [2, 'two@example.test', 7], [3, 'one@example.test', 2]]);
   assert.equal(f.writes.length, 0);
+});
+
+test('equal marks rank by first-attempt duration before submission date, with unknown times last', async () => {
+  const f = fixture({ attempts: [
+    candidate('unknown@example.test', 7, '2026-01-01'),
+    candidate('slow@example.test', 7, '2026-01-02', { timeTakenSeconds: 120 }),
+    candidate('fast@example.test', 7, '2026-01-03', { timeTakenSeconds: 65 }),
+    candidate('top@example.test', 8, '2026-01-04'),
+    candidate('same-time@example.test', 7, '2026-01-04', { timeTakenSeconds: 65 }),
+    candidate('zero@example.test', 7, '2026-01-05', { timeTakenSeconds: 0 }),
+  ] });
+  const result = await f.service.getPublicMockResults('test');
+  assert.deepEqual(Array.from(result.results, row => row.email), ['top@example.test', 'zero@example.test', 'fast@example.test', 'same-time@example.test', 'slow@example.test', 'unknown@example.test']);
+  assert.deepEqual(Array.from(result.results, row => row.timeTakenSeconds), [null, 0, 65, 65, 120, null]);
+  assert.equal(f.writes.length, 0);
+});
+
+test('legacy timing recovery matches the ranked first timestamp and never borrows a quicker retake', async () => {
+  const f = fixture({ attempts: [
+    candidate('one@example.test', 7, '2026-01-01'),
+    candidate('two@example.test', 7, '2026-01-01'),
+    candidate('three@example.test', 7, '2026-01-01'),
+  ] });
+  f.privateAttempts.push(
+    { candidate: { email: 'one@example.test' }, submittedAt: '2026-01-01T00:00:00.000Z', timeTakenSeconds: 120, answers: { private: 1 } },
+    { candidate: { email: 'two@example.test' }, submittedAt: '2026-01-01', timeTakenSeconds: 65 },
+    { candidate: { email: 'three@example.test' }, submittedAt: '2026-01-02', timeTakenSeconds: 1 },
+  );
+  const result = await f.service.getPublicMockResults('test');
+  assert.deepEqual(Array.from(result.results, row => [row.email, row.timeTakenSeconds]), [['two@example.test', 65], ['one@example.test', 120], ['three@example.test', null]]);
+  assert.ok(result.results.every(row => !('answers' in row)));
+});
+
+test('archived first score keeps its original duration even when a retake has a faster time', async () => {
+  const f = fixture({
+    attempts: [candidate('one@example.test', 7, '2026-01-02', { timeTakenSeconds: 1 }), candidate('two@example.test', 7, '2026-01-01', { timeTakenSeconds: 60 })],
+    history: [candidate('one@example.test', 7, '2026-01-01', { timeTakenSeconds: 120 })],
+  });
+  const result = await f.service.getPublicMockResults('test');
+  assert.deepEqual(Array.from(result.results, row => [row.email, row.timeTakenSeconds]), [['two@example.test', 60], ['one@example.test', 120]]);
 });
 
 test('public results cannot read a restricted mock', async () => {

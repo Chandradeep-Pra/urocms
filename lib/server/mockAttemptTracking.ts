@@ -81,6 +81,10 @@ function timestamp(input: Data): string {
   return Number.isFinite(time) ? new Date(time).toISOString() : "";
 }
 
+export function mockAttemptSubmittedAt(input: Data): string | null {
+  return timestamp(input) || null;
+}
+
 export function summarizeMockCompletions(originals: Data[], submissions: Data[]): AdminMockAttemptRow[] {
   type Event = { marks: number; seconds: number | null; timestamp: string };
   type Group = { candidate: AdminMockAttemptRow["candidate"]; events: Map<string, Event>; originalKey: string; ordinal: number; missingHistory: number };
