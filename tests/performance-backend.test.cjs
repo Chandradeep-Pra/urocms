@@ -23,15 +23,15 @@ function sessionFixture(records, decoded = { uid: 'login', email: 'one@example.t
   };
   const firebase = { getAdminDb: () => ({ collection: () => collection }), getAdminAuth: () => ({ verifyIdToken: async () => decoded }) };
   const identity = load('lib/server/userIdentity.ts', { '@/lib/firebaseAdmin': firebase });
-  const session = load('lib/server/appSession.ts', { '@/lib/firebaseAdmin': firebase, '@/lib/server/userIdentity': identity, 'next/server': { NextResponse: { json: (data, init) => ({ data, ...init }) } } });
+  const session = load('lib/server/appSession.ts', { './applePurchaseLedger': { applyAppleAccess: async (uid, user) => { reads.push('apple-access:' + uid); return user; } }, '@/lib/firebaseAdmin': firebase, '@/lib/server/userIdentity': identity, 'next/server': { NextResponse: { json: (data, init) => ({ data, ...init }) } } });
   return { reads, writes, resolve: () => session.requireAppUser({ headers: new Headers({ authorization: 'Bearer test' }) }) };
 }
 
-test('mapped identity reuses its first snapshot with no lookup or write', async () => {
+test('mapped identity reuses its first snapshot and then checks Apple access without writing', async () => {
   const fixture = sessionFixture({ login: { email: 'one@example.test', canonicalUserId: 'login', tier: 'paid' } });
   const result = await fixture.resolve();
   assert.equal(result.user.tier, 'paid');
-  assert.deepEqual(fixture.reads, ['login']);
+  assert.deepEqual(fixture.reads, ['login', 'apple-access:login']);
   assert.deepEqual(fixture.writes, []);
 });
 
@@ -48,7 +48,7 @@ test('legacy duplicates retain combined entitlements without migrating records',
   assert.deepEqual(Array.from(result.user.activeCourseIds).sort(), ['new-course', 'old-course']);
   assert.deepEqual(fixture.writes, []);
   assert.equal(JSON.stringify(records), before);
-  assert.deepEqual(fixture.reads, ['login', 'email-query']);
+  assert.deepEqual(fixture.reads, ['login', 'email-query', 'apple-access:legacy']);
 });
 
 test('a first authenticated read does not create a user record', async () => {
@@ -57,7 +57,7 @@ test('a first authenticated read does not create a user record', async () => {
   assert.equal(result.user.uid, 'login');
   assert.equal(result.user.tier, 'guest');
   assert.deepEqual(fixture.writes, []);
-  assert.deepEqual(fixture.reads, ['login', 'email-query']);
+  assert.deepEqual(fixture.reads, ['login', 'email-query', 'apple-access:login']);
 });
 
 test('anonymous reads remain transient', async () => {

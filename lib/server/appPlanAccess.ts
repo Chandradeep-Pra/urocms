@@ -42,6 +42,7 @@ export type AppPlanAccessSnapshot = {
 export type AppPlanUserInput = {
   uid: string;
   tier: AppTier;
+  applePlanIds?: string[];
   activePlanId?: string | null;
   activePlanStatus?: AppPlanStatus | string | null;
   planActivatedAt?: unknown;
@@ -102,7 +103,7 @@ function buildEntitlements(selection: PlanSelection, scopes: PlanAccessScopes): 
   };
 }
 
-export async function resolveAppPlanAccess(user: AppPlanUserInput): Promise<AppPlanAccessSnapshot> {
+async function resolveSinglePlanAccess(user: AppPlanUserInput): Promise<AppPlanAccessSnapshot> {
   const activePlanId = user.activePlanId ? String(user.activePlanId).trim() : "";
   const planActivatedAt = toIsoString(user.planActivatedAt);
   const planExpiresAt = toIsoString(user.planExpiresAt);
@@ -173,4 +174,19 @@ export async function resolveAppPlanAccess(user: AppPlanUserInput): Promise<AppP
     },
     entitlements: buildEntitlements(selectedContent, accessScopes),
   };
+}
+
+export async function resolveAppPlanAccess(user: AppPlanUserInput): Promise<AppPlanAccessSnapshot> {
+  const result = await resolveSinglePlanAccess(user);
+  for (const id of [...new Set(user.applePlanIds || [])]) {
+    if (id === result.plan?.id) continue;
+    const doc = await getAdminDb().collection("pricingPlans").doc(id).get();
+    const data = doc.data();
+    if (!doc.exists || !data || data.isActive === false) continue;
+    const extra = buildEntitlements(normalizePlanSelection(data.selectedContent), normalizePlanAccessScopes(data.accessScopes));
+    for (const key of Object.keys(result.entitlements) as (keyof AppPlanEntitlements)[]) {
+      result.entitlements[key] = normalizeIdList([...result.entitlements[key], ...extra[key]]);
+    }
+  }
+  return result;
 }

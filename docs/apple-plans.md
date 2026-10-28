@@ -38,33 +38,14 @@ the CMS reference price or web billing label. Products missing from StoreKit
 must not have an enabled purchase button. Use StoreKit for purchase and restore,
 including pending, cancelled, failed and verified outcomes.
 
-### Purchase verification endpoint: `POST /api/plans/apple/verify`
-- Authentication: Required (`requireAppUser`, bearer token)
-- Body:
-  ```json
-  {
-    "productId": "com.urologics.app.membership.3m",
-    "transactionId": "2000000123456789",
-    "transactionDate": 1727179200000,
-    "purchaseToken": "optional-jws-or-receipt"
-  }
-  ```
-- Response:
-  ```json
-  {
-    "success": true,
-    "alreadyCompleted": false,
-    "planId": "frcs-plan",
-    "accessEndsAt": "2026-12-24T12:00:00.000Z"
-  }
-  ```
+### Purchase verification
 
-The server resolves the plan and duration by the verified `productId`, ensures
-the transaction is not claimed by another user account, updates the user's tier
-to `paid`, attaches the active plan and course entitlements, and records the purchase
-in Firestore. After receiving `success: true`, the native client calls `finishTransaction`
-to finalize the transaction with Apple.
+See [Apple purchase security and rollout](apple-purchase-security.md) for the complete implementation, credentials, notification setup, database rules, testing, and operational requirements.
 
-References:
-- https://developer.apple.com/documentation/storekit/product/displayprice
-- https://developer.apple.com/help/app-store-connect/test-in-app-purchases/overview-of-testing-in-sandbox
+- POST /api/plans/apple/account: authenticated account binding and configuration preflight. Returns a server-generated appAccountToken UUID, which must be passed to StoreKit before purchase.
+- POST /api/plans/apple/verify: authenticated, rate-limited verification. Accepts productId and numeric transactionId. The backend obtains current signed transaction information from Apple, verifies it using Apple's official library, checks ownership against the stored account token, and only then records a completed purchase. Client prices, purchase dates, success flags, and receipt claims are not authoritative.
+- GET /api/plans/apple/account: authenticated purchase history and consent preference.
+- PATCH /api/plans/apple/account: explicit consumption-information consent or withdrawal.
+- POST /api/plans/apple/notifications: public Apple webhook authenticated by Apple's signed payload, not a Firebase bearer token. Handles refund/revocation state, reversals and consented consumption requests.
+
+Access is derived from verified, environment-separated purchase records on authenticated server requests. Duplicate callbacks and restoration do not add access time. Legacy unverified Apple records are excluded and require controlled reconciliation. Existing PayPal and manual membership records are not rewritten by the new Apple fulfillment flow.

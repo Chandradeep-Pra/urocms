@@ -93,6 +93,7 @@ const sections = [
     title: "8. Sharing of Information",
     body: [
       "We do not sell your personal information.",
+      "If you explicitly enable Share Refund Support Information in Profile > Apple Purchases, we may send Apple the relevant App Store transaction identifier, whether the purchase was delivered, and whether a sample was provided, to help Apple assess a refund request. This sharing is optional and can be turned off in the same screen. We do not infer or send course-usage percentages from time elapsed. Withdrawal stops future sharing; you may contact Apple at privacy.apple.com about information already shared with Apple.",
       "We may share information with service providers that help operate the app, comply with law, prevent fraud or abuse, process payments, provide support, or protect the rights and safety of Urologics and its users.",
     ],
   },

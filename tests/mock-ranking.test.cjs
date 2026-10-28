@@ -209,6 +209,7 @@ test('authenticated sessions use the verified Google picture when the profile ha
   for (const profileImageUrl of [null, 'https://photos.test/profile.jpg']) {
     const user = { email: 'one@example.test', canonicalUserId: 'one', profileImageUrl };
     const session = load('lib/server/appSession.ts', {
+      './applePurchaseLedger': { applyAppleAccess: async (_uid, user) => user },
       'next/server': { NextResponse: { json: data => data } },
       '@/lib/firebaseAdmin': {
         getAdminAuth: () => ({ verifyIdToken: async () => ({ uid: 'one', email: user.email, picture: 'https://photos.test/google.jpg', firebase: { sign_in_provider: 'google.com' } }) }),

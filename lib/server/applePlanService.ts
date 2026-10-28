@@ -1,5 +1,6 @@
 import "server-only";
-import { FieldValue } from "firebase-admin/firestore";
+import { fulfillVerifiedApplePurchase } from "./applePurchaseLedger";
+import { ApplePaymentError } from "./appleStoreServer";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { parseApplePlanPricing, validateApplePlanPricing } from "@/lib/apple-plans";
 
@@ -71,6 +72,7 @@ export async function findPlanByAppleProductId(productId: string): Promise<Resol
   const cleanId = String(productId || "").trim();
   if (!cleanId) return null;
   const snapshot = await getAdminDb().collection("pricingPlans").get();
+  let match: ResolvedApplePlanVersion | null = null;
   for (const doc of snapshot.docs) {
     const data = doc.data() || {};
     if (data.isActive === false) continue;
@@ -82,7 +84,8 @@ export async function findPlanByAppleProductId(productId: string): Promise<Resol
         const courseIds = Array.isArray(data.accessScopes?.courseIds)
           ? data.accessScopes.courseIds.map(String).filter(Boolean)
           : [];
-        return {
+        if (match) throw new ApplePaymentError("AMBIGUOUS_APPLE_PRODUCT", 409);
+        match = {
           planId: doc.id,
           planName: String(data.name || "Untitled plan"),
           versionId: String(v.id || ""),
@@ -96,7 +99,7 @@ export async function findPlanByAppleProductId(productId: string): Promise<Resol
       }
     }
   }
-  return null;
+  return match;
 }
 
 export type ApplePurchaseFulfillmentInput = {
@@ -111,122 +114,7 @@ export type ApplePurchaseFulfillmentInput = {
 };
 
 export async function verifyAndFulfillApplePurchase(input: ApplePurchaseFulfillmentInput) {
-  const productId = String(input.productId || "").trim();
-  const transactionId = String(input.transactionId || "").trim();
-  if (!productId) throw new Error("Apple product ID is required");
-  if (!transactionId) throw new Error("Apple transaction ID is required");
-
-  const resolved = await findPlanByAppleProductId(productId);
-  if (!resolved) {
-    throw new Error(`No active Apple plan found matching product ID '${productId}'`);
-  }
-
-  const db = getAdminDb();
-  const txRef = db.collection("appleTransactions").doc(transactionId);
-  const userRef = db.collection("users").doc(input.userId);
-
-  return db.runTransaction(async (tx) => {
-    const [txSnap, userSnap] = await Promise.all([
-      tx.get(txRef),
-      tx.get(userRef),
-    ]);
-
-    if (txSnap.exists) {
-      const existing = txSnap.data() || {};
-      if (existing.userId !== input.userId) {
-        throw new Error("This Apple transaction is already linked to another account");
-      }
-      return {
-        alreadyCompleted: true,
-        planId: resolved.planId,
-        accessEndsAt: existing.accessEndsAt ? String(existing.accessEndsAt) : null,
-      };
-    }
-
-    const now = new Date();
-    const userData = userSnap.data() || {};
-    const existingExpiryRaw = userData.planExpiresAt;
-    const existingExpiry = existingExpiryRaw ? new Date(String(existingExpiryRaw)) : null;
-    const baseDate = existingExpiry && !Number.isNaN(existingExpiry.getTime()) && existingExpiry > now
-      ? existingExpiry
-      : now;
-
-    const accessStartsAt = now;
-    const accessEndsAt = new Date(baseDate);
-    accessEndsAt.setUTCMonth(accessEndsAt.getUTCMonth() + resolved.months);
-
-    const purchaseRef = db.collection("purchases").doc();
-
-    tx.set(txRef, {
-      transactionId,
-      productId,
-      planId: resolved.planId,
-      versionId: resolved.versionId,
-      userId: input.userId,
-      purchaseToken: input.purchaseToken || null,
-      accessStartsAt: accessStartsAt.toISOString(),
-      accessEndsAt: accessEndsAt.toISOString(),
-      createdAt: now.toISOString(),
-    });
-
-    tx.set(purchaseRef, {
-      userId: input.userId,
-      userEmail: input.userEmail || null,
-      userName: input.userName || null,
-      planId: resolved.planId,
-      versionId: resolved.versionId,
-      planNameSnapshot: resolved.planName,
-      durationMonths: resolved.months,
-      paidAmount: resolved.price,
-      currency: resolved.currency,
-      provider: "app-store",
-      appleProductId: productId,
-      appleTransactionId: transactionId,
-      appleOfferId: input.offerId || null,
-      status: "COMPLETED",
-      accessStartsAt,
-      accessEndsAt,
-      purchasedAt: now,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    for (const courseId of resolved.courseIds) {
-      const entitlementRef = db.collection("courseEntitlements").doc(`${input.userId}_${courseId}`);
-      tx.set(entitlementRef, {
-        userId: input.userId,
-        courseId,
-        planId: resolved.planId,
-        purchaseId: purchaseRef.id,
-        status: "ACTIVE",
-        accessStartsAt,
-        accessEndsAt,
-        updatedAt: now,
-        createdAt: now,
-      }, { merge: true });
-    }
-
-    const userUpdate: Record<string, unknown> = {
-      tier: "paid",
-      activePlanId: resolved.planId,
-      activePlanStatus: "active",
-      planActivatedAt: accessStartsAt.toISOString(),
-      planExpiresAt: accessEndsAt.toISOString(),
-      updatedAt: now.toISOString(),
-      upgradedAt: now.toISOString(),
-    };
-
-    if (resolved.courseIds.length > 0) {
-      userUpdate.activeCourseIds = FieldValue.arrayUnion(...resolved.courseIds);
-    }
-
-    tx.set(userRef, userUpdate, { merge: true });
-
-    return {
-      alreadyCompleted: false,
-      planId: resolved.planId,
-      accessEndsAt: accessEndsAt.toISOString(),
-      purchaseId: purchaseRef.id,
-    };
-  });
+  const resolved = await findPlanByAppleProductId(input.productId);
+  if (!resolved) throw new ApplePaymentError("APPLE_PRODUCT_UNAVAILABLE", 404);
+  return fulfillVerifiedApplePurchase(input, resolved);
 }

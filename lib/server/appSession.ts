@@ -1,3 +1,4 @@
+import { applyAppleAccess } from "./applePurchaseLedger";
 import { NextRequest, NextResponse } from "next/server";
 import type { DecodedIdToken } from "firebase-admin/auth";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
@@ -19,6 +20,7 @@ export interface AppUserSession {
   googleAccessEmail: string | null;
   source: string | null;
   activeCourseIds: string[];
+  applePlanIds?: string[];
   activePlanId: string | null;
   activePlanStatus: AppPlanStatus;
   planActivatedAt: unknown;
@@ -101,7 +103,7 @@ export async function requireAppUser(req: NextRequest) {
       currentSnapshot: userDoc,
       readOnly: true,
     });
-    const user = resolved.userData ?? {};
+    const user = await applyAppleAccess(resolved.uid, resolved.userData ?? {});
 
     return {
       user: {
@@ -126,6 +128,7 @@ export async function requireAppUser(req: NextRequest) {
         googleAccessEmail: user.googleAccessEmail ?? user.email ?? decoded.email ?? null,
         source: user.source ?? decoded.firebase.sign_in_provider ?? null,
         activeCourseIds: Array.isArray(user.activeCourseIds) ? user.activeCourseIds : [],
+        applePlanIds: user.applePlanIds ?? [],
         activePlanId: user.activePlanId ? String(user.activePlanId) : null,
         activePlanStatus: normalizePlanStatus(user.activePlanStatus),
         planActivatedAt: user.planActivatedAt ?? null,
