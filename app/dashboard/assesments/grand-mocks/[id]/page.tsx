@@ -100,6 +100,7 @@ export default function GrandMockDetailsPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     quizId: "",
+    title: "",
     accessType: "restricted" as "public" | "restricted",
     startTime: "",
     endTime: "",
@@ -115,6 +116,7 @@ export default function GrandMockDetailsPage() {
       setMock(nextMock);
       setForm({
         quizId: nextMock.quizId,
+        title: nextMock.title || nextMock.quiz?.title || "",
         accessType: nextMock.accessType === "public" ? "public" : "restricted",
         startTime: toDateTimeLocal(nextMock.startTime),
         endTime: toDateTimeLocal(nextMock.endTime),
@@ -173,11 +175,17 @@ export default function GrandMockDetailsPage() {
   const handleSave = async () => {
     if (!mock) return;
 
+    if (!form.title.trim()) {
+      toast.error("Mock name is required");
+      return;
+    }
+
     setSaving(true);
 
     try {
       const payload = {
         quizId: form.quizId,
+        title: form.title.trim(),
         accessType: form.accessType,
         startTime: form.startTime,
         endTime: form.endTime,
@@ -192,12 +200,15 @@ export default function GrandMockDetailsPage() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Failed to update mock");
+      }
 
       toast.success("Mock updated");
       fetchMock();
-    } catch {
-      toast.error("Failed to update mock");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update mock");
     } finally {
       setSaving(false);
     }
@@ -313,6 +324,19 @@ export default function GrandMockDetailsPage() {
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="mock-name">Mock name</Label>
+                <Input
+                  id="mock-name"
+                  value={form.title}
+                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                  aria-describedby="mock-name-help"
+                />
+                <p id="mock-name-help" className="text-sm text-muted-foreground">
+                  Shown to students. Defaults to the selected quiz’s name.
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <Label>Linked Quiz</Label>
                 <Select
@@ -322,6 +346,10 @@ export default function GrandMockDetailsPage() {
                     setForm((prev) => ({
                       ...prev,
                       quizId: value,
+                      title:
+                        !prev.title.trim() || prev.title === (quizzes.find((quiz) => quiz.id === prev.quizId)?.title ?? mock.quiz.title)
+                          ? selected?.title || ""
+                          : prev.title,
                       durationMinutes:
                         selected?.durationMinutes?.toString() || prev.durationMinutes,
                     }));

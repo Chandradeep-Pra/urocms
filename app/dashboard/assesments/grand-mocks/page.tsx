@@ -86,6 +86,7 @@ export default function GrandMockPage() {
 
   const [form, setForm] = useState({
     quizId: "",
+    title: "",
     startTime: "",
     endTime: "",
     durationMinutes: "",
@@ -142,31 +143,41 @@ export default function GrandMockPage() {
       return;
     }
 
+    if (!form.title.trim()) {
+      toast.error("Mock name is required");
+      return;
+    }
+
     try {
       const res = await adminFetch("/api/mocks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           quizId: form.quizId,
+          title: form.title.trim(),
           startTime: form.startTime,
           endTime: form.endTime || null,
           durationMinutes: Number(form.durationMinutes),
         }),
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Failed to create mock");
+      }
 
       toast.success("Mock scheduled");
       setDialogOpen(false);
       setForm({
         quizId: "",
+        title: "",
         startTime: "",
         endTime: "",
         durationMinutes: "",
       });
       loadMocks();
-    } catch {
-      toast.error("Failed to create mock");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create mock");
     }
   };
 
@@ -228,6 +239,10 @@ export default function GrandMockPage() {
                     setForm((prev) => ({
                       ...prev,
                       quizId: value,
+                      title:
+                        !prev.title.trim() || prev.title === quizzes.find((quiz) => quiz.id === prev.quizId)?.title
+                          ? selected?.title || ""
+                          : prev.title,
                       durationMinutes:
                         selected?.durationMinutes?.toString() || "",
                     }));
@@ -245,6 +260,19 @@ export default function GrandMockPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mock-name">Mock name</Label>
+                <Input
+                  id="mock-name"
+                  value={form.title}
+                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                  aria-describedby="mock-name-help"
+                />
+                <p id="mock-name-help" className="text-sm text-muted-foreground">
+                  Shown to students. Defaults to the selected quiz’s name.
+                </p>
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">

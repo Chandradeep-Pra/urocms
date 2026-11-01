@@ -18,6 +18,7 @@ type MockAttemptInput = {
 
 type MockScheduleInput = {
   quizId?: unknown;
+  title?: unknown;
   startTime?: unknown;
   endTime?: unknown;
   durationMinutes?: unknown;
@@ -87,6 +88,16 @@ function normalizeDurationMinutes(value: unknown, fallback: number) {
 
 function normalizeAccessType(value: unknown): MockAccessType {
   return value === "public" ? "public" : "restricted";
+}
+
+function resolveMockTitle(value: unknown, fallback: unknown) {
+  if (value === undefined) {
+    return typeof fallback === "string" && fallback.trim() ? fallback.trim() : "Untitled Mock";
+  }
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error("Mock name is required");
+  }
+  return value.trim();
 }
 
 function firstImage(...values: unknown[]): string | null {
@@ -342,6 +353,7 @@ export async function createMockSchedule(input: MockScheduleInput) {
   }
 
   const quiz = await getMockQuizOrThrow(quizId);
+  const title = resolveMockTitle(input.title, quiz.data.title);
   const schedule = buildMockScheduleWindow({
     startTime,
     endTime: input.endTime,
@@ -351,7 +363,7 @@ export async function createMockSchedule(input: MockScheduleInput) {
 
   const docRef = await getAdminDb().collection("mocks").add({
     quizId,
-    title: quiz.data.title || "Untitled Mock",
+    title,
     description: String(quiz.data.description || "").trim(),
     type: quiz.data.type,
     accessType: normalizeAccessType(input.accessType),
@@ -365,7 +377,7 @@ export async function createMockSchedule(input: MockScheduleInput) {
 
   return {
     id: docRef.id,
-    title: String(quiz.data.title || "Untitled Mock"),
+    title,
     type: String(quiz.data.type || "mock"),
     accessType: normalizeAccessType(input.accessType),
   };
@@ -412,6 +424,7 @@ export async function updateMockSchedule(id: string, input: MockScheduleInput) {
   const existingMock = existingMockDoc.data() ?? {};
   const nextQuizId = String(input.quizId || existingMock.quizId || "").trim();
   const quiz = await getMockQuizOrThrow(nextQuizId);
+  const title = resolveMockTitle(input.title, existingMock.title || quiz.data.title);
   const nextAccessType = normalizeAccessType(input.accessType ?? existingMock.accessType);
   const normalizedAttempts =
     input.attempts !== undefined
@@ -431,7 +444,7 @@ export async function updateMockSchedule(id: string, input: MockScheduleInput) {
 
   await mockRef.update({
     quizId: nextQuizId,
-    title: quiz.data.title || existingMock.title || "Untitled Mock",
+    title,
     description: String(quiz.data.description || "").trim(),
     type: quiz.data.type || existingMock.type || "mock",
     accessType: nextAccessType,

@@ -44,7 +44,8 @@ export async function PATCH(
     const status =
       message === "Mock not found" || message === "Quiz not found"
         ? 404
-        : message === "Only mock type quizzes can be linked"
+        : message === "Only mock type quizzes can be linked" ||
+            message === "Mock name is required"
           ? 400
           : 500;
     console.error("Update mock error:", err);

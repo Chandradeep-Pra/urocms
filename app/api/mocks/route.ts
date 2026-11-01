@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
       message === "Quiz not found"
         ? 404
         : message === "Quiz and start time required" ||
+            message === "Mock name is required" ||
             message === "Only mock type quizzes can be linked"
           ? 400
           : 500;
