@@ -437,6 +437,7 @@ export default function GrandMockDetailsPage() {
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-zinc-900">Attempts</h2>
               
+              
             </div>
             <MockAttemptsTable rows={mock.attemptRows} />
           </section>
