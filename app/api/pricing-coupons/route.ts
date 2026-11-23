@@ -9,7 +9,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { response } = await requireAdminSession(req); if (response) return response;
   try {
     const data = await loadPricingAdminData();
     return NextResponse.json({ coupons: data.coupons });

@@ -43,6 +43,7 @@ export type AppPlanUserInput = {
   uid: string;
   tier: AppTier;
   applePlanIds?: string[];
+  paypalPlanIds?: string[];
   activePlanId?: string | null;
   activePlanStatus?: AppPlanStatus | string | null;
   planActivatedAt?: unknown;
@@ -178,7 +179,7 @@ async function resolveSinglePlanAccess(user: AppPlanUserInput): Promise<AppPlanA
 
 export async function resolveAppPlanAccess(user: AppPlanUserInput): Promise<AppPlanAccessSnapshot> {
   const result = await resolveSinglePlanAccess(user);
-  for (const id of [...new Set(user.applePlanIds || [])]) {
+  for (const id of [...new Set([...(user.applePlanIds || []), ...(user.paypalPlanIds || [])])]) {
     if (id === result.plan?.id) continue;
     const doc = await getAdminDb().collection("pricingPlans").doc(id).get();
     const data = doc.data();

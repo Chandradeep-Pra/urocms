@@ -4,14 +4,20 @@ import { requireAdminSession } from "@/lib/server/adminAccess";
 import {
   createPricingPlan,
   loadPricingAdminData,
+  loadPublicPricingData,
   parsePricingPlanInput,
   validatePricingPlanInput,
 } from "@/lib/server/pricingService";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const admin = req.nextUrl.searchParams.get("admin") === "1";
+  if (admin) {
+    const { response } = await requireAdminSession(req);
+    if (response) return response;
+  }
   try {
-    const data = await loadPricingAdminData();
-    return NextResponse.json(data);
+    const data = admin ? await loadPricingAdminData() : await loadPublicPricingData();
+    return NextResponse.json(data, { headers: { "Cache-Control": admin ? "private, no-store" : "no-store" } });
   } catch (error) {
     console.error("Pricing plans fetch error:", error);
     return NextResponse.json({ error: "Failed to load pricing plans" }, { status: 500 });

@@ -67,6 +67,7 @@ export type PricingPlan = {
 };
 
 export type PricingPlanVersion = {
+  payLaterEnabled?: boolean;
   apple?: import("@/lib/apple-plans").ApplePlanPricing;
   id: string;
   months: number;
@@ -136,6 +137,7 @@ export type PlanFormValues = {
 };
 
 export type PlanVersionFormValues = {
+  payLaterEnabled: boolean;
   appleEnabled: boolean;
   applePrice: string;
   appleProductId: string;

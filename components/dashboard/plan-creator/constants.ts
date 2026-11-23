@@ -50,6 +50,7 @@ export function createEmptyPlanVersion(
   return {
     id: overrides.id ?? `version-${months}-${Math.random().toString(36).slice(2, 9)}`,
     months,
+    payLaterEnabled: overrides.payLaterEnabled ?? true,
     price: overrides.price ?? "",
     appleEnabled: overrides.appleEnabled ?? false,
     applePrice: overrides.applePrice ?? "",

@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebaseAdmin";
+import { NextRequest } from "next/server";
 import { requireAppUser } from "@/lib/server/appSession";
-import { serializePurchase } from "@/lib/server/purchaseService";
+import { listCustomerPurchases } from "@/lib/server/purchaseService";
+import { limitPaymentRequests, paymentErrorResponse, paymentId, paymentJson } from "@/lib/server/paypalPaymentHttp";
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const auth = await requireAppUser(req); if ("response" in auth) return auth.response;
-  const { id } = await context.params; const doc = await getAdminDb().collection("purchases").doc(id).get();
-  if (!doc.exists) return NextResponse.json({ error: "Purchase not found" }, { status: 404 });
-  if (doc.data()?.userId !== auth.user.uid) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  return NextResponse.json({ purchase: serializePurchase(doc.id, doc.data() || {}) });
+  try {
+    await limitPaymentRequests(auth.user.uid, "purchase", 60);
+    const id = paymentId((await context.params).id), purchase = (await listCustomerPurchases(auth.user.uid)).find(p => p.id === id);
+    return purchase ? paymentJson({ purchase }) : paymentJson({ error: "Purchase not found" }, 404);
+  } catch (error) { return paymentErrorResponse(error); }
 }

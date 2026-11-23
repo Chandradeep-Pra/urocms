@@ -44,29 +44,23 @@ export default function PlanCreatorPage() {
   const [form, setForm] = useState(emptyForm);
   const [couponForm, setCouponForm] = useState(emptyCouponForm);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/pricing-plans", { cache: "no-store" });
+  const fetchData = () => adminFetch("/api/pricing-plans?admin=1", { cache: "no-store" })
+    .then(async res => {
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to load pricing plans");
-      }
-
+      if (!res.ok) throw new Error(data.error || "Failed to load pricing plans");
+      return data;
+    })
+    .then(data => {
       setCatalog(data.catalog);
       setPlans(data.plans || []);
       setCoupons(data.coupons || []);
       setWaitlistResponses(data.waitlistResponses || []);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load pricing plans");
-    } finally {
-      setLoading(false);
-    }
-  };
+    })
+    .catch(error => { toast.error(error instanceof Error ? error.message : "Failed to load pricing plans"); })
+    .finally(() => setLoading(false));
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, []);
 
   const totalSelected = useMemo(() => {
@@ -186,6 +180,7 @@ export default function PlanCreatorPage() {
         createEmptyPlanVersion(Number(version.months || 3), {
           id: String(version.id || `version-${index + 1}`),
           price: String(version.price ?? version.originalPrice ?? ""),
+          payLaterEnabled: version.payLaterEnabled !== false,
           appleEnabled: version.apple?.enabled ?? false,
           applePrice: version.apple?.price == null ? "" : String(version.apple.price),
           appleProductId: version.apple?.productId ?? "",
@@ -237,6 +232,7 @@ export default function PlanCreatorPage() {
         id: version.id,
         months: Number(version.months),
         price: Number(version.price),
+        payLaterEnabled: version.payLaterEnabled,
         apple: {
           enabled: version.appleEnabled,
           price: (version.applePrice || "").trim() === "" ? null : Number(version.applePrice),
@@ -557,7 +553,7 @@ export default function PlanCreatorPage() {
 
           <TabsContent value="plans">
             <div className="mb-3 flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={fetchData} className="gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => { setLoading(true); void fetchData(); }} className="gap-2">
                 <RefreshCw className="h-4 w-4" />
                 Refresh
               </Button>

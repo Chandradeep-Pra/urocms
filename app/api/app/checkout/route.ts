@@ -1,3 +1,5 @@
+import { paypalPublicConfig } from "@/lib/server/paypalService";
+import { paymentJson } from "@/lib/server/paypalPaymentHttp";
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requireAppUser } from "@/lib/server/appSession";
@@ -120,7 +122,7 @@ export async function GET(req: NextRequest) {
     ? await db.getAll(...eligibleCouponIds.map((id) => db.collection("pricingCoupons").doc(id)))
     : [];
   const coupons = couponDocs
-    .filter((doc) => doc.exists && isCouponCurrentlyActive(doc.data() ?? {}))
+    .filter((doc) => doc.exists && doc.data()?.isSecret === false && isCouponCurrentlyActive(doc.data() ?? {}))
     .map((doc) => {
       const data = doc.data() ?? {};
       return {
@@ -134,7 +136,8 @@ export async function GET(req: NextRequest) {
       };
     });
 
-  return NextResponse.json({
+  const paypal = paypalPublicConfig();
+  return paymentJson({
     purchaseAvailable: true,
     plan: {
       id: planDoc.id,
@@ -152,7 +155,8 @@ export async function GET(req: NextRequest) {
     coupons,
     checkoutUrl: safeCheckoutUrl,
     taxPercent,
-    paypalClientId: process.env.PAYPAL_CLIENT_ID?.trim() || "",
+    paypalClientId: paypal.clientId,
+    paypal: { ...paypal, payLaterEnabled: paypal.payLaterEnabled && version.payLaterEnabled !== false },
     user: {
       uid: auth.user.uid,
       email: auth.user.email,

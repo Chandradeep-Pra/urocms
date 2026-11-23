@@ -19,6 +19,7 @@ export type PlanAccessScopes = {
 };
 
 export type PricingPlanVersionInput = {
+  payLaterEnabled?: boolean;
   apple?: ApplePlanPricing;
   id: string;
   months: number;
@@ -117,6 +118,7 @@ function parsePricingPlanVersions(body: any): PricingPlanVersionInput[] {
   const rawVersions = Array.isArray(body?.versions) ? body.versions : [];
 
   return rawVersions.map((version: any, index: number) => ({
+    payLaterEnabled: version?.payLaterEnabled !== false,
     apple: parseApplePlanPricing(version?.apple),
     id: String(version?.id ?? `version-${index + 1}`).trim() || `version-${index + 1}`,
     months: Number(version?.months ?? 0),
@@ -216,6 +218,7 @@ async function resolvePlanVersionPricing(
 
   return {
     id: version.id,
+    payLaterEnabled: version.payLaterEnabled !== false,
     apple: parseApplePlanPricing(version.apple),
     months: version.months,
     price: originalPrice,
@@ -371,6 +374,42 @@ function serializeDate(value: any) {
   return typeof value === "string" ? value : null;
 }
 
+/** Public catalog deliberately excludes waitlist PII, private coupons and content catalog data. */
+export async function loadPublicPricingData() {
+  const db = getAdminDb();
+  const [plansSnap, couponsSnap] = await Promise.all([db.collection("pricingPlans").get(), db.collection("pricingCoupons").get()]);
+  const now = Date.now();
+  const coupons = couponsSnap.docs.filter(doc => {
+    const data = doc.data(), start = serializeDate(data.startsAt), end = serializeDate(data.endsAt);
+    return data.isSecret === false && data.isActive !== false && (!start || Date.parse(start) <= now) && (!end || Date.parse(end) >= now);
+  }).map(doc => {
+    const data = doc.data();
+    return { id: doc.id, code: String(data.code || ""), description: String(data.description || ""), discountType: data.discountType === "amount" ? "amount" : "percent",
+      discountValue: Number(data.discountValue || 0), startsAt: serializeDate(data.startsAt), endsAt: serializeDate(data.endsAt), isActive: true, isSecret: false };
+  });
+  const publicIds = new Set(coupons.map(coupon => coupon.id));
+  const plans = plansSnap.docs.map(doc => {
+    const data = doc.data();
+    const rawVersions: Record<string, unknown>[] = Array.isArray(data.versions) && data.versions.length ? data.versions
+      : [{ id: "legacy-default", months: data.expiryMonths, price: data.price, durationLabel: data.durationLabel, billingLabel: data.billingLabel }];
+    const versions = rawVersions.map(version => ({ id: String(version.id || ""), months: Number(version.months || 0), price: Number(version.price ?? version.originalPrice ?? 0),
+      originalPrice: Number(version.price ?? version.originalPrice ?? 0), discountedPrice: Number(version.price ?? version.originalPrice ?? 0),
+      durationLabel: String(version.durationLabel || ""), billingLabel: String(version.billingLabel || ""), embeddedLink: "", payLaterEnabled: version.payLaterEnabled !== false,
+      couponId: "", couponCode: "" }));
+    const selectedContent = normalizePlanSelection(data.selectedContent), accessScopes = normalizePlanAccessScopes(data.accessScopes);
+    return { id: doc.id, name: String(data.name || ""), description: String(data.description || ""), tag: String(data.tag || ""), category: String(data.category || ""),
+      categorySortOrder: Number(data.categorySortOrder || 0), sortOrder: Number(data.sortOrder || 0), currency: "GBP", price: versions[0].price,
+      originalPrice: versions[0].price, discountedPrice: versions[0].price, expiryMonths: versions[0].months, versions,
+      isActive: data.isActive !== false, durationLabel: String(data.durationLabel || ""), billingLabel: String(data.billingLabel || ""),
+      availabilityNote: String(data.availabilityNote || ""), featureBullets: sanitizeFeatureBullets(data.featureBullets), vivaMinutes: Number(data.vivaMinutes || 0),
+      embeddedLink: "", couponId: "", couponCode: "", marketingCouponId: "", selectedContent, accessScopes,
+      eligibleCouponIds: [...new Set([...(Array.isArray(data.eligibleCouponIds) ? data.eligibleCouponIds : []), ...rawVersions.map(version => version.couponId), data.couponId])]
+        .filter((id: unknown) => typeof id === "string" && publicIds.has(id)),
+      contentCounts: countPlanSelection(normalizePlanSelection(data.selectedContent)) };
+  }).sort((a, b) => a.categorySortOrder - b.categorySortOrder || a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
+  return { plans, coupons, waitlistResponses: [], catalog: { courses: [], chapters: [], chapterGroups: [], videoSections: [], videos: [], quizzes: [], mocks: [], vivaCases: [], vivaFolders: [] } };
+}
+
 export async function loadPricingAdminData() {
   const [
     plansSnap,
@@ -450,6 +489,7 @@ export async function loadPricingAdminData() {
       discountedPrice: Number(data.discountedPrice ?? data.price ?? 0),
       versions: Array.isArray(data.versions)
         ? data.versions.map((version: any, index: number) => ({
+            payLaterEnabled: version?.payLaterEnabled !== false,
             apple: parseApplePlanPricing(version?.apple),
             id: String(version?.id ?? `version-${index + 1}`),
             months: Number(version?.months ?? 0),

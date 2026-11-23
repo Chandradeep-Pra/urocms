@@ -1,3 +1,4 @@
+import { applyPayPalAccess } from "./paypalAccess";
 import { applyAppleAccess } from "./applePurchaseLedger";
 import { NextRequest, NextResponse } from "next/server";
 import type { DecodedIdToken } from "firebase-admin/auth";
@@ -21,6 +22,7 @@ export interface AppUserSession {
   source: string | null;
   activeCourseIds: string[];
   applePlanIds?: string[];
+  paypalPlanIds?: string[];
   activePlanId: string | null;
   activePlanStatus: AppPlanStatus;
   planActivatedAt: unknown;
@@ -103,7 +105,7 @@ export async function requireAppUser(req: NextRequest) {
       currentSnapshot: userDoc,
       readOnly: true,
     });
-    const user = await applyAppleAccess(resolved.uid, resolved.userData ?? {});
+    const user = await applyPayPalAccess(resolved.uid, await applyAppleAccess(resolved.uid, resolved.userData ?? {}));
 
     return {
       user: {
@@ -129,6 +131,7 @@ export async function requireAppUser(req: NextRequest) {
         source: user.source ?? decoded.firebase.sign_in_provider ?? null,
         activeCourseIds: Array.isArray(user.activeCourseIds) ? user.activeCourseIds : [],
         applePlanIds: user.applePlanIds ?? [],
+        paypalPlanIds: user.paypalPlanIds ?? [],
         activePlanId: user.activePlanId ? String(user.activePlanId) : null,
         activePlanStatus: normalizePlanStatus(user.activePlanStatus),
         planActivatedAt: user.planActivatedAt ?? null,

@@ -1,13 +1,19 @@
 "use client";
 
-import { Suspense, useEffect, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { onAuthStateChanged } from "firebase/auth";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, CircleHelp, Loader2, ReceiptText, ShieldCheck, Tag } from "lucide-react";
 import { auth } from "@/lib/firebaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+
+import { loadPayPalSdk, type PayPalButtonOptions } from "@/lib/client/paypalSdk";
+import { PayPalReminderSettings } from "@/components/payments/PayPalReminderSettings";
+
+type PaymentQuote = { total: number; taxAmount: number; originalAmount: number; discountAmount: number; amountMinor: number; currency: string; payLaterEligible: boolean };
 
 type AvailableCheckoutDetails = {
   purchaseAvailable: true;
@@ -31,6 +37,7 @@ type AvailableCheckoutDetails = {
   checkoutUrl: string;
   taxPercent: number;
   paypalClientId: string;
+  paypal: { enabled: boolean; environment: "sandbox" | "live"; payLaterEnabled: boolean };
   user: { uid: string; email: string | null; name: string | null };
 };
 
@@ -43,20 +50,9 @@ type UnavailableCheckoutDetails = {
 
 type CheckoutDetails = AvailableCheckoutDetails | UnavailableCheckoutDetails;
 
-type PayPalButtons = (options: {
-  fundingSource?: string;
-  style?: { layout?: "vertical" | "horizontal"; shape?: "pill" | "rect"; label?: "paypal" | "checkout" | "pay" | "buynow"; height?: number };
-  createOrder: () => Promise<string>;
-  onApprove: (data: { orderID: string }) => Promise<void>;
-  onCancel: () => void;
-  onError: (error: unknown) => void;
-}) => { render: (selector: HTMLElement) => Promise<void>; close?: () => Promise<void> };
-
-declare global { interface Window { paypal?: { Buttons: PayPalButtons; FUNDING?: { PAYPAL?: string } } } }
-
 function PurchaseSuccess() {
   const colors = ["#0f7896", "#1294ba", "#f59e0b", "#10b981", "#ec4899"];
-  return <div className="relative overflow-hidden py-8 text-center">{Array.from({ length: 36 }, (_, index) => <span key={index} className="pointer-events-none absolute top-[-20px] h-3 w-2 animate-[confetti-fall_3s_ease-in_infinite]" style={{ left: `${(index * 29) % 100}%`, backgroundColor: colors[index % colors.length], animationDelay: `${(index % 12) * 0.16}s`, animationDuration: `${2.4 + (index % 7) * 0.2}s`, transform: `rotate(${index * 37}deg)` }} />)}<div className="relative mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-100 text-emerald-700"><Check className="h-10 w-10" /></div><p className="relative mt-6 text-sm font-bold uppercase tracking-[0.18em] text-[#0f7896]">Payment confirmed</p><h1 className="relative mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950">Thank you for your purchase!</h1><p className="relative mx-auto mt-4 max-w-md text-base leading-7 text-slate-600">Your payment was verified successfully and your course access is now active.</p><a href="https://urologics.co.uk" className="relative mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-[#0f7896] px-8 font-bold text-white shadow-lg transition hover:bg-[#0b647d]">Login to Urologics</a><p className="relative mt-4 text-xs text-slate-500">A purchase confirmation has been sent to your email.</p><style jsx>{`@keyframes confetti-fall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(620px) rotate(720deg); opacity: 0; } }`}</style></div>;
+  return <div className="relative overflow-hidden py-8 text-center">{Array.from({ length: 36 }, (_, index) => <span key={index} className="pointer-events-none absolute top-[-20px] h-3 w-2 animate-[confetti-fall_3s_ease-in_infinite]" style={{ left: `${(index * 29) % 100}%`, backgroundColor: colors[index % colors.length], animationDelay: `${(index % 12) * 0.16}s`, animationDuration: `${2.4 + (index % 7) * 0.2}s`, transform: `rotate(${index * 37}deg)` }} />)}<div className="relative mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-100 text-emerald-700"><Check className="h-10 w-10" /></div><p className="relative mt-6 text-sm font-bold uppercase tracking-[0.18em] text-[#0f7896]">Payment confirmed</p><h1 className="relative mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950">Thank you for your purchase!</h1><p className="relative mx-auto mt-4 max-w-md text-base leading-7 text-slate-600">Your payment was verified successfully and your course access is now active.</p><a href="https://urologics.co.uk" className="relative mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-[#0f7896] px-8 font-bold text-white shadow-lg transition hover:bg-[#0b647d]">Login to Urologics</a><p className="relative mt-4 text-xs text-slate-500">Your purchase confirmation will be emailed to you.</p><style jsx>{`@keyframes confetti-fall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(620px) rotate(720deg); opacity: 0; } }`}</style></div>;
 }
 
 type AppliedPricing = {
@@ -92,13 +88,21 @@ async function verifyCoupon(details: AvailableCheckoutDetails, couponCode: strin
 }
 
 function CheckoutContent() {
+  const router = useRouter();
+  const [quoteState, setQuote] = useState<(PaymentQuote & { key: string }) | null>(null);
+  const [successfulPurchaseId, setSuccessfulPurchaseId] = useState<string | null>(null);
+  const [payLaterVisible, setPayLaterVisible] = useState(false);
+  const [quoteError, setQuoteError] = useState("");
+  const activePayment = useRef(false);
+  const [pendingOrder, setPendingOrder] = useState<string | null>(null);
+  const [restartKey, setRestartKey] = useState<string | null>(null);
   const [details, setDetails] = useState<CheckoutDetails | null>(null);
   const [error, setError] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [couponError, setCouponError] = useState("");
   const [appliedPricing, setAppliedPricing] = useState<AppliedPricing | null>(null);
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
-  const [paymentState, setPaymentState] = useState<"idle" | "loading" | "processing" | "success" | "cancelled" | "failed" | "pending">("idle");
+  const [paymentState, setPaymentState] = useState<"idle" | "loading" | "approving" | "processing" | "success" | "cancelled" | "failed" | "pending">("idle");
   const [paymentError, setPaymentError] = useState("");
   const [materialRequest, setMaterialRequest] = useState("");
   const [requestSaving, setRequestSaving] = useState(false);
@@ -114,9 +118,10 @@ function CheckoutContent() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setPaymentState("idle"); setSuccessfulPurchaseId(null); setPendingOrder(null); setAppliedPricing(null);
       if (!user) {
         const redirect = window.location.pathname + window.location.search;
-        window.location.assign(`/login?redirect=${encodeURIComponent(redirect)}`);
+        router.replace(`/login?redirect=${encodeURIComponent(redirect)}`);
         return;
       }
 
@@ -149,7 +154,7 @@ function CheckoutContent() {
       }
     });
     return unsubscribe;
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (!appliedPricing?.expiresAt) return;
@@ -164,49 +169,110 @@ function CheckoutContent() {
     return () => window.clearInterval(interval);
   }, [appliedPricing?.expiresAt]);
 
+  const quoteKey = details?.purchaseAvailable ? `${details.plan.id}:${details.plan.courseId}:${details.version.id}:${appliedPricing?.couponCode || ""}` : "";
+  const quote = quoteState?.key === quoteKey ? quoteState : null;
+
   useEffect(() => {
-    if (!details?.purchaseAvailable || !details.paypalClientId || paymentComplete) return;
-    const availableDetails = details;
-    let disposed = false;
-    let buttons: ReturnType<PayPalButtons> | null = null;
-    const container = document.getElementById("paypal-button-container");
-    if (!container) return;
-    container.innerHTML = "";
-    const render = async () => {
-      if (disposed || !window.paypal || !container) return;
-      buttons = window.paypal.Buttons({
-        style: { layout: "vertical", shape: "pill", label: "paypal", height: 48 },
-        createOrder: async () => {
-          setPaymentState("loading"); setPaymentError("");
-          const user = auth.currentUser; if (!user) throw new Error("Please sign in again");
-          const response = await fetch("/api/paypal/create-order", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` }, body: JSON.stringify({ courseId: availableDetails.plan.courseId, planId: availableDetails.plan.id, versionId: availableDetails.version.id, couponCode: appliedPricing?.couponCode || undefined }) });
-          const data = await response.json(); if (!response.ok) throw new Error(data.error || "Unable to create payment");
-          setPaymentState("idle"); return String(data.orderId);
-        },
-        onApprove: async ({ orderID }) => {
-          setPaymentState("processing"); setPaymentError("");
-          try {
-            const user = auth.currentUser; if (!user) throw new Error("Please sign in again");
-            const response = await fetch("/api/paypal/capture-order", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` }, body: JSON.stringify({ orderId: orderID }) });
-            const data = await response.json();
-            if (!response.ok) { setPaymentState(data.pending ? "pending" : "failed"); throw new Error(data.error || "Payment verification failed"); }
-            setPaymentState("success");
-          } catch (error) { setPaymentError(error instanceof Error ? error.message : "Payment verification failed"); setPaymentState((state) => state === "pending" ? state : "failed"); }
-        },
-        onCancel: () => { setPaymentState("cancelled"); setPaymentError("Payment was cancelled. You have not been charged."); },
-        onError: (error) => { console.error("PayPal checkout error", error); setPaymentState("failed"); setPaymentError("PayPal checkout failed. Please retry this order before starting another payment."); },
-      });
-      await buttons.render(container);
-    };
-    const existing = document.querySelector<HTMLScriptElement>("script[data-paypal-sdk]");
-    if (existing) { if (window.paypal) void render(); else existing.addEventListener("load", render, { once: true }); }
-    else {
-      const script = document.createElement("script"); script.dataset.paypalSdk = "true";
-      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(availableDetails.paypalClientId)}&currency=${encodeURIComponent(availableDetails.version.currency)}&intent=capture`;
-      script.addEventListener("load", render, { once: true }); script.addEventListener("error", () => { setPaymentState("failed"); setPaymentError("Unable to load PayPal checkout"); }); document.head.appendChild(script);
+    if (!details?.purchaseAvailable || paymentComplete) return;
+    const controller = new AbortController();
+    async function loadQuote() {
+      try {
+        const current = auth.currentUser; if (!current || !details?.purchaseAvailable) return;
+        const response = await fetch("/api/paypal/quote", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await current.getIdToken()}` },
+          body: JSON.stringify({ planId: details.plan.id, versionId: details.version.id, courseId: details.plan.courseId, couponCode: appliedPricing?.couponCode || undefined }), signal: controller.signal });
+        const data = await response.json(); if (!response.ok) throw new Error(data.error || "Unable to confirm this price.");
+        if (!controller.signal.aborted) { setQuote({ ...data, key: quoteKey }); setQuoteError(""); }
+      } catch (error) { if (!controller.signal.aborted) setQuoteError(error instanceof Error ? error.message : "Unable to confirm this price."); }
     }
-    return () => { disposed = true; void buttons?.close?.(); };
-  }, [details, appliedPricing?.couponCode, paymentComplete]);
+    void loadQuote(); return () => controller.abort();
+  }, [details, appliedPricing?.couponCode, paymentComplete, quoteKey]);
+
+  useEffect(() => {
+    if (!details?.purchaseAvailable || !details.paypal.enabled || !quote || paymentComplete) return;
+    const available = details;
+    let disposed = false;
+    const controls: Array<{ close?: () => Promise<void> }> = [];
+    async function render() {
+      try {
+        const sdk = await loadPayPalSdk(available.paypalClientId, quote!.currency, available.paypal.environment === "sandbox");
+        if (disposed) return;
+        setPayLaterVisible(false);
+        const currentUid = auth.currentUser?.uid;
+        const storageKey = `paypal-attempt:${currentUid}:${available.paypal.environment}:${available.plan.id}:${available.plan.courseId}:${available.version.id}:${quote!.amountMinor}:${appliedPricing?.couponCode || ""}`;
+        const savedOrder = sessionStorage.getItem(`paypal-order:${storageKey}`);
+        setPendingOrder(savedOrder || null);
+        const options = (intent: "paypal" | "paylater"): PayPalButtonOptions => ({
+          fundingSource: intent === "paylater" ? sdk.FUNDING.PAYLATER : sdk.FUNDING.PAYPAL,
+          style: { layout: "vertical", shape: "pill", height: 48 },
+          createOrder: async () => {
+            if (activePayment.current) throw new Error("A payment is already being processed.");
+            activePayment.current = true; setPaymentState("loading"); setPaymentError("");
+            try {
+              const user = auth.currentUser; if (!user) throw new Error("Please sign in again.");
+              const key = `paypal-attempt:${user.uid}:${available.paypal.environment}:${available.plan.id}:${available.plan.courseId}:${available.version.id}:${quote!.amountMinor}:${appliedPricing?.couponCode || ""}`;
+              let attemptId = sessionStorage.getItem(key); if (!attemptId) { attemptId = crypto.randomUUID(); sessionStorage.setItem(key, attemptId); }
+              const response = await fetch("/api/paypal/create-order", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` },
+                body: JSON.stringify({ courseId: available.plan.courseId, planId: available.plan.id, versionId: available.version.id, couponCode: appliedPricing?.couponCode || undefined, attemptId, checkoutIntent: intent }) });
+              const data = await response.json();
+              if (!response.ok && data.code === "START_NEW_CHECKOUT") setRestartKey(key);
+              if (!response.ok) throw new Error(data.error || "Unable to start payment.");
+              setPendingOrder(String(data.orderId)); sessionStorage.setItem(`paypal-order:${key}`, String(data.orderId)); setPaymentState("approving"); return String(data.orderId);
+            } catch (error) { activePayment.current = false; throw error; }
+          },
+          onApprove: async ({ orderID }) => {
+            setPaymentState("processing"); setPaymentError("");
+            try {
+              const user = auth.currentUser; if (!user) throw new Error("Please sign in again.");
+              setPendingOrder(orderID);
+              const response = await fetch("/api/paypal/capture-order", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` }, body: JSON.stringify({ orderId: orderID }) });
+              const data = await response.json();
+              if (!response.ok) { setPaymentState(data.pending ? "pending" : "failed"); throw new Error(data.error || "Payment verification is pending."); }
+              sessionStorage.removeItem(storageKey); sessionStorage.removeItem(`paypal-order:${storageKey}`); setSuccessfulPurchaseId(data.purchaseId); setPaymentState("success");
+            } catch (error) { setPaymentError(error instanceof Error ? error.message : "Payment verification is pending."); setPaymentState(state => state === "pending" ? state : "failed"); }
+            finally { activePayment.current = false; }
+          },
+          onCancel: () => { activePayment.current = false; setPaymentState("cancelled"); setPaymentError("Checkout was closed. Check the payment status before trying again."); },
+          onError: () => { activePayment.current = false; setPaymentState("failed"); setPaymentError("PayPal checkout could not finish. Check the same payment before trying again."); },
+        });
+        const normalContainer = document.getElementById("paypal-button-container");
+        if (normalContainer) { normalContainer.replaceChildren(); const button = sdk.Buttons(options("paypal")); controls.push(button); await button.render(normalContainer); }
+        if (disposed) return;
+        if (quote!.payLaterEligible && available.paypal.payLaterEnabled) {
+          const later = sdk.Buttons(options("paylater")); controls.push(later);
+          if (later.isEligible()) {
+            setPayLaterVisible(true);
+            await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+            if (disposed) return;
+            const container = document.getElementById("paypal-paylater-button"); if (container) { container.replaceChildren(); await later.render(container); }
+            const message = document.getElementById("paypal-paylater-message");
+            if (message && sdk.Messages) { message.replaceChildren(); await sdk.Messages({ amount: quote!.total.toFixed(2), placement: "payment", style: { layout: "text", logo: { type: "inline" }, text: { color: "black", size: 14 } } }).render(message); }
+          }
+        }
+      } catch (error) { if (!disposed) { setPaymentState("failed"); setPaymentError(error instanceof Error ? error.message : "Unable to load checkout."); } }
+    }
+    void render();
+    return () => { disposed = true; for (const control of controls) void control.close?.().catch(() => {}); };
+  }, [details, quote, appliedPricing?.couponCode, paymentComplete]);
+
+  async function retryPayment() {
+    const user = auth.currentUser; if (!user || !pendingOrder || activePayment.current) return;
+    activePayment.current = true; setPaymentState("processing"); setPaymentError("");
+    try {
+      const response = await fetch("/api/paypal/capture-order", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` }, body: JSON.stringify({ orderId: pendingOrder }) });
+      const data = await response.json();
+      if (!response.ok && data.code === "CHECKOUT_APPROVAL_REQUIRED") { setPaymentState("idle"); setPaymentError("Please finish approval using the PayPal button."); return; }
+      if (!response.ok && data.code === "PAYMENT_NOT_COMPLETED" && details?.purchaseAvailable && quote) {
+        setRestartKey(`paypal-attempt:${user.uid}:${details.paypal.environment}:${details.plan.id}:${details.plan.courseId}:${details.version.id}:${quote.amountMinor}:${appliedPricing?.couponCode || ""}`);
+      }
+      if (!response.ok) throw new Error(data.error || "Payment verification is pending.");
+      if (details?.purchaseAvailable && quote) {
+        const key = `paypal-attempt:${user.uid}:${details.paypal.environment}:${details.plan.id}:${details.plan.courseId}:${details.version.id}:${quote.amountMinor}:${appliedPricing?.couponCode || ""}`;
+        sessionStorage.removeItem(key); sessionStorage.removeItem(`paypal-order:${key}`);
+      }
+      setSuccessfulPurchaseId(data.purchaseId); setPaymentState("success");
+    } catch (error) { setPaymentState("pending"); setPaymentError(error instanceof Error ? error.message : "Payment verification is pending."); }
+    finally { activePayment.current = false; }
+  }
 
   async function applySelectedCoupon(nextCode = couponCode) {
     if (!details?.purchaseAvailable || !nextCode.trim()) return;
@@ -298,7 +364,11 @@ function CheckoutContent() {
     );
   }
 
-  if (paymentComplete) return <PurchaseSuccess />;
+  if (paymentComplete) return <div className="space-y-5"><PurchaseSuccess />{successfulPurchaseId && <PayPalReminderSettings purchaseId={successfulPurchaseId} save={async body => {
+    const user = auth.currentUser; if (!user) throw new Error("Please sign in again.");
+    const response = await fetch("/api/paypal/reminders", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` }, body: JSON.stringify(body) });
+    if (!response.ok) throw new Error("Unable to save reminders.");
+  }} />}</div>;
 
   const money = (value: number) =>
     new Intl.NumberFormat("en-GB", {
@@ -309,11 +379,12 @@ function CheckoutContent() {
     new Intl.NumberFormat("en-GB", {
       style: "currency",
       currency: details.version.currency,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+      maximumFractionDigits: 2,
     }).format(value);
   const subtotal = appliedPricing?.discountedPrice ?? details.version.originalPrice;
-  const taxAmount = Math.round(subtotal * details.taxPercent) / 100;
-  const total = Math.round((subtotal + taxAmount) * 100) / 100;
+  const taxAmount = quote?.taxAmount ?? Math.round(subtotal * details.taxPercent) / 100;
+  const total = quote?.total ?? Math.round((subtotal + taxAmount) * 100) / 100;
   const queryId = new URLSearchParams(window.location.search).get("queryId");
   const expiryDateLabel = appliedPricing?.expiresAt
     ? new Intl.DateTimeFormat("en-GB", {
@@ -403,7 +474,7 @@ function CheckoutContent() {
                 key={coupon.id}
                 type="button"
                 onClick={() => void applySelectedCoupon(coupon.code)}
-                disabled={verifyingCoupon}
+                disabled={verifyingCoupon || ["loading", "approving", "processing", "pending"].includes(paymentState)}
                 layout
                 whileHover={{ y: -2, scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
@@ -448,7 +519,7 @@ function CheckoutContent() {
             }}
             placeholder="Enter coupon code"
           />
-          <Button type="button" variant="outline" onClick={() => void applySelectedCoupon()} disabled={!couponCode.trim() || verifyingCoupon}>
+          <Button type="button" variant="outline" onClick={() => void applySelectedCoupon()} disabled={!couponCode.trim() || verifyingCoupon || ["loading", "approving", "processing", "pending"].includes(paymentState)}>
             {verifyingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
           </Button>
         </div>
@@ -492,7 +563,7 @@ function CheckoutContent() {
         </div>
         <div className="space-y-3 text-sm">
           <div className="flex justify-between gap-4 text-slate-600">
-            <span>{details.plan.name} · {details.version.durationLabel || `${details.version.months} months`}</span>
+            <span>{details.plan.name} &middot; {details.version.durationLabel || `${details.version.months} months`}</span>
             <span>{money(details.version.originalPrice)}</span>
           </div>
           <AnimatePresence initial={false}>
@@ -549,6 +620,7 @@ function CheckoutContent() {
           </div>
         </div>
       </div>
+      {paymentState === "approving" && <p role="status" className="rounded-2xl bg-cyan-50 p-4 text-sm text-cyan-900">Finish approval in PayPal to continue.</p>}
       {paymentState === "processing" ? <div className="flex items-center gap-2 rounded-2xl bg-cyan-50 p-4 text-cyan-800"><Loader2 className="h-4 w-4 animate-spin" /> Processing and verifying payment...</div> : null}
       {paymentState === "pending" ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">Payment verification is pending. Retry the same PayPal order; do not create another charge.</div> : null}
       {paymentError ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{paymentError}</div> : null}
@@ -576,7 +648,22 @@ function CheckoutContent() {
           )}
         </div>
       ) : null}
-      {!details.paypalClientId ? <p className="rounded-2xl bg-amber-50 p-4 text-amber-800">PayPal Sandbox is not configured.</p> : <div id="paypal-button-container" className={paymentState === "processing" ? "pointer-events-none opacity-50" : ""} />}
+      {quoteError && <p role="alert" className="rounded-2xl bg-rose-50 p-4 text-sm text-rose-700">{quoteError}</p>}
+      {!details.paypal.enabled ? <p role="status" className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">Online payments are being prepared. Please contact us if you need help purchasing this plan.</p> : <div className={`space-y-4 ${paymentState === "approving" || paymentState === "processing" || paymentState === "pending" ? "pointer-events-none opacity-50" : ""}`}>
+        {details.paypal.environment === "sandbox" && <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">Sandbox checkout - test payments only</p>}
+        <div id="paypal-button-container" />
+        <section hidden={!payLaterVisible || !quote?.payLaterEligible || !details.paypal.payLaterEnabled} className="rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50/70 to-white p-5">
+          <p className="mb-3 text-sm font-semibold text-slate-900">More ways to pay</p>
+          <div id="paypal-paylater-message" className="mb-4" />
+          <div id="paypal-paylater-button" />
+        </section>
+        {!quote && !quoteError && <p role="status" className="text-center text-sm text-slate-500">Confirming your price...</p>}
+      </div>}
+      {pendingOrder && ["idle", "pending", "failed", "cancelled"].includes(paymentState) && <Button type="button" variant="outline" onClick={() => void retryPayment()} className="w-full rounded-full">Check this payment</Button>}
+      {restartKey && <Button type="button" variant="outline" className="w-full rounded-full" onClick={() => {
+        sessionStorage.removeItem(restartKey); sessionStorage.removeItem(`paypal-order:${restartKey}`);
+        setRestartKey(null); setPendingOrder(null); setPaymentError(""); setPaymentState("idle");
+      }}>Start a new checkout</Button>}
     </div>
   );
 }

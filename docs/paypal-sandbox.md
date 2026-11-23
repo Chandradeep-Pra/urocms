@@ -1,5 +1,7 @@
 # PayPal Checkout setup
 
+> See [PayPal Pay Later setup](paypal-payments.md) for the current version-3 flow, recipient verification, webhook handler and recovery scheduler. Standard checkout still needs only matching client credentials and the appropriate mode. The historical schema notes below describe the earlier one-time checkout.
+
 ## Environment
 
 Configure only these PayPal variables on the server:

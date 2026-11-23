@@ -392,6 +392,13 @@ export function PlanFormCard({
                         ) : null}
                       </div>
 
+                      <div className="mb-4 flex items-start justify-between gap-4 rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4">
+                        <div>
+                          <Label htmlFor={`${version.id}-paylater`} className="text-sm font-semibold text-slate-900">PayPal Pay Later</Label>
+                          <p className="mt-1 max-w-md text-xs leading-relaxed text-slate-600">Show PayPal&apos;s official financing option for this version. PayPal determines availability and approval. UK Pay in 3 uses its fixed monthly schedule.</p>
+                        </div>
+                        <Switch id={`${version.id}-paylater`} checked={version.payLaterEnabled} onCheckedChange={checked => updateVersion(version.id, { payLaterEnabled: checked })} />
+                      </div>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label>Months</Label>
