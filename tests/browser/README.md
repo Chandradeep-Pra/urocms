@@ -10,4 +10,6 @@ Override the local addresses with `CMS_TEST_ORIGIN` and `TESTING_TEST_ORIGIN` if
 
 API and Firebase responses use test fixtures. The checks cover signup validation, country selection, password visibility, student routing, calendar selection, description bullets, profile edits, purchase tabs, active courses, live tests, lesson history, course search and Viva mode styling. Screenshots are written to `.test-artifacts/account-ui`.
 
+For pricing-card sizing, start UROCMS on port 3000 and Testing Zone on port 3022, then run `node tests/browser/pricing-cards.cjs`. Use `localhost` for the CMS development server. The same origin overrides are supported. This fixture-based check covers equal compact heights, hidden scrollbars, keyboard scrolling, page scrolling over expanded lists, staged expansion, conditional “See more ...” actions, checkout links, coupons, transparent search controls, animated search hints, AI search submission, responsive layouts and reduced motion. Screenshots are written to `.test-artifacts/pricing-shared-height`.
+
 The runner creates a temporary `/ui-check-local` route for the calendar, signup dialog and bullet editor, then removes it and its generated route type during cleanup.

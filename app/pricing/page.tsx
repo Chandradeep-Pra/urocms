@@ -6,10 +6,8 @@ import {
   BookOpen,
   Brain,
   FileQuestion,
-  Gift,
   Video,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { PricingCategoryAccordion } from "@/components/pricing/PricingCategoryAccordion";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { absoluteUrl, siteConfig } from "@/lib/site";
@@ -363,15 +361,15 @@ export default async function PricingPage() {
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-cyan-50 px-6 py-10 text-[#071014]">
+    <main className="min-h-screen overflow-x-hidden bg-cyan-50 px-3 py-10 text-[#071014] sm:px-6 lg:px-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(offerCatalogSchema),
         }}
       />
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-14 flex items-start justify-between gap-6">
+      <div className="mx-auto max-w-[1400px]">
+        <div className="mb-10 flex items-start justify-between gap-6 sm:mb-14">
           <div className="max-w-4xl">
             <Link
               href="/"
@@ -382,18 +380,19 @@ export default async function PricingPage() {
             </Link>
 
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#0f7896]">
-              Pricing
+              Plans &amp; Pricing
             </p>
 
-            <h1 className="mt-4 text-5xl font-semibold tracking-[-0.05em] text-[#071014] sm:text-6xl">
-              Simple plans for serious FRCS preparation.
+            <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-[#071014] sm:text-6xl">
+              Urologics FRCS Plans
             </h1>
+
           </div>
 
         </div>
 
         {plans.length === 0 ? (
-          <div className="rounded-[32px] border border-[#0f7896]/12 bg-white p-10 shadow-[0_18px_50px_rgba(15,120,150,0.08)]">
+          <div className="rounded-[32px] border border-[#0f7896]/[0.12] bg-white p-10 shadow-[0_18px_50px_rgba(15,120,150,0.08)]">
             <p className="text-lg font-semibold text-[#071014]">No pricing plans published yet.</p>
            
           </div>
@@ -415,12 +414,12 @@ function TopStat({
   text: string;
 }) {
   return (
-    <div className="rounded-[24px] border border-[#0f7896]/12 bg-white p-5 shadow-[0_14px_36px_rgba(15,120,150,0.08)]">
+    <div className="rounded-[24px] border border-[#0f7896]/[0.12] bg-white p-5 shadow-[0_14px_36px_rgba(15,120,150,0.08)]">
       <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#0f7896]/10 text-[#0f7896]">
         <Icon className="h-5 w-5" />
       </div>
       <p className="text-lg font-semibold tracking-[-0.03em] text-[#071014]">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-[#071014]/62">{text}</p>
+      <p className="mt-2 text-sm leading-6 text-[#071014]/[0.62]">{text}</p>
     </div>
   );
 }

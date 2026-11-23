@@ -1,16 +1,14 @@
 "use client";
 
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CheckCircle2,
   ChevronDown,
-  ChevronUp,
-  Clock3,
   Layers3,
   Loader2,
   Search,
-  Sparkles,
+  ArrowRight,
   Tag,
   WandSparkles,
   X,
@@ -25,6 +23,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { PricingCardLayout, SynchronizedPricingGrid } from "@/components/pricing/SynchronizedPricingGrid";
+import { cleanPricingFeatures, cleanPricingText, formatPricingDuration, formatPricingPlanName, pricingSearchFeedback } from "@/lib/pricingDisplay";
 
 type PricingPlanVersion = {
   id: string;
@@ -107,17 +107,13 @@ function formatGbp(price: number) {
   }).format(price);
 }
 
-function pluralize(value: number, singular: string, plural = `${singular}s`) {
-  return `${value} ${value === 1 ? singular : plural}`;
-}
-
 function AccessLine({ text, meta }: { text: string; meta?: string }) {
   return (
-    <div className="rounded-2xl border border-[#0f7896]/10 bg-white px-4 py-3 shadow-[0_8px_20px_rgba(15,120,150,0.04)]">
+    <div className="border-b border-[#0f7896]/[0.08] pb-2">
       <div className="flex items-start gap-3">
-        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#0f7896]" />
+        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
         <div>
-          <p className="text-sm font-semibold text-[#071014]">{text}</p>
+          <p className="text-sm leading-6 text-[#071014]/[0.72]">{text}</p>
           {meta ? <p className="mt-1 text-xs leading-6 text-[#071014]/55">{meta}</p> : null}
         </div>
       </div>
@@ -170,19 +166,19 @@ function PlanWaitlistButton({ plan }: { plan: PricingPlanCard }) {
       <Button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-4 w-full rounded-full bg-slate-800 text-white hover:bg-slate-950"
+        className="mt-2 w-full rounded-full bg-slate-800 text-white hover:bg-slate-950"
       >
         Join Waitlist
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-[28px] border border-[#0f7896]/14 bg-white p-6 shadow-[0_24px_70px_rgba(15,120,150,0.18)] sm:max-w-md">
+        <DialogContent className="rounded-[28px] border border-[#0f7896]/[0.14] bg-white p-6 shadow-[0_24px_70px_rgba(15,120,150,0.18)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-semibold tracking-[-0.04em] text-[#071014]">
               Join waitlist
             </DialogTitle>
             <DialogDescription className="text-sm leading-6 text-[#071014]/60">
-              Register interest for {plan.name}. We will contact you when this plan opens.
+              Register interest for {formatPricingPlanName(plan.name)}. We will contact you when this plan opens.
             </DialogDescription>
           </DialogHeader>
 
@@ -242,6 +238,17 @@ function PlanCard({
   aiResult?: AiPlanResult;
 }) {
   const isComingSoon = plan.isActive === false;
+  const displayName = formatPricingPlanName(plan.name);
+  const includedFeatures = cleanPricingFeatures([
+    ...plan.featureBullets.map((text) => ({ text })),
+    ...plan.courseItems.map((course) => ({ text: formatPricingPlanName(course.title) })),
+  ]);
+  const featureLines = includedFeatures.length > 0 ? includedFeatures : cleanPricingFeatures(plan.items.map((item) => ({
+    text: `${item.count} ${item.label}`,
+    meta: item.details.length > 0
+      ? `${item.details.slice(0, 3).join(", ")}${item.details.length > 3 ? ` +${item.details.length - 3} more` : ""}`
+      : undefined,
+  })));
   const sortedVersions =
     Array.isArray(plan.versions) && plan.versions.length > 0
       ? [...plan.versions].sort((a, b) => Number(a.months) - Number(b.months))
@@ -294,28 +301,20 @@ function PlanCard({
   }
 
   return (
-    <article
-      className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border p-6 transition duration-300 md:h-[620px] ${
-        isComingSoon
-          ? "border-slate-300 bg-slate-100 text-slate-700 shadow-[0_16px_38px_rgba(7,16,20,0.04)]"
-          : "border-[#0f7896]/12 bg-white shadow-[0_16px_38px_rgba(15,120,150,0.08)] hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(15,120,150,0.14)]"
-      }`}
-      data-disabled={isComingSoon || undefined}
-    >
-      <div className="absolute inset-x-0 top-0 h-1 bg-[#0f7896]" />
-
-      <div className="grid h-full min-h-0 gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)] md:gap-8">
-        <div className="flex min-h-0 min-w-0 flex-col">
-
-      <div className="flex items-start justify-between gap-4">
+    <PricingCardLayout
+      id={plan.id}
+      name={displayName}
+      className={`rounded-[28px] border px-5 py-4 sm:px-7 sm:py-5 ${isComingSoon
+        ? "border-slate-300 bg-slate-100 text-slate-700 shadow-[0_16px_38px_rgba(7,16,20,0.04)]"
+        : "border-[#0f7896]/[0.12] bg-white shadow-[0_16px_44px_rgba(15,120,150,0.08)]"}`}
+      disabled={isComingSoon}
+      header={<>
+        <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="mb-3 flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7896]/10 text-[#0f7896]">
-              <Sparkles className="h-4 w-4" />
-            </span>
+          {plan.tag || isComingSoon ? <div className="flex flex-wrap items-center gap-2">
             {plan.tag ? (
               <span className="inline-flex rounded-full bg-[#0f7896]/10 px-3 py-1 text-xs font-semibold text-[#0f7896]">
-                {plan.tag}
+                {cleanPricingText(plan.tag)}
               </span>
             ) : null}
             {isComingSoon ? (
@@ -323,24 +322,20 @@ function PlanCard({
                 Coming soon
               </span>
             ) : null}
-          </div>
-          <h3 className="text-2xl font-semibold tracking-[-0.04em] text-[#071014]">
-            {plan.name}
+          </div> : null}
+          <h3 className={`${plan.tag || isComingSoon ? "mt-2" : ""} text-2xl font-bold tracking-[-0.04em] text-[#071014]`}>
+            {displayName}
           </h3>
         </div>
         {plan.availabilityNote ? (
           <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-            {plan.availabilityNote}
+            {cleanPricingText(plan.availabilityNote)}
           </span>
         ) : null}
       </div>
 
-      <p className="pricing-scrollbar mt-4 max-h-24 overflow-y-auto pr-2 text-sm leading-7 text-[#071014]/62">
-        {plan.subtitle || "Custom access plan built from selected Urologics content."}
-      </p>
-
       {aiResult ? (
-        <div className="pricing-scrollbar mt-5 max-h-44 overflow-y-auto border-l-4 border-emerald-500 bg-emerald-50 px-4 py-4">
+        <div className="mt-3 border-l-4 border-emerald-500 bg-emerald-50 px-4 py-3">
           <div className="flex items-center gap-2 text-emerald-800">
             <WandSparkles className="h-4 w-4 shrink-0" />
             <p className="text-xs font-bold uppercase tracking-[0.14em]">Why AI chose this</p>
@@ -361,85 +356,45 @@ function PlanCard({
           ) : null}
         </div>
       ) : null}
-
-      <div className="pricing-scrollbar mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
-
-        {plan.featureBullets.map((feature) => (
-          <AccessLine key={`${plan.id}-${feature}`} text={feature} />
+      </>}
+      features={<>
+        {featureLines.map((feature) => (
+          <AccessLine key={`${plan.id}-${feature.text}`} text={feature.text} meta={feature.meta} />
         ))}
-
-        {plan.courseItems.map((course) => (
-          <AccessLine
-            key={`${plan.id}-${course.id}`}
-            text={course.title}
-            meta={`${course.sectionsCount} sections · ${
-              course.accessTier === "paid" ? "Paid course" : "Free course"
-            }`}
-          />
-        ))}
-
-        {plan.featureBullets.length === 0 && plan.courseItems.length === 0
-          ? plan.items.map((item) => (
-              <AccessLine
-                key={`${plan.id}-${item.key}`}
-                text={`${item.count} ${item.label}`}
-                meta={
-                  item.details.length > 0
-                    ? `${item.details.slice(0, 3).join(", ")}${
-                        item.details.length > 3 ? ` +${item.details.length - 3} more` : ""
-                      }`
-                    : undefined
-                }
-              />
-            ))
-          : null}
-
-        {plan.featureBullets.length === 0 &&
-        plan.courseItems.length === 0 &&
-        plan.items.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[#0f7896]/12 bg-cyan-50 px-4 py-3 text-sm text-[#071014]/55">
+        {featureLines.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[#0f7896]/[0.12] bg-cyan-50 px-4 py-3 text-sm text-[#071014]/55">
             Custom access bundle
           </div>
         ) : null}
-
-      </div>
-        </div>
-
-        <aside className="pricing-scrollbar flex min-h-0 min-w-0 flex-col overflow-y-auto border-t border-[#0f7896]/10 pt-6 md:border-l md:border-t-0 md:pl-8 md:pt-0">
+      </>}
+      footer={<aside className="min-w-0 border-t border-[#0f7896]/10 pt-2">
           <div>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f7896]">
-                Choose duration
-              </p>
-              <p className="text-xs font-medium text-[#071014]/55">
-                {sortedVersions.length} option{sortedVersions.length > 1 ? "s" : ""}
-              </p>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {sortedVersions.map((version) => (
                 <button
                   key={version.id}
                   type="button"
+                  aria-pressed={activeVersion.id === version.id}
                   disabled={isComingSoon}
                   onClick={() => {
                     setActiveVersionId(version.id);
                     setAppliedCoupon(null);
                     setCouponError("");
                   }}
-                  className={`min-h-10 border px-3 py-2 text-sm font-medium transition ${
+                  className={`min-h-10 rounded-full border px-3 py-2 text-sm font-medium transition ${
                     activeVersion.id === version.id
                       ? "border-[#0f7896] bg-[#0f7896] text-white"
                       : "border-[#0f7896]/15 bg-[#f8fdff] text-[#0f7896] hover:border-[#0f7896]/40"
                   }`}
                 >
-                  {version.months} months
+                  {formatPricingDuration(version.durationLabel, version.months)}
                 </button>
               ))}
             </div>
           </div>
 
           {plan.eligibleCoupons.length > 0 ? (
-            <div className="mt-4">
+            <div className="mt-3">
               <div className="flex items-center gap-2 text-amber-900">
                 <Tag className="h-4 w-4" />
                 <p className="text-xs font-bold uppercase tracking-[0.14em]">Eligible coupons</p>
@@ -474,20 +429,9 @@ function PlanCard({
             </div>
           ) : null}
 
-          <div className="mt-4 border-l-2 border-[#0f7896] bg-cyan-50 px-4 py-3 text-sm text-[#071014]/62">
-          <div className="flex items-center gap-2 font-medium text-[#0f7896]">
-            <Clock3 className="h-4 w-4" />
-            <span>
-              {activeVersion.durationLabel
-                ? activeVersion.durationLabel
-                : `Valid for ${pluralize(activeVersion.months, "month")}`}
-            </span>
-          </div>
-          {activeVersion.billingLabel ? <p className="mt-2">{activeVersion.billingLabel}</p> : null}
-          {plan.vivaMinutes ? <p className="mt-2">Includes {plan.vivaMinutes} AI viva minutes</p> : null}
-        </div>
+          {plan.vivaMinutes ? <p className="mt-2 text-xs text-[#071014]/60">Includes {plan.vivaMinutes} AI viva minutes</p> : null}
 
-      <div className="mt-5 border-t border-[#0f7896]/10 pt-5">
+      <div className="mt-2 border-t border-[#0f7896]/10 pt-2">
         <AnimatePresence mode="wait" initial={false}>
         {appliedCoupon ? (
           <motion.div
@@ -516,7 +460,7 @@ function PlanCard({
         </AnimatePresence>
         {isComingSoon ? (
           <>
-            <div className="mt-4 rounded-2xl border border-slate-300 bg-white/80 px-4 py-3 text-center text-sm font-medium leading-6 text-slate-700">
+            <div className="mt-2 rounded-2xl border border-slate-300 bg-white/80 px-4 py-2 text-center text-sm font-medium leading-6 text-slate-700">
               This plan is coming soon, please join the waitlist.
             </div>
             <PlanWaitlistButton plan={plan} />
@@ -524,17 +468,68 @@ function PlanCard({
         ) : (
           <Button
             asChild
-            className="mt-4 w-full rounded-full bg-[#0f7896] text-white hover:bg-[#0b647d]"
+            className="group mt-2 min-h-10 w-full rounded-full bg-[#0f7896] text-white shadow-[0_6px_16px_rgba(15,120,150,0.18)] hover:bg-[#0b647d]"
           >
             <a href={`/checkout?planId=${encodeURIComponent(plan.id)}&versionId=${encodeURIComponent(activeVersion.id)}${appliedCoupon ? `&couponCode=${encodeURIComponent(appliedCoupon.code)}` : ""}`}>
-              Enrol Now
+              Continue to payment
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </a>
           </Button>
         )}
+
       </div>
-        </aside>
-      </div>
-    </article>
+        </aside>}
+    />
+  );
+}
+
+const searchHints = [
+  "Search courses, topics, mocks, or AI viva",
+  'Try: “Find plans with AI viva”',
+];
+
+function subscribeToMotionPreference(listener: () => void) {
+  const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+  preference.addEventListener("change", listener);
+  return () => preference.removeEventListener("change", listener);
+}
+
+function getReducedMotionPreference() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function PricingSearchHint({ paused }: { paused: boolean }) {
+  const [index, setIndex] = useState(0);
+  const reducedMotion = useSyncExternalStore(subscribeToMotionPreference, getReducedMotionPreference, () => true);
+
+  useEffect(() => {
+    if (paused || reducedMotion !== false) return;
+    const timer = window.setInterval(() => setIndex((current) => (current + 1) % searchHints.length), 4000);
+    return () => window.clearInterval(timer);
+  }, [paused, reducedMotion]);
+
+  if (paused) return null;
+  const hint = searchHints[reducedMotion ? 0 : index];
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-y-0 left-12 right-11 flex items-center overflow-hidden"
+      data-pricing-search-hint=""
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={hint}
+          initial={{ opacity: 0, y: reducedMotion ? 0 : 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: reducedMotion ? 0 : -6 }}
+          transition={{ duration: reducedMotion ? 0 : 0.18, ease: "easeOut" }}
+          className="block w-full truncate text-sm text-[#071014]/50"
+        >
+          {hint}
+        </motion.span>
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -545,9 +540,16 @@ export function PricingCategoryAccordion({
 }) {
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const [aiResults, setAiResults] = useState<AiPlanResult[] | null>(null);
   const [aiSearching, setAiSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const searchFeedback = pricingSearchFeedback({
+    query: searchQuery,
+    searching: aiSearching,
+    error: searchError,
+    hasAiResults: aiResults !== null,
+  });
 
   const visibleGroups = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -565,7 +567,7 @@ export function PricingCategoryAccordion({
             ...plan.featureBullets,
             ...plan.courseItems.map((course) => course.title),
             ...plan.items.flatMap((item) => item.details),
-          ].some((value) => String(value || "").toLowerCase().includes(query));
+          ].some((value) => cleanPricingText(String(value || "")).toLowerCase().includes(query));
         }),
       }))
       .filter((group) => group.plans.length > 0);
@@ -605,17 +607,19 @@ export function PricingCategoryAccordion({
   }
 
   const toggleCategory = (category: string) => {
-    setOpenCategories((current) => (current.includes(category) ? [] : [category]));
+    setOpenCategories((current) => (current.includes(category) ? current.filter((item) => item !== category) : [...current, category]));
   };
 
   return (
     <div className="space-y-6">
-      <div className="border-y border-[#0f7896]/12 bg-white px-4 py-5 shadow-[0_12px_32px_rgba(15,120,150,0.06)] sm:px-5">
+      <div role="search" aria-label="Find a preparation plan" className="bg-transparent" data-pricing-search="">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0f7896]" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0f7896]" />
             <Input
               value={searchQuery}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
               onChange={(event) => {
                 setSearchQuery(event.target.value);
                 setAiResults(null);
@@ -624,10 +628,11 @@ export function PricingCategoryAccordion({
               onKeyDown={(event) => {
                 if (event.key === "Enter") void runAiSearch();
               }}
-              className="h-12 rounded-lg border-[#0f7896]/20 bg-[#f8fdff] pl-12 pr-11 shadow-none focus-visible:border-[#0f7896] focus-visible:ring-[#0f7896]/15"
-              placeholder="Search courses, topics, mocks, or AI viva"
+              className="h-12 rounded-full border-[#0f7896]/20 bg-transparent pl-12 pr-11 shadow-none hover:border-[#0f7896]/40 focus-visible:border-[#0f7896] focus-visible:ring-2 focus-visible:ring-[#0f7896]/15 dark:bg-transparent"
+              placeholder={searchFocused ? searchHints[0] : ""}
               aria-label="Search plans"
             />
+            <PricingSearchHint paused={searchFocused || searchQuery.length > 0} />
             {searchQuery ? (
               <button
                 type="button"
@@ -648,7 +653,7 @@ export function PricingCategoryAccordion({
             type="button"
             onClick={() => void runAiSearch()}
             disabled={aiSearching || searchQuery.trim().length < 3}
-            className="h-12 rounded-lg bg-[#0f7896] px-5 text-white hover:bg-[#0b647d]"
+            className="h-12 rounded-full bg-[#0f7896] px-6 text-white hover:bg-[#0b647d]"
           >
             {aiSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <WandSparkles className="h-4 w-4" />}
             AI search
@@ -662,9 +667,9 @@ export function PricingCategoryAccordion({
       </div>
 
       {visibleGroups.length === 0 ? (
-        <div className="border-y border-[#0f7896]/12 bg-white py-12 text-center">
-          <p className="font-semibold text-[#071014]">No matching plans found</p>
-          <p className="mt-2 text-sm text-[#071014]/55">Try a broader topic or describe what you want to practise.</p>
+        <div role="status" aria-live="polite" className="border-y border-[#0f7896]/[0.12] bg-white py-12 text-center" data-pricing-search-feedback="">
+          <p className="font-semibold text-[#071014]">{searchFeedback.title}</p>
+          <p className="mt-2 text-sm text-[#071014]/55">{searchFeedback.detail}</p>
         </div>
       ) : null}
 
@@ -674,50 +679,32 @@ export function PricingCategoryAccordion({
         return (
           <section
             key={group.category}
-            className="overflow-hidden rounded-[34px] border border-[#0f7896]/12 bg-white shadow-[0_18px_50px_rgba(15,120,150,0.08)]"
+            className="overflow-hidden rounded-[32px] border border-[#0f7896]/[0.12] bg-white shadow-[0_18px_50px_rgba(15,120,150,0.08)]"
           >
             <button
               type="button"
+              aria-expanded={open}
               onClick={() => toggleCategory(group.category)}
-              className="flex w-full items-center justify-between gap-6 bg-gradient-to-r from-white via-cyan-50/70 to-white px-6 py-6 text-left transition hover:bg-cyan-50/80"
+              className="flex w-full items-center justify-between gap-5 bg-gradient-to-r from-white via-cyan-50/70 to-white px-5 py-6 text-left transition hover:bg-cyan-50 sm:px-7"
             >
               <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0f7896] text-white shadow-[0_10px_24px_rgba(15,120,150,0.22)]">
+                <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-[#0f7896] text-white shadow-[0_10px_24px_rgba(15,120,150,0.22)]">
                   <Layers3 className="h-6 w-6" />
                 </div>
 
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex rounded-full bg-[#0f7896]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#0f7896]">
-                      Category
-                    </span>
-                    <span className="inline-flex rounded-full border border-[#0f7896]/10 bg-white px-3 py-1 text-[11px] font-medium text-[#071014]/60">
-                      {group.plans.length} plan{group.plans.length > 1 ? "s" : ""}
-                    </span>
-                  </div>
-
-                  <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#071014]">
+                  <h2 className="mt-2 text-xl font-bold tracking-[-0.03em] text-[#071014] sm:text-2xl">
                     {group.category}
                   </h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-[#071014]/58">
-                    Compare the plans in this section and expand to see exactly what is included.
-                  </p>
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-3">
-                <div className="hidden rounded-full border border-[#0f7896]/12 bg-white px-4 py-2 text-sm font-semibold text-[#0f7896] sm:inline-flex">
-                  {open ? "Hide plans" : "View plans"}
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#0f7896]/12 bg-white text-[#0f7896] shadow-sm">
-                  {open ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                </div>
-              </div>
+              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#0f7896]/[0.12] bg-white text-[#0f7896] transition-transform duration-300 ${open ? "rotate-180" : ""}`}><ChevronDown className="h-5 w-5" /></span>
             </button>
 
             {open ? (
-              <div className="border-t border-[#0f7896]/10 bg-[#fbfeff] px-6 py-6">
-                <div className="grid gap-5 xl:grid-cols-2">
+              <div className="border-t border-[#0f7896]/10 bg-[#fbfeff] p-4 sm:p-6">
+                <SynchronizedPricingGrid className="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {group.plans.map((plan) => (
                     <PlanCard
                       key={plan.id}
@@ -725,7 +712,7 @@ export function PricingCategoryAccordion({
                       aiResult={aiResults?.find((result) => result.id === plan.id)}
                     />
                   ))}
-                </div>
+                </SynchronizedPricingGrid>
               </div>
             ) : null}
           </section>
